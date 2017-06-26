@@ -1,0 +1,9 @@
+*.log
+*.aux
+*.out
+*.bbl
+*.blg
+*.dvi
+*.ps
+*.pdf
+*-arxiv.tex
