@@ -7,3 +7,5 @@
 *.ps
 *.pdf
 *-arxiv.tex
+*~
+.DS_Store
