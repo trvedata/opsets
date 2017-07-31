@@ -25,46 +25,47 @@
 
 \begin{figure*}
 \begin{align*}
-    \mathrm{child}(\mathit{List}, \mathit{Parent}, \mathit{Child}) \leftarrow &
+    \mathrm{child}(\mathit{List}, \mathit{Parent}, \mathit{Child}) \leftarrow\; &
     \mathrm{insert}(\mathit{List}, \mathit{Parent}, \mathit{Child}, \mathit{Value}).
 \\
-    \mathrm{firstChild}(\mathit{List}, \mathit{Parent}, \mathit{Child}) \leftarrow &
+    \mathrm{firstChild}(\mathit{List}, \mathit{Parent}, \mathit{Child}) \leftarrow\; &
     \mathrm{child}(\mathit{List}, \mathit{Parent}, \mathit{Child}),
     \neg\mathrm{child}(\mathit{List}, \mathit{Parent}, \mathit{Other}),
     \mathit{Child} < \mathit{Other}.
 \\
-    \mathrm{sibling}(\mathit{List}, \mathit{Child1}, \mathit{Child2}) \leftarrow &
+    \mathrm{sibling}(\mathit{List}, \mathit{Child1}, \mathit{Child2}) \leftarrow\; &
     \mathrm{child}(\mathit{List}, \mathit{Parent}, \mathit{Child1}),
     \mathrm{child}(\mathit{List}, \mathit{Parent}, \mathit{Child2}).
 \\
-    \mathrm{nextSibling}(\mathit{List}, \mathit{Prev}, \mathit{Next}) \leftarrow &
+    \mathrm{nextSibling}(\mathit{List}, \mathit{Prev}, \mathit{Next}) \leftarrow\; &
     \mathrm{sibling}(\mathit{List}, \mathit{Prev}, \mathit{Next}),
     \mathit{Next} < \mathit{Prev},\\&
     \neg\mathrm{sibling}(\mathit{List}, \mathit{Prev}, \mathit{Other}),
     \mathit{Next} < \mathit{Other},
     \mathit{Other} < \mathit{Prev}.
 \\
-    \mathrm{siblinglessAncestor}(\mathit{List}, \mathit{Start}, \mathit{Start}) \leftarrow &
+    \mathrm{siblinglessAncestor}(\mathit{List}, \mathit{Start}, \mathit{Start}) \leftarrow\; &
     \neg\mathrm{nextSibling}(\mathit{List}, \mathit{Start}, \mathit{Sibling}).
 \\
-    \mathrm{siblinglessAncestor}(\mathit{List}, \mathit{Start}, \mathit{Next}) \leftarrow &
+    \mathrm{siblinglessAncestor}(\mathit{List}, \mathit{Start}, \mathit{Next}) \leftarrow\; &
     \mathrm{siblinglessAncestor}(\mathit{List}, \mathit{Start}, \mathit{Prev}),
     \mathrm{child}(\mathit{List}, \mathit{Next}, \mathit{Prev}), \\&
     \neg\mathrm{nextSibling}(\mathit{List}, \mathit{Next}, \mathit{Sibling}).
 \\
-    \mathrm{nextElem}(\mathit{List}, \mathit{Prev}, \mathit{Next}) \leftarrow &
+    \mathrm{nextElem}(\mathit{List}, \mathit{Prev}, \mathit{Next}) \leftarrow\; &
     \mathrm{firstChild}(\mathit{List}, \mathit{Prev}, \mathit{Next}).
 \\
-    \mathrm{nextElem}(\mathit{List}, \mathit{Prev}, \mathit{Next}) \leftarrow &
+    \mathrm{nextElem}(\mathit{List}, \mathit{Prev}, \mathit{Next}) \leftarrow\; &
     \neg\mathrm{firstChild}(\mathit{List}, \mathit{Prev}, \mathit{Child}),
     \mathrm{nextSibling}(\mathit{List}, \mathit{Prev}, \mathit{Next}).
 \\
-    \mathrm{nextElem}(\mathit{List}, \mathit{Prev}, \mathit{Next}) \leftarrow &
+    \mathrm{nextElem}(\mathit{List}, \mathit{Prev}, \mathit{Next}) \leftarrow\; &
     \neg\mathrm{firstChild}(\mathit{List}, \mathit{Prev}, \mathit{Child}),
     \mathrm{siblinglessAncestor}(\mathit{List}, \mathit{Prev}, \mathit{Anc}), \\&
     \mathrm{child}(\mathit{List}, \mathit{Parent}, \mathit{Anc}),
     \mathrm{nextSibling}(\mathit{List}, \mathit{Parent}, \mathit{Next}).
 \end{align*}
+\caption{Datalog rules for an ordered list (insertion only).}
 \end{figure*}
 
 {\footnotesize
