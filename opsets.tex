@@ -23,6 +23,41 @@
 
 \cite{Attiya:2016kh}
 
+% Topological orderings are also closely related to the concept of a linear
+% extension of a partial order in mathematics.
+% https://en.wikipedia.org/wiki/Topological_sorting
+
+\begin{figure*}
+\begin{align*}
+    \mathrm{happensBefore}(\mathit{Op1}, \mathit{Op2}) \leftarrow\; &
+    \mathrm{depends}(\mathit{Op1}, \mathit{Op2}).
+\\
+    \mathrm{happensBefore}(\mathit{Op1}, \mathit{Op2}) \leftarrow\; &
+    \mathrm{depends}(\mathit{Op1}, \mathit{Op3}),
+    \mathrm{happensBefore}(\mathit{Op3}, \mathit{Op2}).
+\\
+    \mathrm{concurrent}(\mathit{Op1}, \mathit{Op2}) \leftarrow\; &
+    \mathrm{op}(\mathit{Op1}), \mathrm{op}(\mathit{Op2}),
+    \neg\mathrm{happensBefore}(\mathit{Op1}, \mathit{Op2}),
+    \neg\mathrm{happensBefore}(\mathit{Op2}, \mathit{Op1}).
+\\
+    & \text{TODO\dots this is not thought through yet}
+\\
+    \mathrm{applyOrder}(\mathit{Op1}, \mathit{Op2}) \leftarrow\; &
+    \mathrm{happensBefore}(\mathit{Op1}, \mathit{Op2}).
+\\
+    \mathrm{happensNext}(\mathit{Op1}, \mathit{Op2}) \leftarrow\; &
+    \mathrm{happensBefore}(\mathit{Op1}, \mathit{Op2}),
+    \neg\mathrm{happensBefore}(\mathit{Op1}, \mathit{Op3}),
+    \neg\mathrm{happensBefore}(\mathit{Op3}, \mathit{Op2}).
+\\
+    \mathrm{firstNext}(\mathit{Op1}, \mathit{Op2}) \leftarrow\; &
+    \mathrm{happensNext}(\mathit{Op1}, \mathit{Op2}),
+    \neg\mathrm{happensNext}(\mathit{Op1}, \mathit{Op3}), \mathit{Op3} < \mathit{Op2}.
+\end{align*}
+\caption{Causal ordering of operations.}
+\end{figure*}
+
 \begin{figure*}
 \begin{align*}
     \mathrm{child}(\mathit{List}, \mathit{Parent}, \mathit{Child}) \leftarrow\; &
