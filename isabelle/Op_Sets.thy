@@ -14,52 +14,108 @@ definition have_list :: "('objId, 'elemId) operation set \<Rightarrow> 'objId \<
 definition have_list_elem :: "('objId, 'elemId) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> bool" where
   "have_list_elem opers listId elemId \<equiv> \<exists>prev. Insert listId prev elemId \<in> opers"
 
+definition has_child :: "('objId, 'elemId) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> bool" where
+  "has_child opers listId parentId \<equiv> \<exists>elemId. Insert listId (Some parentId) elemId \<in> opers"
+
 definition child :: "('objId, 'elemId) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId option \<Rightarrow> 'elemId \<Rightarrow> bool" where
   "child opers listId parentId childId \<equiv> Insert listId parentId childId \<in> opers"
+
+definition later_child :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId option \<Rightarrow> 'elemId \<Rightarrow> bool" where
+  "later_child opers listId parentId childId \<equiv> \<exists>prevId.
+     child opers listId parentId prevId \<and>
+     child opers listId parentId childId \<and>
+     childId < prevId"
 
 definition first_child :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId option \<Rightarrow> 'elemId \<Rightarrow> bool" where
   "first_child opers listId parentId childId \<equiv>
      child opers listId parentId childId \<and>
+     \<not>later_child opers listId parentId childId"
+
+definition first_child' :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId option \<Rightarrow> 'elemId \<Rightarrow> bool" where
+  "first_child' opers listId parentId childId \<equiv>
+     child opers listId parentId childId \<and>
      (\<nexists>other. child opers listId parentId other \<and> childId < other)"
+
+lemma "first_child opers listId parentId childId \<longleftrightarrow> first_child' opers listId parentId childId"
+by (auto simp: later_child_def first_child_def first_child'_def)
+
 
 definition first_elem :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> bool" where
   "first_elem opers listId elemId \<equiv> first_child opers listId None elemId"
 
 definition sibling :: "('objId, 'elemId) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
-  "sibling opers listId child1 child2 \<equiv>
-     \<exists>parent. child opers listId parent child1 \<and> child opers listId parent child2"
+  "sibling opers listId child1 child2 \<equiv> \<exists>parent.
+     child opers listId parent child1 \<and>
+     child opers listId parent child2"
+
+definition later_sibling :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
+  "later_sibling opers listId prevId laterId \<equiv>
+     sibling opers listId prevId laterId \<and>
+     laterId < prevId"
+
+definition later2_sibling :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
+  "later2_sibling opers listId prevId laterId \<equiv> \<exists>nextId.
+     sibling opers listId prevId nextId \<and>
+     sibling opers listId prevId laterId \<and>
+     laterId < nextId \<and>
+     nextId < prevId"
 
 definition next_sibling :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
   "next_sibling opers listId prevId nextId \<equiv>
+     later_sibling opers listId prevId nextId \<and>
+     \<not>later2_sibling opers listId prevId nextId"
+
+definition next_sibling' :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
+  "next_sibling' opers listId prevId nextId \<equiv>
      sibling opers listId prevId nextId \<and>
      nextId < prevId \<and>
      (\<nexists>other. sibling opers listId prevId other \<and> nextId < other \<and> other < prevId)"
 
-definition next_elem_sibling :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
-  "next_elem_sibling opers listId prevId nextId \<equiv>
-     (\<nexists>child. first_child opers listId (Some prevId) child) \<and>
-     next_sibling opers listId prevId nextId"
+lemma "next_sibling opers listId prevId nextId \<longleftrightarrow> next_sibling' opers listId prevId nextId"
+by (auto simp: later_sibling_def later2_sibling_def next_sibling_def next_sibling'_def)
+
+definition has_next_sibling :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> bool" where
+  "has_next_sibling opers listId prevId \<equiv> \<exists>nextId.
+     later_sibling opers listId prevId nextId"
 
 inductive siblingless_ancestor :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
-  "\<lbrakk> \<nexists>sibling. next_sibling opers listId startId sibling \<rbrakk>
-     \<Longrightarrow> siblingless_ancestor opers listId startId startId" |
+  "\<lbrakk> have_list_elem opers listId startId;
+     \<not>has_next_sibling opers listId startId
+   \<rbrakk> \<Longrightarrow> siblingless_ancestor opers listId startId startId" |
   "\<lbrakk> siblingless_ancestor opers listId startId prevId;
      child opers listId (Some nextId) prevId;
-     \<nexists>sibling. next_sibling opers listId nextId sibling
+     \<not>has_next_sibling opers listId nextId
    \<rbrakk> \<Longrightarrow> siblingless_ancestor opers listId startId nextId"
 
+definition next_elem_sibling :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
+  "next_elem_sibling opers listId prevId nextId \<equiv>
+     have_list_elem opers listId prevId \<and>
+     \<not>has_child opers listId prevId \<and>
+     next_sibling opers listId prevId nextId"
+
 definition next_elem_auntie :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
-  "next_elem_auntie opers listId prevId nextId \<equiv>
-     (\<nexists>child. first_child opers listId (Some prevId) child) \<and>
-     (\<exists>ancestor parent. siblingless_ancestor opers listId prevId ancestor \<and>
-      child opers listId (Some parent) ancestor \<and>
-      next_sibling opers listId parent nextId)"
+  "next_elem_auntie opers listId prevId nextId \<equiv> \<exists>ancestor parentId.
+     have_list_elem opers listId prevId \<and>
+     \<not>has_child opers listId prevId \<and>
+     siblingless_ancestor opers listId prevId ancestor \<and>
+     child opers listId (Some parentId) ancestor \<and>
+     next_sibling opers listId parentId nextId"
 
 definition next_elem :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
   "next_elem opers listId prevId nextId \<equiv>
      first_child opers listId (Some prevId) nextId \<or>
      next_elem_sibling opers listId prevId nextId \<or>
      next_elem_auntie opers listId prevId nextId"
+
+inductive list_iter :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId list \<Rightarrow> bool" where
+  "\<lbrakk> \<not>next_elem opers listId prevId nextId \<rbrakk> \<Longrightarrow> list_iter opers listId prevId [prevId]" |
+  "\<lbrakk> next_elem opers listId prevId nextId;
+     list_iter opers listId nextId list \<rbrakk> \<Longrightarrow> list_iter opers listId prevId (prevId#list)"
+
+definition list_make :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId list \<Rightarrow> bool" where
+  "list_make opers listId list \<equiv>
+     (\<exists>firstId. first_elem opers listId firstId \<and> list_iter opers listId firstId list) \<or>
+     (\<nexists>firstId. first_elem opers listId firstId \<and> list = [])"
 
 inductive following_elem :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
   "\<lbrakk> have_list_elem opers listId someId \<rbrakk> \<Longrightarrow> following_elem opers listId someId someId" |
