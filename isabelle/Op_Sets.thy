@@ -117,14 +117,6 @@ definition list_make :: "('objId, 'elemId::linorder) operation set \<Rightarrow>
      (\<exists>firstId. first_elem opers listId firstId \<and> list_iter opers listId firstId list) \<or>
      (\<nexists>firstId. first_elem opers listId firstId \<and> list = [])"
 
-inductive following_elem :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId \<Rightarrow> 'elemId \<Rightarrow> bool" where
-  "\<lbrakk> have_list_elem opers listId someId \<rbrakk> \<Longrightarrow> following_elem opers listId someId someId" |
-  "\<lbrakk> following_elem opers listId prevId midId; next_elem opers listId midId nextId \<rbrakk> \<Longrightarrow> following_elem opers listId prevId nextId"
-
-definition list_elem_set :: "('objId, 'elemId::linorder) operation set \<Rightarrow> 'objId \<Rightarrow> 'elemId set" where
-  "list_elem_set opers listId \<equiv> {elemId. \<exists>firstId.
-     first_elem opers listId firstId \<and> following_elem opers listId firstId elemId}"
-
 fun valid_op :: "('objId, 'elemId) operation set \<Rightarrow> ('objId, 'elemId) operation \<Rightarrow> bool" where
   "valid_op opers (MakeList listId) = (\<not> have_list opers listId)" |
   "valid_op opers (Insert listId ref elem) = (
@@ -148,20 +140,26 @@ lemma next_elem_exclusive_child:
   assumes "{nextId. first_child opers listId (Some prevId) nextId} \<noteq> {}"
   shows "{nextId. next_elem_sibling opers listId prevId nextId} = {}"
     and "{nextId. next_elem_auntie opers listId prevId nextId} = {}"
-using assms apply(simp add: next_elem_sibling_def)
-using assms next_elem_auntie_def by force
+using assms 
+  apply(simp; meson next_elem_sibling_def child_def first_child_def has_child_def)
+  apply(metis Collect_empty_eq assms child_def first_child_def has_child_def next_elem_auntie_def)
+done
 
 lemma siblingless_start:
   assumes "siblingless_ancestor opers listId startId anc"
   shows "\<nexists>sibling. next_sibling opers listId startId sibling"
-using assms by(induction rule: siblingless_ancestor.induct, auto)
+using assms
+  apply(induction rule: siblingless_ancestor.induct)
+  apply(auto simp: has_next_sibling_def next_sibling_def)
+done
 
 lemma next_elem_exclusive_sibling:
   assumes "{nextId. next_elem_sibling opers listId prevId nextId} \<noteq> {}"
   shows "{nextId. first_child opers listId (Some prevId) nextId} = {}"
     and "{nextId. next_elem_auntie opers listId prevId nextId} = {}"
-using assms apply(simp add: next_elem_auntie_def next_elem_sibling_def)
-using assms next_elem_auntie_def next_elem_sibling_def siblingless_start by fastforce
+  using assms apply (meson next_elem_exclusive_child(1))
+  using assms next_elem_auntie_def next_elem_sibling_def siblingless_start apply fastforce
+done
 
 lemma elem_id_unique:
   assumes "valid_ops opers"
@@ -202,7 +200,53 @@ lemma first_child_unique:
   assumes "first_child opers listId parentId child1"
   assumes "first_child opers listId parentId child2"
   shows "child1 = child2"
-by (meson assms first_child_def not_less_iff_gr_or_eq)
+by (meson assms first_child_def later_child_def neqE)
+
+lemma next_sibling_unique:
+  assumes "next_sibling opers listId prevId next1"
+  assumes "next_sibling opers listId prevId next2"
+  shows "next1 = next2"
+by (meson assms later2_sibling_def later_sibling_def next_sibling_def not_less_iff_gr_or_eq)
+
+lemma siblingless_ancestor_indeed:
+  assumes "siblingless_ancestor opers listId startId anc"
+  shows "\<nexists>sibling. next_sibling opers listId anc sibling"
+  using assms apply(induction rule: siblingless_ancestor.induct)
+  apply(auto simp: has_next_sibling_def next_sibling_def)
+done
+
+lemma next_elem_auntie_unique:
+  assumes "valid_ops opers"
+    and "next_elem_auntie opers listId prevId next1"
+    and "next_elem_auntie opers listId prevId next2"
+  shows "next1 = next2"
+  using assms apply(simp add: next_elem_auntie_def)
+  apply(erule exE, (erule conjE)+)+
+  apply(case_tac "ancestora = ancestor", clarsimp)
+  apply(metis child_def elem_id_unique next_sibling_unique option.sel)
+  apply(induction rule: siblingless_ancestor.induct)
+  sorry
+
+lemma next_elem_unique:
+  assumes "valid_ops opers"
+    and "next_elem opers listId prevId next1"
+    and "next_elem opers listId prevId next2"
+  shows "next1 = next2"
+  using assms apply -
+  apply(case_tac "{nextId. first_child opers listId (Some prevId) nextId} \<noteq> {}")
+  apply(metis bex_empty first_child_unique mem_Collect_eq next_elem_def next_elem_exclusive_child)
+  apply(case_tac "{nextId. next_elem_sibling opers listId prevId nextId} \<noteq> {}")
+  apply(metis Collect_empty_eq_bot empty_def next_elem_def next_elem_exclusive_sibling(2)
+    next_elem_sibling_def next_sibling_unique)
+  apply(simp add: next_elem_auntie_unique next_elem_def)
+done
+
+
+lemma list_order_complete:
+  assumes "valid_ops opers"
+    and "list_make opers listId list"
+  shows "set list = {elemId. have_list_elem opers listId elemId}"
+  oops
 
 lemma list_invariant:
   assumes "valid_ops opers"
@@ -258,96 +302,7 @@ lemma first_elem_exists:
   apply(auto simp: first_elem_def first_child_def child_def)[1]
   apply(rule_tac x=firstId in exI)
   apply(auto simp: first_elem_def first_child_def child_def)[1]
-done
+oops
 
-lemma next_sibling_unique:
-  assumes "next_sibling opers listId prevId next1"
-  assumes "next_sibling opers listId prevId next2"
-  shows "next1 = next2"
-by (meson assms next_sibling_def not_less_iff_gr_or_eq)
-
-lemma siblingless_ancestor_indeed:
-  assumes "siblingless_ancestor opers listId startId anc"
-  shows "\<nexists>sibling. next_sibling opers listId anc sibling"
-using assms by(induction rule: siblingless_ancestor.induct, auto)
-
-lemma ancestor_chain:
-  assumes "valid_ops opers"
-    and "ancs = {anc. siblingless_ancestor opers listId startId anc}"
-  shows "\<exists>list. set list = ancs \<and>
-           (\<forall>pre x y suf. list = pre@x#y#suf \<longrightarrow> child opers listId (Some x) y)"
-  using assms
-  apply(induction rule: siblingless_ancestor.inducts)
-  oops
-
-thm siblingless_ancestor.induct
-
-lemma next_elem_auntie_unique:
-  assumes "valid_ops opers"
-    and "next_elem_auntie opers listId prevId next1"
-    and "next_elem_auntie opers listId prevId next2"
-  shows "next1 = next2"
-  using assms apply(simp add: next_elem_auntie_def)
-  apply(erule exE, (erule conjE)+)+
-  apply(case_tac "ancestora = ancestor", clarsimp)
-  apply(metis child_def elem_id_unique next_sibling_unique option.sel)
-  apply(induction rule: siblingless_ancestor.induct)
-  sorry
-
-lemma next_elem_unique:
-  assumes "valid_ops opers"
-    and "next_elem opers listId prevId next1"
-    and "next_elem opers listId prevId next2"
-  shows "next1 = next2"
-  using assms apply -
-  apply(case_tac "{nextId. first_child opers listId (Some prevId) nextId} \<noteq> {}")
-  apply(metis bex_empty first_child_unique mem_Collect_eq next_elem_def next_elem_exclusive_child)
-  apply(case_tac "{nextId. next_elem_sibling opers listId prevId nextId} \<noteq> {}")
-  using next_elem_def next_elem_exclusive_sibling(2) next_elem_sibling_def
-    next_sibling_unique apply fastforce
-  apply(simp add: next_elem_auntie_unique next_elem_def)
-done
-
-thm following_elem.inducts
-thm following_elem.induct
-thm following_elem.intros
-thm following_elem.cases
-thm following_elem.simps
-
-lemma following_elem_unaffected:
-  assumes "\<forall>prev elemId. oper \<noteq> Insert listId prev elemId"
-  shows "following_elem opers listId firstId elemId =
-         following_elem (insert oper opers) listId firstId elemId"
-  apply(subgoal_tac "following_elem opers listId firstId elemId \<noteq>
-         following_elem (insert oper opers) listId firstId elemId \<Longrightarrow>
-         \<exists>prev elemId. oper = Insert listId prev elemId")
-  using assms apply force
-  apply(case_tac "following_elem opers listId firstId elemId")
-  oops
-
-lemma list_order_complete:
-  assumes "valid_ops opers"
-  shows "list_elem_set opers listId = {elemId. have_list_elem opers listId elemId}"
-  apply(subgoal_tac "\<And>elemId. have_list_elem opers listId elemId \<longleftrightarrow>
-    (\<exists>firstId. first_elem opers listId firstId \<and> following_elem opers listId firstId elemId)")
-  apply(simp add: list_elem_set_def)
-  using assms(1) apply -
-  apply(drule_tac P="\<lambda>opers. \<forall>elemId. have_list_elem opers listId elemId \<longleftrightarrow>
-          (\<exists>firstId. first_elem opers listId firstId \<and> following_elem opers listId firstId elemId)"
-        and listId=listId in list_invariant)
-  apply(simp add: child_def first_child_def first_elem_def have_list_elem_def)
-  prefer 3 apply simp
-  apply clarsimp
-  apply(erule_tac x=elemId in allE)
-  apply(subgoal_tac "have_list_elem opers listId elemId =
-                have_list_elem (insert oper opers) listId elemId")
-  prefer 2 apply(metis have_list_elem_def insert_iff)
-  apply(subgoal_tac "\<forall>firstId. first_elem opers listId firstId =
-                first_elem (insert oper opers) listId firstId")
-  prefer 2 apply(metis child_def first_child_def first_elem_def insert_iff)
-  apply(subgoal_tac "\<forall>firstId. following_elem opers listId firstId elemId =
-                following_elem (insert oper opers) listId firstId elemId")
-  apply(blast, meson following_elem_unaffected)
-  oops
 
 end
