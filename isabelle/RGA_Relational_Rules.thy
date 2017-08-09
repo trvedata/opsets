@@ -46,5 +46,22 @@ lemmas rga_intros [intro] =
   list_elem_has_child_child_later_child_sibling_later_sibling_later_sibling_2_has_next_sibling.intros
   first_child_next_sibling_siblingless_anc_next_elem.intros
 
+lemma first_child_unique:
+  assumes "first_child \<D> parent child1"
+  assumes "first_child \<D> parent child2"
+  shows "child1 = child2"
+by (meson assms rga_intros first_child.cases not_less_iff_gr_or_eq)
+
+lemma next_sibling_unique:
+  assumes "next_sibling \<D> prev next1"
+  assumes "next_sibling \<D> prev next2"
+  shows "next1 = next2"
+by (meson assms rga_intros later_sibling.cases next_sibling.cases not_less_iff_gr_or_eq)
+
+lemma next_elem_unique:
+  assumes "next_elem \<D> prev next1"
+  assumes "next_elem \<D> prev next2"
+  shows "next1 = next2"
+  oops
 
 end
