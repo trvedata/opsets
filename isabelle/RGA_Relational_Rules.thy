@@ -40,16 +40,22 @@ where
   "\<lbrakk>siblingless_anc \<D> s p; child \<D> n p; \<not> has_next_sibling \<D> n\<rbrakk> \<Longrightarrow> siblingless_anc \<D> s n" |
   "\<lbrakk>first_child \<D> p n\<rbrakk> \<Longrightarrow> next_elem \<D> p n" |
   "\<lbrakk>list_elem \<D> p; \<not> has_child \<D> p; next_sibling \<D> p n\<rbrakk> \<Longrightarrow> next_elem \<D> p n" |
-  "\<lbrakk>list_elem \<D> p; \<not> has_child \<D> p; siblingless_anc \<D> p a; child \<D> p a; next_sibling \<D> p n\<rbrakk> \<Longrightarrow> next_elem \<D> p n"  
+  "\<lbrakk>list_elem \<D> p; \<not> has_child \<D> p; siblingless_anc \<D> p a; child \<D> pa a; next_sibling \<D> pa n\<rbrakk> \<Longrightarrow> next_elem \<D> p n"  
 
 lemmas rga_intros [intro] =
   list_elem_has_child_child_later_child_sibling_later_sibling_later_sibling_2_has_next_sibling.intros
   first_child_next_sibling_siblingless_anc_next_elem.intros
-  
-inductive list_iter :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid list \<Rightarrow> bool" where
-  "list_iter \<D> pa []" |
-  "\<lbrakk>first_child \<D> pa e\<rbrakk> \<Longrightarrow> list_iter \<D> pa [e]" |
-  "\<lbrakk>list_iter \<D> pa (e'#es); next_elem \<D> e e'\<rbrakk> \<Longrightarrow> list_iter \<D> pa (e#e'#es)"
+
+inductive list_suffix :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid list \<Rightarrow> bool"
+  and list_full       :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid list \<Rightarrow> bool"
+where
+  "\<lbrakk>\<not> next_elem \<D> p x\<rbrakk> \<Longrightarrow> list_suffix \<D> p []" |
+  "\<lbrakk>next_elem \<D> p x; list_suffix \<D> x xs\<rbrakk> \<Longrightarrow> list_suffix \<D> p (x#xs)" |
+  "\<lbrakk>\<D> i = Some MakeList; list_suffix \<D> i xs\<rbrakk> \<Longrightarrow> list_full \<D> i xs"
+
+inductive elem_index :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> nat \<Rightarrow> bool" where
+  "\<lbrakk>\<D> head = Some MakeList; next_elem \<D> head x\<rbrakk> \<Longrightarrow> elem_index \<D> x 0" |
+  "\<lbrakk>elem_index \<D> x i; next_elem \<D> x y\<rbrakk> \<Longrightarrow> elem_index \<D> y (Suc i)"
 
 lemma first_child_unique:
   assumes "first_child \<D> parent child1"
@@ -63,57 +69,31 @@ lemma next_sibling_unique:
   shows "next1 = next2"
 by(meson assms rga_intros later_sibling.cases next_sibling.cases not_less_iff_gr_or_eq)
 
+lemma parent_unique:
+  assumes "child \<D> par1 n"
+  and "child \<D> par2 n"
+  shows "par1 = par2"
+by(metis (no_types, lifting) insert_def assms child.cases operation.inject option.inject)
+
+lemma siblingful_anc_unique:
+  assumes "siblingless_anc \<D> prev anc1" and "child \<D> par1 anc1" and "next_sibling \<D> par1 n1"
+  assumes "siblingless_anc \<D> prev anc2" and "child \<D> par2 anc2" and "next_sibling \<D> par2 n2"
+  shows "n1 = n2"
+  using assms apply -
+  apply(case_tac "anc1 = anc2")
+  using next_sibling_unique parent_unique apply blast
+  oops
+
 lemma next_elem_unique:
   assumes "next_elem \<D> prev next1"
   and "next_elem \<D> prev next2"
   shows "next1 = next2"
-sorry
-    
-lemma
-  shows "insert \<D> pa e \<longleftrightarrow> (\<exists>l. e \<in> set l \<and> list_iter \<D> pa l)"
-proof
-  assume "insert \<D> pa e"
-  show "\<exists>l. e \<in> set l \<and> list_iter \<D> pa l"
-    sorry
-next
-  assume "\<exists>l. e \<in> set l \<and> list_iter \<D> pa l"
-  from this obtain l where "list_iter \<D> pa l" and "e \<in> set l"
-    by blast
-  thus "insert \<D> pa e"
-  proof(induction rule: list_iter.induct)
-    fix \<D> pa
-    assume "e \<in> set []"
-    thus "insert \<D> pa e"
-      by auto
-  next
-    fix \<D> pa ea
-    assume "first_child \<D> pa ea" and "e \<in> set [ea]"
-    hence "e = ea"
-      by auto
-    also have "child \<D> pa ea"
-      using \<open>first_child \<D> pa ea\<close> first_child.cases by blast+
-    thus "insert \<D> pa e"
-      using insert_def child.cases \<open>e = ea\<close> by blast
-  next
-    fix \<D> pa e' es ea
-    assume "list_iter \<D> pa (e' # es)"
-      and "e \<in> set (e' # es) \<Longrightarrow> insert \<D> pa e"
-      and "next_elem \<D> ea e'"
-      and "e \<in> set (ea # e' # es)"
-    hence "e = ea \<or> e \<in> set (e'#es)"
-      by auto
-    {
-      assume "e = ea"
-      hence "next_elem \<D> e e'"
-        using \<open>next_elem \<D> ea e'\<close> by auto
-      have "insert \<D> pa e"
-        sorry
-    }
-    thus "insert \<D> pa e"
-      using \<open>e = ea \<or> e \<in> set (e'#es)\<close> \<open>e \<in> set (e' # es) \<Longrightarrow> insert \<D> pa e\<close> by blast
-  qed
-qed
-  
+  oops
+
+lemma elem_index_biject:
+  assumes "elem_index \<D> x i" and "elem_index \<D> y j"
+  shows "i = j \<longleftrightarrow> x = y"
+  oops
 
 
 end
