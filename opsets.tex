@@ -68,14 +68,13 @@
     \mathrm{hasNextSibling}(\mathit{Prev}) \leftarrow\; &
     \mathrm{laterSibling}(\mathit{Prev}, \mathit{Next}).
 \\
-    \mathrm{siblinglessAncestor}(\mathit{Start}, \mathit{Start}) \leftarrow\; &
-    \mathrm{listElem}(\mathit{Start}),
-    \neg\mathrm{hasNextSibling}(\mathit{Start}).
+    \mathrm{nextSiblingAnc}(\mathit{Start}, \mathit{Start}, \mathit{Next}) \leftarrow\; &
+    \mathrm{nextSibling}(\mathit{Start}, \mathit{Next}).
 \\
-    \mathrm{siblinglessAncestor}(\mathit{Start}, \mathit{Next}) \leftarrow\; &
-    \mathrm{siblinglessAncestor}(\mathit{Start}, \mathit{Prev}),
-    \mathrm{child}(\mathit{Next}, \mathit{Prev}),
-    \neg\mathrm{hasNextSibling}(\mathit{Next}).
+    \mathrm{nextSiblingAnc}(\mathit{Start}, \mathit{Anc}, \mathit{Next}) \leftarrow\; &
+    \neg\mathrm{hasNextSibling}(\mathit{Start}),
+    \mathrm{child}(\mathit{Parent}, \mathit{Start}),
+    \mathrm{nextSiblingAnc}(\mathit{Parent}, \mathit{Anc}, \mathit{Next}).
 \\
     \mathrm{nextElem}(\mathit{Prev}, \mathit{Next}) \leftarrow\; &
     \mathrm{firstChild}(\mathit{Prev}, \mathit{Next}).
@@ -83,14 +82,7 @@
     \mathrm{nextElem}(\mathit{Prev}, \mathit{Next}) \leftarrow\; &
     \mathrm{listElem}(\mathit{Prev}),
     \neg\mathrm{hasChild}(\mathit{Prev}),
-    \mathrm{nextSibling}(\mathit{Prev}, \mathit{Next}).
-\\
-    \mathrm{nextElem}(\mathit{Prev}, \mathit{Next}) \leftarrow\; &
-    \mathrm{listElem}(\mathit{Prev}),
-    \neg\mathrm{hasChild}(\mathit{Prev}),
-    \mathrm{siblinglessAncestor}(\mathit{Prev}, \mathit{Anc}), \\&
-    \mathrm{child}(\mathit{Parent}, \mathit{Anc}),
-    \mathrm{nextSibling}(\mathit{Parent}, \mathit{Next}).
+    \mathrm{nextSiblingAnc}(\mathit{Prev}, \mathit{Anc}, \mathit{Next}).
 \end{align*}
 \caption{Datalog rules for an ordered list (insertion only).}
 \end{figure*}

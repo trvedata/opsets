@@ -29,22 +29,21 @@ where
   "\<lbrakk>sibling \<D> p n; sibling \<D> p l; l < n; n < p\<rbrakk> \<Longrightarrow> later_sibling_2 \<D> p l" |
   "\<lbrakk>later_sibling \<D> p n\<rbrakk> \<Longrightarrow> has_next_sibling \<D> p"
 
-inductive first_child :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
-  and next_sibling    :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
-  and siblingless_anc :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
-  and next_elem       :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
+inductive first_child  :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
+  and next_sibling     :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
+  and next_sibling_anc :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
+  and next_elem        :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
 where
   "\<lbrakk>child \<D> parent c; \<not> later_child \<D> parent c\<rbrakk> \<Longrightarrow> first_child \<D> parent c" |
   "\<lbrakk>later_sibling \<D> p n; \<not> later_sibling_2 \<D> p n\<rbrakk> \<Longrightarrow> next_sibling \<D> p n" |
-  "\<lbrakk>list_elem \<D> s; \<not> has_next_sibling \<D> s\<rbrakk> \<Longrightarrow> siblingless_anc \<D> s s" |
-  "\<lbrakk>siblingless_anc \<D> s p; child \<D> n p; \<not> has_next_sibling \<D> n\<rbrakk> \<Longrightarrow> siblingless_anc \<D> s n" |
+  "\<lbrakk>next_sibling \<D> s n\<rbrakk> \<Longrightarrow> next_sibling_anc \<D> s s n" |
+  "\<lbrakk>\<not> has_next_sibling \<D> s; child \<D> p s; next_sibling_anc \<D> p a n\<rbrakk> \<Longrightarrow> next_sibling_anc \<D> s a n" |
   "\<lbrakk>first_child \<D> p n\<rbrakk> \<Longrightarrow> next_elem \<D> p n" |
-  "\<lbrakk>list_elem \<D> p; \<not> has_child \<D> p; next_sibling \<D> p n\<rbrakk> \<Longrightarrow> next_elem \<D> p n" |
-  "\<lbrakk>list_elem \<D> p; \<not> has_child \<D> p; siblingless_anc \<D> p a; child \<D> pa a; next_sibling \<D> pa n\<rbrakk> \<Longrightarrow> next_elem \<D> p n"  
+  "\<lbrakk>list_elem \<D> p; \<not> has_child \<D> p; next_sibling_anc \<D> p a n\<rbrakk> \<Longrightarrow> next_elem \<D> p n"  
 
 lemmas rga_intros [intro] =
   list_elem_has_child_child_later_child_sibling_later_sibling_later_sibling_2_has_next_sibling.intros
-  first_child_next_sibling_siblingless_anc_next_elem.intros
+  first_child_next_sibling_next_sibling_anc_next_elem.intros
 
 definition next_elem_rel :: "'eid::{linorder} database \<Rightarrow> ('eid \<times> 'eid) set" where
   "next_elem_rel \<D> \<equiv> {(x, y). next_elem \<D> x y}"
