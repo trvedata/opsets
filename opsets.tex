@@ -68,13 +68,13 @@
     \mathrm{hasNextSibling}(\mathit{Prev}) \leftarrow\; &
     \mathrm{laterSibling}(\mathit{Prev}, \mathit{Next}).
 \\
-    \mathrm{nextSiblingAnc}(\mathit{Start}, \mathit{Start}, \mathit{Next}) \leftarrow\; &
+    \mathrm{nextSiblingAnc}(\mathit{Start}, \mathit{Next}) \leftarrow\; &
     \mathrm{nextSibling}(\mathit{Start}, \mathit{Next}).
 \\
-    \mathrm{nextSiblingAnc}(\mathit{Start}, \mathit{Anc}, \mathit{Next}) \leftarrow\; &
+    \mathrm{nextSiblingAnc}(\mathit{Start}, \mathit{Next}) \leftarrow\; &
     \neg\mathrm{hasNextSibling}(\mathit{Start}),
     \mathrm{child}(\mathit{Parent}, \mathit{Start}),
-    \mathrm{nextSiblingAnc}(\mathit{Parent}, \mathit{Anc}, \mathit{Next}).
+    \mathrm{nextSiblingAnc}(\mathit{Parent}, \mathit{Next}).
 \\
     \mathrm{nextElem}(\mathit{Prev}, \mathit{Next}) \leftarrow\; &
     \mathrm{firstChild}(\mathit{Prev}, \mathit{Next}).
