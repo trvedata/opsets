@@ -46,6 +46,16 @@ lemmas rga_intros [intro] =
   list_elem_has_child_child_later_child_sibling_later_sibling_later_sibling_2_has_next_sibling.intros
   first_child_next_sibling_siblingless_anc_next_elem.intros
 
+definition next_elem_rel :: "'eid::{linorder} database \<Rightarrow> ('eid \<times> 'eid) set" where
+  "next_elem_rel \<D> \<equiv> {(x, y). next_elem \<D> x y}"
+
+lemma insert_serial:
+  assumes "\<D> y = None" and "\<D>' = \<D>(y \<mapsto> Insert x)"
+    and "(x, z) \<in> next_elem_rel \<D>"
+    and "\<forall>n \<in> dom \<D>. n < y"
+  shows "next_elem_rel \<D>' = next_elem_rel \<D> - {(x, z)} \<union> {(x, y), (y, z)}"
+  oops
+
 inductive list_suffix :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid list \<Rightarrow> bool"
   and list_full       :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid list \<Rightarrow> bool"
 where
