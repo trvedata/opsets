@@ -47,7 +47,7 @@ lemmas rga_intros [intro] =
 
 definition next_elem_rel :: "'eid::{linorder} database \<Rightarrow> ('eid \<times> 'eid) set" where
   "next_elem_rel \<D> \<equiv> {(x, y). next_elem \<D> x y}"
-
+  
 lemma insert_serial:
   assumes "\<D> y = None" and "\<D>' = \<D>(y \<mapsto> Insert x)"
     and "(x, z) \<in> next_elem_rel \<D>"
@@ -76,28 +76,29 @@ lemma next_sibling_unique:
   assumes "next_sibling \<D> prev next1"
   and "next_sibling \<D> prev next2"
   shows "next1 = next2"
-by(meson assms rga_intros later_sibling.cases next_sibling.cases not_less_iff_gr_or_eq)
+  by(meson assms rga_intros later_sibling.cases next_sibling.cases not_less_iff_gr_or_eq)
 
 lemma parent_unique:
   assumes "child \<D> par1 n"
   and "child \<D> par2 n"
   shows "par1 = par2"
-by(metis (no_types, lifting) insert_def assms child.cases operation.inject option.inject)
-
-lemma siblingful_anc_unique:
-  assumes "siblingless_anc \<D> prev anc1" and "child \<D> par1 anc1" and "next_sibling \<D> par1 n1"
-  assumes "siblingless_anc \<D> prev anc2" and "child \<D> par2 anc2" and "next_sibling \<D> par2 n2"
-  shows "n1 = n2"
-  using assms apply -
-  apply(case_tac "anc1 = anc2")
-  using next_sibling_unique parent_unique apply blast
-  oops
-
+  by(metis (no_types, lifting) insert_def assms child.cases operation.inject option.inject)
+    
+inductive_cases next_sibling_ind: "next_sibling \<D> s n"
+inductive_cases next_sibling_anc_ind: "next_sibling_anc \<D> s a n"
+  
 lemma next_elem_unique:
-  assumes "next_elem \<D> prev next1"
-  and "next_elem \<D> prev next2"
-  shows "next1 = next2"
-  oops
+  shows "first_child \<D> parent child1 \<Longrightarrow> first_child \<D> parent child2 \<Longrightarrow> child1 = child2"
+    and "next_sibling \<D> prev next1 \<Longrightarrow> next_sibling \<D> prev next2 \<Longrightarrow> next1 = next2"
+    and "next_sibling_anc \<D> s a1 n1 \<Longrightarrow> next_sibling_anc \<D> s a2 n2 \<Longrightarrow> a1 = a2 \<and> n1 = n2"
+    and "next_elem \<D> prev next1 \<Longrightarrow> next_elem \<D> prev next2 \<Longrightarrow> next1 = next2"
+     apply(induction arbitrary: and next2 rule: first_child_next_sibling_next_sibling_anc_next_elem.inducts)
+  using first_child_unique apply blast
+  using next_sibling_unique apply blast
+    apply(erule next_sibling_ind)
+    
+    
+    
 
 lemma elem_index_biject:
   assumes "elem_index \<D> x i" and "elem_index \<D> y j"
