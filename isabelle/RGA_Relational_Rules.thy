@@ -31,15 +31,15 @@ where
 
 inductive first_child  :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
   and next_sibling     :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
-  and next_sibling_anc :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
+  and next_sibling_anc :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
   and next_elem        :: "'eid::{linorder} database \<Rightarrow> 'eid \<Rightarrow> 'eid \<Rightarrow> bool"
 where
   "\<lbrakk>child \<D> parent c; \<not> later_child \<D> parent c\<rbrakk> \<Longrightarrow> first_child \<D> parent c" |
   "\<lbrakk>later_sibling \<D> p n; \<not> later_sibling_2 \<D> p n\<rbrakk> \<Longrightarrow> next_sibling \<D> p n" |
-  "\<lbrakk>next_sibling \<D> s n\<rbrakk> \<Longrightarrow> next_sibling_anc \<D> s s n" |
-  "\<lbrakk>\<not> has_next_sibling \<D> s; child \<D> p s; next_sibling_anc \<D> p a n\<rbrakk> \<Longrightarrow> next_sibling_anc \<D> s a n" |
+  "\<lbrakk>next_sibling \<D> s n\<rbrakk> \<Longrightarrow> next_sibling_anc \<D> s n" |
+  "\<lbrakk>\<not> has_next_sibling \<D> s; child \<D> p s; next_sibling_anc \<D> p n\<rbrakk> \<Longrightarrow> next_sibling_anc \<D> s n" |
   "\<lbrakk>first_child \<D> p n\<rbrakk> \<Longrightarrow> next_elem \<D> p n" |
-  "\<lbrakk>list_elem \<D> p; \<not> has_child \<D> p; next_sibling_anc \<D> p a n\<rbrakk> \<Longrightarrow> next_elem \<D> p n"  
+  "\<lbrakk>list_elem \<D> p; \<not> has_child \<D> p; next_sibling_anc \<D> p n\<rbrakk> \<Longrightarrow> next_elem \<D> p n"  
 
 lemmas rga_intros [intro] =
   list_elem_has_child_child_later_child_sibling_later_sibling_later_sibling_2_has_next_sibling.intros
@@ -85,17 +85,22 @@ lemma parent_unique:
   by(metis (no_types, lifting) insert_def assms child.cases operation.inject option.inject)
     
 inductive_cases next_sibling_ind: "next_sibling \<D> s n"
-inductive_cases next_sibling_anc_ind: "next_sibling_anc \<D> s a n"
+inductive_cases next_sibling_anc_ind: "next_sibling_anc \<D> s n"
   
 lemma next_elem_unique:
   shows "first_child \<D> parent child1 \<Longrightarrow> first_child \<D> parent child2 \<Longrightarrow> child1 = child2"
     and "next_sibling \<D> prev next1 \<Longrightarrow> next_sibling \<D> prev next2 \<Longrightarrow> next1 = next2"
-    and "next_sibling_anc \<D> s a1 n1 \<Longrightarrow> next_sibling_anc \<D> s a2 n2 \<Longrightarrow> a1 = a2 \<and> n1 = n2"
+    and "next_sibling_anc \<D> s n1 \<Longrightarrow> next_sibling_anc \<D> s n2 \<Longrightarrow> n1 = n2"
     and "next_elem \<D> prev next1 \<Longrightarrow> next_elem \<D> prev next2 \<Longrightarrow> next1 = next2"
-     apply(induction arbitrary: and next2 rule: first_child_next_sibling_next_sibling_anc_next_elem.inducts)
+     apply(induction arbitrary: child2 and next2 and n2 rule: first_child_next_sibling_next_sibling_anc_next_elem.inducts)
   using first_child_unique apply blast
   using next_sibling_unique apply blast
-    apply(erule next_sibling_ind)
+     apply(erule next_sibling_anc_ind)
+      apply blast
+  using next_sibling_ind apply blast
+    apply (metis has_next_sibling.simps next_sibling_anc.simps next_sibling_ind parent_unique)
+    apply (meson child.cases first_child.cases next_elem.cases rga_intros(2))
+    by (meson child.cases first_child.cases list_elem_has_child_child_later_child_sibling_later_sibling_later_sibling_2_has_next_sibling.intros(2) next_elem.cases)
     
     
     
