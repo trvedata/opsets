@@ -21,6 +21,42 @@
 
 \section{Introduction}
 
+A common requirement across a great variety of systems is that several participants may concurrently access and manipulate some shared data structure.
+However, unconstrained concurrent manipulation may introduce inconsistencies that applications cannot tolerate, and thus various approaches for providing \emph{consistency guarantees} have been developed, ensuring that the data structure continues to obey certain invariants or semantics under concurrent access. For example:
+
+\begin{description}
+\item[Transaction isolation] in databases restricts the degree to which concurrent transactions can affect each other while accessing the same database.
+The strongest isolation level, \emph{serializability}, ensures that transactions behave as if there were no concurrency at all, i.e.\ as if transactions were executed serially, one at a time.
+
+\item[Conflict-free Replicated Data Types (CRDTs)] allow each participant to modify a local copy (\emph{replica}) of a shared data structure without waiting for communication with other replicas.
+This has the consequence that the state of replicas may temporarily diverge, but the definition of CRDTs ensures that all replicas eventually converge towards a consistent state.
+
+\item[Operational Transformation (OT)] algorithms are designed for several users who are collaboratively editing a shared document, as implemented for example in Google Docs.
+As with CRDTs, OT allows each user's changes to be applied immediately to their local copy, while ensuring that other users' concurrent edits can be integrated in a consistent way.
+\end{description}
+
+Despite decades of research in the above topics, consistency mechanisms for concurrent data access remain poorly understood, and tools for reasoning about them (both formally and informally) are subtle and error-prone.
+
+In this work we introduce \emph{Operation Sets} (or \emph{OpSets} for short), a novel approach to describing and reasoning about algorithms for concurrent data access and manipulation.
+OpSets trivially ensure that replicas converge, and they simplify the tasks of extending algorithms and verifying more complex correctness properties.
+The OpSets approach builds upon existing work on CRDTs, and extends it by incorporating ideas from database query languages, transaction isolation, and operational transformation.
+
+Our contributions in this paper are as follows:
+
+\begin{itemize}
+\item We demonstrate how to express a variety of abstract datatypes (maps, lists, trees, and registers) as declarative definitions on top of a simple abstraction, the OpSet.
+By using the Datalog query language for our definitions, we strike an effective compromise between two competing requirements: being abstract enough to make formal verification feasible, and being concrete enough to enable efficient practical implementations.
+
+\item We define correctness properties of the above abstract datatypes using a generalised notion of serializability, and we use the Isabelle/HOL proof assistant to formally verify that our implementation satisfies those correctness properties.
+Furthermore, we demonstrate that our correctness properties capture intuitive requirements by giving counter-examples for several existing algorithms in the literature, showing that they do not satisfy the required semantics.
+
+\item To demonstrate the ease of extending OpSet definitions with new operations, we provide an implementation of a \emph{move} operation for lists and trees~-- an operation that is not supported by prior CRDT algorithms~-- and we verify its correctness against a specification.
+
+\item We show how to perform garbage collection on OpSets to prevent unbounded growth on a dataset. Unlike several prior proposals for garbage collection in CRDTs, our approach does not require any global coordination or consensus between nodes.
+
+\item We discuss the distinction between three families of CRDTs in the literature (operation-based, state-based, and delta-based), and argue that our OpSet approach makes this distinction largely redundant: we require only a basic set CRDT as foundation, and show that other abstract datatypes can efficiently be implemented on top of that set, without making further assumptions about the properties of the underlying network.
+\end{itemize}
+
 \cite{Attiya:2016kh}
 
 % Topological orderings are also closely related to the concept of a linear
