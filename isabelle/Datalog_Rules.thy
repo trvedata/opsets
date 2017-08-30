@@ -6,22 +6,16 @@ datatype ('oid, 'val) operation
   = MakeList
   | MakeMap
   | MakeBag
+  | MakeVal "'val"
   | InsertAfter "'oid"
   | LinkList "'oid" "'oid"
   | LinkMap "'oid" "string" "'oid"
   | LinkBag "'oid" "'oid"
-  | SetList "'oid" "'val"
-  | SetMap "'oid" "string" "'val"
-  | AddBag "'oid" "'val"
 
 type_synonym ('oid, 'val) database = "'oid \<rightharpoonup> ('oid, 'val) operation"
 
 locale datalog =
   fixes \<D> :: "('oid::{linorder}, 'val) database"
-  and hb :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" (infix "\<prec>" 50)
-  assumes hb_extension: "x \<prec> y \<Longrightarrow> x < y"
-  and hb_irrefl: "\<not> x \<prec> x"
-  and hb_trans: "x \<prec> y \<Longrightarrow> y \<prec> z \<Longrightarrow> x \<prec> z"
 
 context datalog begin
 
@@ -85,90 +79,68 @@ lemma insert_serial:
 
 (*********** Links between objects and register assignment ***************)
 
-datatype ('oid, 'val) link_or_val
-  = Link "'oid"
-  | Val  "'val"
-
 context datalog begin
 
-inductive is_map       :: "'oid \<Rightarrow> bool"
-  and is_bag           :: "'oid \<Rightarrow> bool"
-  and link_target      :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
-  and stolen_link      :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
-  and map_write        :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool"
-  and map_overwritten  :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool"
-  and map_write_old    :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool"
-  and list_write       :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
-  and list_overwritten :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
-  and list_write_old   :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
+inductive is_map     :: "'oid \<Rightarrow> bool"
+  and is_bag         :: "'oid \<Rightarrow> bool"
+  and is_val         :: "'oid \<Rightarrow> bool"
+  and link_target    :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
+  and stolen_link    :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
+  and map_write      :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool"
+  and map_write_old  :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool"
+  and list_write     :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
+  and list_write_old :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
 where
   "\<lbrakk>\<D> oid = Some MakeMap\<rbrakk> \<Longrightarrow> is_map oid" |
   "\<lbrakk>\<D> oid = Some MakeBag\<rbrakk> \<Longrightarrow> is_bag oid" |
+  "\<lbrakk>\<D> oid = Some (MakeVal v)\<rbrakk> \<Longrightarrow> is_val oid" |
   "\<lbrakk>\<D> oid = Some (LinkList el target); is_list_elem el\<rbrakk> \<Longrightarrow> link_target oid target" |
   "\<lbrakk>\<D> oid = Some (LinkMap m k target); is_map m  \<rbrakk> \<Longrightarrow> link_target oid target" |
   "\<lbrakk>\<D> oid = Some (LinkBag bag target); is_bag bag\<rbrakk> \<Longrightarrow> link_target oid target" |
   "\<lbrakk>link_target o1 target; link_target o2 target; o1 < o2\<rbrakk> \<Longrightarrow> stolen_link o1 target" |
   "\<lbrakk>\<D> oid = Some (LinkMap m k t); is_map m\<rbrakk> \<Longrightarrow> map_write oid m k" |
-  "\<lbrakk>\<D> oid = Some (SetMap  m k v); is_map m\<rbrakk> \<Longrightarrow> map_write oid m k" |
-  "\<lbrakk>map_write o1 m k; map_write o2 m k; o1 \<prec> o2\<rbrakk> \<Longrightarrow> map_overwritten o1 m k" |
   "\<lbrakk>map_write o1 m k; map_write o2 m k; o1 < o2\<rbrakk> \<Longrightarrow> map_write_old o1 m k" |
   "\<lbrakk>\<D> oid = Some (LinkList el t); is_list_elem el\<rbrakk> \<Longrightarrow> list_write oid el" |
-  "\<lbrakk>\<D> oid = Some (SetList  el v); is_list_elem el\<rbrakk> \<Longrightarrow> list_write oid el" |
-  "\<lbrakk>list_write o1 el; list_write o2 el; o1 \<prec> o2\<rbrakk> \<Longrightarrow> list_overwritten o1 el" |
   "\<lbrakk>list_write o1 el; list_write o2 el; o1 < o2\<rbrakk> \<Longrightarrow> list_write_old o1 el"
 
 inductive latest_link   :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
   and latest_map_write  :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool"
-  and concur_map_write  :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool"
-  and latest_map_val    :: "'oid \<Rightarrow> string \<Rightarrow> ('oid, 'val) link_or_val \<Rightarrow> bool"
-  and concur_map_val    :: "'oid \<Rightarrow> string \<Rightarrow> ('oid, 'val) link_or_val \<Rightarrow> bool"
+  and latest_map_link   :: "'oid \<Rightarrow> string \<Rightarrow> 'oid \<Rightarrow> bool"
   and has_map_val       :: "'oid \<Rightarrow> string \<Rightarrow> bool"
   and latest_list_write :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
-  and concur_list_write :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
-  and latest_list_val   :: "'oid \<Rightarrow> ('oid, 'val) link_or_val \<Rightarrow> bool"
-  and concur_list_val   :: "'oid \<Rightarrow> ('oid, 'val) link_or_val \<Rightarrow> bool"
+  and latest_list_link  :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
   and has_list_val      :: "'oid \<Rightarrow> bool"
 where
   "\<lbrakk>link_target oid target; \<not> stolen_link oid target\<rbrakk> \<Longrightarrow> latest_link oid target" |
-  "\<lbrakk>map_write oid m k; \<not> map_write_old   oid m k\<rbrakk> \<Longrightarrow> latest_map_write oid m k" |
-  "\<lbrakk>map_write oid m k; \<not> map_overwritten oid m k\<rbrakk> \<Longrightarrow> concur_map_write oid m k" |
+  "\<lbrakk>map_write oid m k; \<not> map_write_old oid m k\<rbrakk> \<Longrightarrow> latest_map_write oid m k" |
   "\<lbrakk>\<D> oid = Some (LinkMap m k target); latest_map_write oid m k; latest_link oid target\<rbrakk>
-      \<Longrightarrow> latest_map_val m k (Link target)" |
-  "\<lbrakk>\<D> oid = Some (SetMap m k v); latest_map_write oid m k\<rbrakk> \<Longrightarrow> latest_map_val m k (Val v)" |
-  "\<lbrakk>\<D> oid = Some (LinkMap m k target); concur_map_write oid m k; latest_link oid target\<rbrakk>
-      \<Longrightarrow> concur_map_val m k (Link target)" |
-  "\<lbrakk>\<D> oid = Some (SetMap m k v); concur_map_write oid m k\<rbrakk> \<Longrightarrow> concur_map_val m k (Val v)" |
-  "\<lbrakk>latest_map_val m k v\<rbrakk> \<Longrightarrow> has_map_val m k" |
-  "\<lbrakk>list_write oid el; \<not> list_write_old   oid el\<rbrakk> \<Longrightarrow> latest_list_write oid el" |
-  "\<lbrakk>list_write oid el; \<not> list_overwritten oid el\<rbrakk> \<Longrightarrow> concur_list_write oid el" |
+      \<Longrightarrow> latest_map_link m k target" |
+  "\<lbrakk>latest_map_link m k v\<rbrakk> \<Longrightarrow> has_map_val m k" |
+  "\<lbrakk>list_write oid el; \<not> list_write_old oid el\<rbrakk> \<Longrightarrow> latest_list_write oid el" |
   "\<lbrakk>\<D> oid = Some (LinkList el target); latest_list_write oid el; latest_link oid target\<rbrakk>
-      \<Longrightarrow> latest_list_val el (Link target)" |
-  "\<lbrakk>\<D> oid = Some (SetList el v); latest_list_write oid el\<rbrakk> \<Longrightarrow> latest_list_val el (Val v)" |
-  "\<lbrakk>\<D> oid = Some (LinkList el target); concur_list_write oid el; latest_link oid target\<rbrakk>
-      \<Longrightarrow> concur_list_val el (Link target)" |
-  "\<lbrakk>\<D> oid = Some (SetList el v); concur_list_write oid el\<rbrakk> \<Longrightarrow> concur_list_val el (Val v)" |
-  "\<lbrakk>latest_list_val el v\<rbrakk> \<Longrightarrow> has_list_val el"
+      \<Longrightarrow> latest_list_link el target" |
+  "\<lbrakk>latest_list_link el v\<rbrakk> \<Longrightarrow> has_list_val el"
 
 end
 
-definition latest_link_rel :: "('oid::{linorder}, 'val) database \<Rightarrow> ('oid \<Rightarrow> 'oid \<Rightarrow> bool) \<Rightarrow> ('oid \<times> 'oid) set" where
-  "latest_link_rel \<D> hb \<equiv> {(oid, target). datalog.latest_link \<D> hb oid target}"
+definition latest_link_rel :: "('oid::{linorder}, 'val) database \<Rightarrow> ('oid \<times> 'oid) set" where
+  "latest_link_rel \<D> \<equiv> {(oid, target). datalog.latest_link \<D> oid target}"
 
-definition latest_map_rel :: "('oid::{linorder}, 'val) database \<Rightarrow> ('oid \<Rightarrow> 'oid \<Rightarrow> bool) \<Rightarrow> ('oid \<times> string \<times> ('oid, 'val) link_or_val) set" where
-  "latest_map_rel \<D> hb \<equiv> {(m, k, v). datalog.latest_map_val \<D> hb m k v}"
+definition latest_map_rel :: "('oid::{linorder}, 'val) database \<Rightarrow> ('oid \<times> string \<times> 'oid) set" where
+  "latest_map_rel \<D> \<equiv> {(m, k, v). datalog.latest_map_link \<D> m k v}"
 
 lemma map_val_unique:
-  assumes "(m, k, v1) \<in> latest_map_rel \<D> hb"
-    and "(m, k, v2) \<in> latest_map_rel \<D> hb"
+  assumes "(m, k, v1) \<in> latest_map_rel \<D>"
+    and "(m, k, v2) \<in> latest_map_rel \<D>"
   shows "v1 = v2"
   oops
 
 lemma link_map_serial:
   assumes "\<D> oid = None" and "\<D>' = \<D>(oid \<mapsto> LinkMap m k target)"
     and "\<And>n. n \<in> dom \<D> \<Longrightarrow> n < oid"
-    and "\<nexists>prev. (prev, target) \<in> latest_link_rel \<D> hb" (* TODO define semantics for stealing *)
-    and "(m, k, v1) \<in> latest_map_rel \<D> hb" (* TODO case where there's no prior value *)
-  shows "latest_map_rel \<D>' hb = latest_map_rel \<D> hb - {(m, k, v1)} \<union> {(m, k, Link target)}"
+    and "\<nexists>prev. (prev, target) \<in> latest_link_rel \<D>" (* TODO define semantics for stealing *)
+    and "(m, k, v1) \<in> latest_map_rel \<D>" (* TODO case where there's no prior value *)
+  shows "latest_map_rel \<D>' = latest_map_rel \<D> - {(m, k, v1)} \<union> {(m, k, Link target)}"
   oops
 
 
@@ -177,18 +149,18 @@ lemma link_map_serial:
 context datalog begin
 
 inductive next_nonempty :: "'oid \<Rightarrow> 'oid option \<Rightarrow> bool"
-  and list_elem         :: "'oid \<Rightarrow> ('oid, 'val) link_or_val \<Rightarrow> 'oid option \<Rightarrow> bool"
+  and list_elem         :: "'oid \<Rightarrow> 'oid \<Rightarrow> 'oid option \<Rightarrow> bool"
 where
   "\<lbrakk>next_elem el None\<rbrakk> \<Longrightarrow> next_nonempty el None" |
   "\<lbrakk>next_elem el (Some n); has_list_val n\<rbrakk> \<Longrightarrow> next_nonempty el (Some n)" |
   "\<lbrakk>next_elem el (Some n); \<not> has_list_val n; next_nonempty n m\<rbrakk> \<Longrightarrow> next_nonempty el m" |
-  "\<lbrakk>latest_list_val el v; next_nonempty el next\<rbrakk> \<Longrightarrow> list_elem el v next"
+  "\<lbrakk>latest_list_link el v; next_nonempty el next\<rbrakk> \<Longrightarrow> list_elem el v next"
 
-inductive list_suffix :: "'oid \<Rightarrow> ('oid \<times> ('oid, 'val) link_or_val) list \<Rightarrow> bool"
-  and list_full       :: "'oid \<Rightarrow> ('oid \<times> ('oid, 'val) link_or_val) list \<Rightarrow> bool"
+inductive list_suffix :: "'oid \<Rightarrow> ('oid \<times> 'oid) list \<Rightarrow> bool"
+  and list_full       :: "'oid \<Rightarrow> ('oid \<times> 'oid) list \<Rightarrow> bool"
 where
   "\<lbrakk>next_nonempty el None\<rbrakk> \<Longrightarrow> list_suffix el []" |
-  "\<lbrakk>next_nonempty el (Some n); latest_list_val n v; list_suffix n suf\<rbrakk> \<Longrightarrow> list_suffix el ((n,v)#suf)" |
+  "\<lbrakk>next_nonempty el (Some n); latest_list_link n v; list_suffix n suf\<rbrakk> \<Longrightarrow> list_suffix el ((n,v)#suf)" |
   "\<lbrakk>\<D> oid = Some MakeList; list_suffix oid suf\<rbrakk> \<Longrightarrow> list_full oid suf"
 
 end
