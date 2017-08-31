@@ -11,6 +11,9 @@ datatype ('oid, 'val) operation
   | LinkList "'oid" "'oid"
   | LinkMap "'oid" "string" "'oid"
   | LinkBag "'oid" "'oid"
+  | DelList "'oid"
+  | DelMap  "'oid" "string"
+  | DelBag  "'oid"
 
 type_synonym ('oid, 'val) database = "'oid \<rightharpoonup> ('oid, 'val) operation"
 
@@ -99,8 +102,10 @@ where
   "\<lbrakk>\<D> oid = Some (LinkBag bag target); is_bag bag\<rbrakk> \<Longrightarrow> link_target oid target" |
   "\<lbrakk>link_target o1 target; link_target o2 target; o1 < o2\<rbrakk> \<Longrightarrow> stolen_link o1 target" |
   "\<lbrakk>\<D> oid = Some (LinkMap m k t); is_map m\<rbrakk> \<Longrightarrow> map_write oid m k" |
+  "\<lbrakk>\<D> oid = Some (DelMap m k);    is_map m\<rbrakk> \<Longrightarrow> map_write oid m k" |
   "\<lbrakk>map_write o1 m k; map_write o2 m k; o1 < o2\<rbrakk> \<Longrightarrow> map_write_old o1 m k" |
   "\<lbrakk>\<D> oid = Some (LinkList el t); is_list_elem el\<rbrakk> \<Longrightarrow> list_write oid el" |
+  "\<lbrakk>\<D> oid = Some (DelList el);    is_list_elem el\<rbrakk> \<Longrightarrow> list_write oid el" |
   "\<lbrakk>list_write o1 el; list_write o2 el; o1 < o2\<rbrakk> \<Longrightarrow> list_write_old o1 el"
 
 inductive latest_link   :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
