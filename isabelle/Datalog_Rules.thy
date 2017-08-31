@@ -66,23 +66,110 @@ inductive next_elem :: "'oid \<Rightarrow> 'oid option \<Rightarrow> bool" where
   "\<lbrakk>first_child p n\<rbrakk> \<Longrightarrow> next_elem p (Some n)" |
   "\<lbrakk>is_list_elem p; \<not> has_child p; next_sibling_anc p n\<rbrakk> \<Longrightarrow> next_elem p (Some n)" |  
   "\<lbrakk>is_list_elem p; \<not> has_child p; \<not> has_sibling_anc p\<rbrakk> \<Longrightarrow> next_elem p None"  
+  
+lemmas [intro] = next_elem.intros
+lemmas [intro] = has_sibling_anc.intros
+lemmas [intro] = next_sibling_anc.intros
+lemmas [intro] = next_sibling.intros
+lemmas [intro] = first_child.intros
+lemmas [intro] = has_next_sibling.intros
+lemmas [intro] = later_sibling_2.intros
+lemmas [intro] = later_sibling.intros
+lemmas [intro] = sibling.intros
+lemmas [intro] = later_child.intros has_child.intros parent_child.intros
+lemmas [intro] = is_list_parent.intros is_list_elem.intros
 
+inductive_cases next_elem_elim [elim]: "next_elem oid opt"
+
+inductive_cases has_sibling_anc_elim [elim]: "has_sibling_anc m"
+inductive_cases next_sibling_anc_elim [elim]: "next_sibling_anc m n"
+inductive_cases next_sibling_elim [elim]: "next_sibling m n"
+    
+inductive_cases first_child_elim [elim]: "first_child p n"
+
+inductive_cases has_next_sibling_elim [elim]: "has_next_sibling m"
+inductive_cases later_sibling_2_elim [elim]: "later_sibling_2 m n"
+inductive_cases later_sibling_elim [elim]: "later_sibling m n"
+inductive_cases sibling_elim [elim]: "sibling m n"
+  
+inductive_cases parent_child_elim [elim]: "parent_child p m"
+inductive_cases has_child_elim [elim]: "has_child p"
+inductive_cases later_child_elim [elim]: "later_child p n"
+  
+inductive_cases is_list_elem_elim [elim]: "is_list_elem p"
+inductive_cases is_list_parent_elim [elim]: "is_list_parent p"
+  
 end
 
-definition next_elem_rel :: "('oid::{linorder}, 'val) database \<Rightarrow> ('oid \<times> 'oid option) set" where
-  "next_elem_rel \<D> \<equiv> {(x, y). datalog.next_elem \<D> x y}"
+definition (in datalog) next_elem_rel :: "('oid \<times> 'oid option) set" where
+  "next_elem_rel \<equiv> {(x, y). next_elem x y}"
 
-lemma next_elem_unique:
-  assumes "(x, y) \<in> next_elem_rel \<D>" and "(x, z) \<in> next_elem_rel \<D>"
+lemma (in datalog) first_child_functional [simp]:
+  assumes "first_child p c" and "first_child p d"
+  shows "c = d"
+  using assms by force
+    
+lemma (in datalog) first_child_has_child [dest]:
+  assumes "first_child m n"
+  shows "has_child m"
+  using assms by force
+    
+lemma (in datalog) next_sibling_functional [simp]:
+  assumes "next_sibling m n" and "next_sibling m p"
+  shows "n = p"
+  using assms
+  apply -
+  apply(erule next_sibling_elim)+
+  apply(meson datalog.later_sibling_2.simps later_sibling.cases not_less_iff_gr_or_eq)
+  done
+    
+lemma (in datalog) next_sibling_to_has_next_sibling [dest]:
+  assumes "next_sibling m n"
+  shows "has_next_sibling m"
+using assms by force
+    
+lemma (in datalog) next_sibling_anc_functional [simp]:
+  assumes "next_sibling_anc m n" and "next_sibling_anc m p"
+  shows "n = p"
+  using assms by(induction rule: next_sibling_anc.induct) force+
+    
+lemma (in datalog) next_elem_functional [simp]:
+  assumes "next_elem m n" and "next_elem m p"
+  shows "n = p"
+  using assms by - ((erule next_elem_elim)+, auto)
+  
+lemma (in datalog) next_elem_rel_unique:
+  assumes "(x, y) \<in> next_elem_rel" and "(x, z) \<in> next_elem_rel"
   shows "y = z"
-  oops
+  using assms by(clarsimp simp add: next_elem_rel_def)
 
+lemma (in datalog) database_dom_monotonic [intro]:
+  assumes "x \<in> dom \<D>"
+  shows "x \<in> dom (\<D>(y \<mapsto> z))"
+  using assms by auto
+
+lemma (in datalog) next_elem_dom_closed [elim]:
+  assumes "next_elem m n"
+  shows "m \<in> dom \<D>"
+  using assms by - (erule next_elem_elim, (force+))
+    
 lemma insert_serial:
   assumes "\<D> y = None" and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
-    and "(x, z) \<in> next_elem_rel \<D>"
+    and "(x, z) \<in> datalog.next_elem_rel \<D>"
     and "\<And>n. n \<in> dom \<D> \<Longrightarrow> n < y"
-  shows "next_elem_rel \<D>' = next_elem_rel \<D> - {(x, z)} \<union> {(x, Some y), (y, z)}"
-  oops
+  shows "datalog.next_elem_rel \<D>' = datalog.next_elem_rel \<D> - {(x, z)} \<union> {(x, Some y), (y, z)}"
+  using assms
+    nitpick
+  apply(unfold datalog.next_elem_rel_def)
+  apply clarsimp
+  apply(rule equalityI, clarsimp)
+   apply(rule conjI)
+    apply(case_tac "a = x"; clarsimp)
+     defer
+     apply(erule_tac x=a in meta_allE)
+    try
+     apply(subgoal_tac "a \<in> dom \<D>")
+    
 
 
 (*********** Links between objects and register assignment ***************)
