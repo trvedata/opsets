@@ -5,15 +5,12 @@ begin
 datatype ('oid, 'val) operation
   = MakeList
   | MakeMap
-  | MakeBag
   | MakeVal "'val"
   | InsertAfter "'oid"
   | LinkList "'oid" "'oid"
   | LinkMap "'oid" "string" "'oid"
-  | LinkBag "'oid" "'oid"
   | DelList "'oid"
   | DelMap  "'oid" "string"
-  | DelBag  "'oid"
 
 type_synonym ('oid, 'val) database = "'oid \<rightharpoonup> ('oid, 'val) operation"
 
@@ -85,7 +82,6 @@ lemma insert_serial:
 context datalog begin
 
 inductive is_map     :: "'oid \<Rightarrow> bool"
-  and is_bag         :: "'oid \<Rightarrow> bool"
   and is_val         :: "'oid \<Rightarrow> bool"
   and link_target    :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
   and stolen_link    :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
@@ -95,11 +91,9 @@ inductive is_map     :: "'oid \<Rightarrow> bool"
   and list_write_old :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool"
 where
   "\<lbrakk>\<D> oid = Some MakeMap\<rbrakk> \<Longrightarrow> is_map oid" |
-  "\<lbrakk>\<D> oid = Some MakeBag\<rbrakk> \<Longrightarrow> is_bag oid" |
   "\<lbrakk>\<D> oid = Some (MakeVal v)\<rbrakk> \<Longrightarrow> is_val oid" |
   "\<lbrakk>\<D> oid = Some (LinkList el target); is_list_elem el\<rbrakk> \<Longrightarrow> link_target oid target" |
   "\<lbrakk>\<D> oid = Some (LinkMap m k target); is_map m  \<rbrakk> \<Longrightarrow> link_target oid target" |
-  "\<lbrakk>\<D> oid = Some (LinkBag bag target); is_bag bag\<rbrakk> \<Longrightarrow> link_target oid target" |
   "\<lbrakk>link_target o1 target; link_target o2 target; o1 < o2\<rbrakk> \<Longrightarrow> stolen_link o1 target" |
   "\<lbrakk>\<D> oid = Some (LinkMap m k t); is_map m\<rbrakk> \<Longrightarrow> map_write oid m k" |
   "\<lbrakk>\<D> oid = Some (DelMap m k);    is_map m\<rbrakk> \<Longrightarrow> map_write oid m k" |
@@ -145,7 +139,7 @@ lemma link_map_serial:
     and "\<And>n. n \<in> dom \<D> \<Longrightarrow> n < oid"
     and "\<nexists>prev. (prev, target) \<in> latest_link_rel \<D>" (* TODO define semantics for stealing *)
     and "(m, k, v1) \<in> latest_map_rel \<D>" (* TODO case where there's no prior value *)
-  shows "latest_map_rel \<D>' = latest_map_rel \<D> - {(m, k, v1)} \<union> {(m, k, Link target)}"
+  shows "latest_map_rel \<D>' = latest_map_rel \<D> - {(m, k, v1)} \<union> {(m, k, target)}"
   oops
 
 
