@@ -14,6 +14,14 @@ datatype ('oid, 'val) operation
 
 type_synonym ('oid, 'val) database = "'oid \<rightharpoonup> ('oid, 'val) operation"
 
+definition ref_integrity :: "('oid, 'val) database \<Rightarrow> bool" where
+  "ref_integrity \<D> \<equiv> \<forall>oid \<in> dom \<D>. \<forall>x y s.
+     (\<D> oid = Some (InsertAfter x) \<longrightarrow> x \<in> dom \<D> \<and> x \<noteq> oid) \<and>
+     (\<D> oid = Some (LinkList x y ) \<longrightarrow> x \<in> dom \<D> \<and> x \<noteq> oid \<and> y \<in> dom \<D> \<and> y \<noteq> oid) \<and>
+     (\<D> oid = Some (LinkMap x s y) \<longrightarrow> x \<in> dom \<D> \<and> x \<noteq> oid \<and> y \<in> dom \<D> \<and> y \<noteq> oid) \<and>
+     (\<D> oid = Some (DelList x    ) \<longrightarrow> x \<in> dom \<D> \<and> x \<noteq> oid) \<and>
+     (\<D> oid = Some (DelMap x s   ) \<longrightarrow> x \<in> dom \<D> \<and> x \<noteq> oid)"
+
 locale datalog =
   fixes \<D> :: "('oid::{linorder}, 'val) database"
 
@@ -152,17 +160,153 @@ lemma (in datalog) next_elem_dom_closed [elim]:
   assumes "next_elem m n"
   shows "m \<in> dom \<D>"
   using assms by - (erule next_elem_elim, (force+))
-    
+
+definition append_op :: "('oid::{linorder}, 'val) database \<Rightarrow> ('oid::{linorder}, 'val) database \<Rightarrow> 'oid \<Rightarrow> ('oid, 'val) operation \<Rightarrow> bool" where
+  "append_op \<D> \<D>' oid oper \<equiv>
+     (\<D> oid = None \<and> \<D>' = \<D>(oid \<mapsto> oper) \<and>
+     ref_integrity \<D> \<and> (\<forall>n \<in> dom \<D>. n < oid))"
+
+lemma is_list_parent_monotonic:
+  assumes "datalog.is_list_parent \<D> x"
+    and "oid \<notin> dom \<D>"
+  shows "datalog.is_list_parent (\<D>(oid \<mapsto> oper)) x"
+by(metis (full_types) assms datalog.is_list_elem.simps datalog.is_list_parent.intros
+  datalog.is_list_parent_elim domIff fun_upd_other option.simps(3))
+
+lemma insert_first_child:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+  shows "datalog.first_child \<D>' x y"
+  using assms
+  apply(unfold append_op_def, clarsimp)
+  apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) x y")
+  apply(metis (no_types, lifting) datalog.first_child.intros datalog.later_child_elim
+    datalog.parent_child.cases domIff dual_order.asym fun_upd_other option.simps(3))
+  apply(simp add: datalog.parent_child.intros domIff is_list_parent_monotonic)
+done
+
+lemma insert_immediately_after:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+  shows "(x, Some y) \<in> datalog.next_elem_rel \<D>'"
+using assms datalog.next_elem.intros(1) datalog.next_elem_rel_def insert_first_child by blast
+
+lemma insert_has_no_child:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+  shows "\<not> datalog.has_child \<D>' y"
+using assms
+  apply(unfold append_op_def, clarsimp)
+  apply(erule datalog.has_child_elim)
+  apply(erule datalog.parent_child_elim)
+  apply(subgoal_tac "x \<in> dom \<D>") prefer 2
+  apply(meson datalog.is_list_elem.simps datalog.is_list_parent_elim domI)
+  apply(subgoal_tac "x \<noteq> y") prefer 2 apply blast
+  apply(subgoal_tac "\<D> child = Some (InsertAfter y)") prefer 2
+  apply(meson map_upd_Some_unfold operation.inject(2))
+  apply(unfold ref_integrity_def, blast)
+  done
+
+lemma first_child_has_no_sibling:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+    and "\<not> datalog.has_child \<D> x"
+  shows "\<not> datalog.has_next_sibling \<D>' y"
+  using assms
+  apply(unfold append_op_def, clarsimp)
+  apply(erule datalog.has_next_sibling_elim)
+  apply(erule datalog.later_sibling_elim)
+  apply(erule datalog.sibling_elim)
+  apply(subgoal_tac "parent = x") prefer 2
+  using datalog.parent_child.cases apply fastforce
+  apply(subgoal_tac "\<D> n = Some (InsertAfter x)") prefer 2
+  apply(metis datalog.parent_child.cases fun_upd_other neq_iff)
+  using datalog.has_child.intros datalog.parent_child.intros apply blast
+  done
+
+lemma insert_next_sibling:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+    and "datalog.first_child \<D> x z"
+  shows "datalog.next_sibling \<D>' y z"
+  using assms
+  apply(unfold append_op_def, clarsimp)
+  apply(subgoal_tac "datalog.parent_child \<D>' x y") prefer 2
+  using insert_first_child datalog.first_child_elim apply blast
+  apply(subgoal_tac "datalog.parent_child \<D>' x z") prefer 2
+  apply(metis datalog.first_child.cases datalog.parent_child.simps fun_upd_apply)
+  apply(subgoal_tac "z < y") prefer 2
+  apply(meson datalog.first_child.cases datalog.parent_child_elim domI)
+  apply(rule datalog.next_sibling.intros)
+  using datalog.later_sibling.intros datalog.sibling.intros apply blast
+  apply(clarsimp, erule datalog.later_sibling_2_elim)
+  apply(erule datalog.first_child_elim)
+  apply(metis datalog.later_child.simps datalog.parent_child.cases
+    datalog.parent_child.intros datalog.sibling_elim fun_upd_other neq_iff)
+done
+
+lemma insert_unchanged_sibling_anc:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+  shows "datalog.next_sibling_anc \<D> x z \<longleftrightarrow> datalog.next_sibling_anc \<D>' x z"
+  using assms
+  apply(unfold append_op_def, clarsimp)
+  apply(induction rule: datalog.next_sibling_anc.induct)
+  (* TODO I don't know how to do this *)
+  sorry
+
+lemma insert_next_sibling_anc:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+    and "\<not> datalog.has_child \<D> x"
+    and "datalog.next_sibling_anc \<D> x z"
+  shows "datalog.next_sibling_anc \<D>' y z"
+  using assms
+  apply(unfold append_op_def, clarsimp)
+  apply(rule_tac p=x in datalog.next_sibling_anc.intros(2))
+  using first_child_has_no_sibling apply blast
+  using datalog.first_child_elim insert_first_child apply blast
+  apply(simp add: insert_unchanged_sibling_anc)
+done
+
+lemma insert_end_of_list:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+    and "\<not> datalog.next_sibling_anc \<D> x z"
+  shows "\<not> datalog.next_sibling_anc \<D>' y z"
+  sorry
+
+lemma insert_connect_next:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+    and "datalog.next_elem \<D> x z"
+  shows "datalog.next_elem \<D>' y z"
+  using assms
+  apply(unfold append_op_def, clarsimp)
+  apply(erule datalog.next_elem_elim)    
+  apply(simp add: datalog.is_list_elem.intros datalog.next_elem.intros(2)
+    datalog.next_sibling_anc.intros(1) insert_has_no_child insert_next_sibling)
+  apply(simp add: datalog.is_list_elem.intros datalog.next_elem.intros(2)
+    insert_has_no_child insert_next_sibling_anc)
+  apply(simp add: datalog.has_sibling_anc.simps datalog.is_list_elem.intros
+    insert_has_no_child datalog.next_elem.intros(3) insert_end_of_list)
+  done
+
 lemma insert_serial:
-  assumes "\<D> y = None" and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
     and "(x, z) \<in> datalog.next_elem_rel \<D>"
-    and "\<And>n. n \<in> dom \<D> \<Longrightarrow> n < y"
+    and "datalog.is_list_parent \<D> x"
   shows "datalog.next_elem_rel \<D>' = datalog.next_elem_rel \<D> - {(x, z)} \<union> {(x, Some y), (y, z)}"
   using assms
-    nitpick
-  apply(unfold datalog.next_elem_rel_def)
+  apply(unfold datalog.next_elem_rel_def append_op_def)
   apply clarsimp
-  apply(rule equalityI, clarsimp)
+  apply(rule equalityI)
+   apply clarify
+    apply(subgoal_tac "a \<noteq> x") prefer 2
+   apply(case_tac "a = x"; clarsimp)
+
+    apply(subgoal_tac "datalog.next_elem \<D>' y z")
+
    apply(rule conjI)
     apply(case_tac "a = x"; clarsimp)
      defer
