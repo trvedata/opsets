@@ -173,6 +173,14 @@ lemma is_list_parent_monotonic:
 by(metis (full_types) assms datalog.is_list_elem.simps datalog.is_list_parent.intros
   datalog.is_list_parent_elim domIff fun_upd_other option.simps(3))
 
+lemma is_list_parent_rev:
+  assumes "datalog.is_list_parent (\<D>(oid \<mapsto> oper)) x"
+    and "x \<noteq> oid"
+  shows "datalog.is_list_parent \<D> x"
+by (metis (no_types, lifting) assms datalog.is_list_elem.simps
+  datalog.is_list_parent.intros(1) datalog.is_list_parent.intros(2)
+  datalog.is_list_parent_elim fun_upd_other)
+
 lemma insert_first_child:
   assumes "append_op \<D> \<D>' y (InsertAfter x)"
     and "datalog.is_list_parent \<D> x"
@@ -184,12 +192,6 @@ lemma insert_first_child:
     datalog.parent_child.cases domIff dual_order.asym fun_upd_other option.simps(3))
   apply(simp add: datalog.parent_child.intros domIff is_list_parent_monotonic)
 done
-
-lemma insert_immediately_after:
-  assumes "append_op \<D> \<D>' y (InsertAfter x)"
-    and "datalog.is_list_parent \<D> x"
-  shows "(x, Some y) \<in> datalog.next_elem_rel \<D>'"
-using assms datalog.next_elem.intros(1) datalog.next_elem_rel_def insert_first_child by blast
 
 lemma insert_has_no_child:
   assumes "append_op \<D> \<D>' y (InsertAfter x)"
@@ -245,15 +247,45 @@ lemma insert_next_sibling:
     datalog.parent_child.intros datalog.sibling_elim fun_upd_other neq_iff)
 done
 
+lemma insert_unchanged_parent_child:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+    and "a \<noteq> x"
+  shows "datalog.parent_child \<D> a b \<longleftrightarrow> datalog.parent_child \<D>' a b"
+  using assms
+  apply(unfold append_op_def, clarsimp)
+  apply(rule iffI)
+   apply(erule datalog.parent_child_elim)
+   apply(rule datalog.parent_child.intros, force)
+   apply(simp add: domIff is_list_parent_monotonic)
+  apply(erule datalog.parent_child_elim)
+  apply(rule datalog.parent_child.intros)
+   apply(metis (mono_tags, lifting) map_upd_Some_unfold operation.inject(2))
+  apply(subgoal_tac "a \<noteq> y")
+   apply(meson domIff is_list_parent_rev)
+  apply(case_tac "b = y", simp)
+  using ref_integrity_def apply fastforce
+  done
+
+lemma insert_unchanged_no_child:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+    and "a \<noteq> x"
+    and "\<not> datalog.has_child \<D> a"
+  shows "\<not> datalog.has_child \<D>' a"
+by(meson assms datalog.has_child.simps insert_unchanged_parent_child)
+    
+(* I think this is correct because InsertAfter creates a greatest
+   sibling, but next_sibling_anc never visits greatest siblings --
+   only first_child visits those. *)
 lemma insert_unchanged_sibling_anc:
   assumes "append_op \<D> \<D>' y (InsertAfter x)"
     and "datalog.is_list_parent \<D> x"
-  shows "datalog.next_sibling_anc \<D> x z \<longleftrightarrow> datalog.next_sibling_anc \<D>' x z"
+    and "a \<noteq> y"
+  shows "datalog.next_sibling_anc \<D> a b \<longleftrightarrow> datalog.next_sibling_anc \<D>' a b"
   using assms
   apply(unfold append_op_def, clarsimp)
-  apply(induction rule: datalog.next_sibling_anc.induct)
-  (* TODO I don't know how to do this *)
-  sorry
+  sorry (* TODO *)
 
 lemma insert_next_sibling_anc:
   assumes "append_op \<D> \<D>' y (InsertAfter x)"
@@ -266,15 +298,31 @@ lemma insert_next_sibling_anc:
   apply(rule_tac p=x in datalog.next_sibling_anc.intros(2))
   using first_child_has_no_sibling apply blast
   using datalog.first_child_elim insert_first_child apply blast
+  apply(subgoal_tac "x \<noteq> y")
   apply(simp add: insert_unchanged_sibling_anc)
+  using datalog.first_child_has_child insert_first_child insert_has_no_child apply blast
 done
 
 lemma insert_end_of_list:
   assumes "append_op \<D> \<D>' y (InsertAfter x)"
     and "datalog.is_list_parent \<D> x"
+    and "\<not> datalog.has_child \<D> x"
     and "\<not> datalog.next_sibling_anc \<D> x z"
   shows "\<not> datalog.next_sibling_anc \<D>' y z"
-  sorry
+  using assms
+  apply(unfold append_op_def, clarsimp)
+  apply(erule datalog.next_sibling_anc_elim)
+  using datalog.next_sibling_to_has_next_sibling first_child_has_no_sibling apply blast
+  apply(subgoal_tac "p = x", clarsimp) prefer 2
+  using datalog.parent_child.cases apply fastforce
+  using datalog.has_child.intros insert_has_no_child insert_unchanged_sibling_anc apply fastforce
+  done
+
+lemma insert_immediately_after:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+  shows "datalog.next_elem \<D>' x (Some y)"
+using assms datalog.next_elem.intros(1) datalog.next_elem_rel_def insert_first_child by blast
 
 lemma insert_connect_next:
   assumes "append_op \<D> \<D>' y (InsertAfter x)"
@@ -283,13 +331,38 @@ lemma insert_connect_next:
   shows "datalog.next_elem \<D>' y z"
   using assms
   apply(unfold append_op_def, clarsimp)
-  apply(erule datalog.next_elem_elim)    
+  apply(erule datalog.next_elem_elim)
   apply(simp add: datalog.is_list_elem.intros datalog.next_elem.intros(2)
     datalog.next_sibling_anc.intros(1) insert_has_no_child insert_next_sibling)
   apply(simp add: datalog.is_list_elem.intros datalog.next_elem.intros(2)
     insert_has_no_child insert_next_sibling_anc)
   apply(simp add: datalog.has_sibling_anc.simps datalog.is_list_elem.intros
     insert_has_no_child datalog.next_elem.intros(3) insert_end_of_list)
+  done
+
+lemma insert_unchanged_next_elem:
+  assumes "append_op \<D> \<D>' y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+    and "a \<noteq> x"
+    and "datalog.next_elem \<D> a b"
+  shows "datalog.next_elem \<D>' a b"
+  using assms
+  apply(unfold append_op_def, clarsimp)
+  apply(erule datalog.next_elem_elim)
+  apply(subgoal_tac "datalog.first_child \<D>' a n")
+  using datalog.next_elem.intros(1) apply blast
+  apply(meson datalog.first_child.intros datalog.first_child_elim
+    datalog.later_child.simps insert_unchanged_parent_child)
+   apply(subgoal_tac "datalog.next_sibling_anc \<D>' a n")
+    apply(subgoal_tac "\<not> datalog.has_child \<D>' a")
+     apply(simp add: datalog.is_list_elem.simps datalog.next_elem.intros(2))
+    apply(simp add: datalog.has_child.simps insert_unchanged_parent_child)
+   apply(metis datalog.is_list_elem.cases insert_unchanged_sibling_anc option.simps(3))
+  apply(clarsimp, rule datalog.next_elem.intros(3))
+    apply (simp add: datalog.is_list_elem.simps)
+  using insert_unchanged_no_child apply blast
+  apply(metis assms(4) datalog.has_sibling_anc.simps datalog.next_elem_dom_closed
+    domIff insert_unchanged_sibling_anc)
   done
 
 lemma insert_serial:
