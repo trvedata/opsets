@@ -14,13 +14,13 @@ datatype ('oid, 'val) operation
 
 type_synonym ('oid, 'val) database = "'oid \<rightharpoonup> ('oid, 'val) operation"
 
-definition ref_integrity :: "('oid, 'val) database \<Rightarrow> bool" where
+definition ref_integrity :: "('oid::{linorder}, 'val) database \<Rightarrow> bool" where
   "ref_integrity \<D> \<equiv> \<forall>oid \<in> dom \<D>. \<forall>x y s.
-     (\<D> oid = Some (InsertAfter x) \<longrightarrow> x \<in> dom \<D> \<and> x \<noteq> oid) \<and>
-     (\<D> oid = Some (LinkList x y ) \<longrightarrow> x \<in> dom \<D> \<and> x \<noteq> oid \<and> y \<in> dom \<D> \<and> y \<noteq> oid) \<and>
-     (\<D> oid = Some (LinkMap x s y) \<longrightarrow> x \<in> dom \<D> \<and> x \<noteq> oid \<and> y \<in> dom \<D> \<and> y \<noteq> oid) \<and>
-     (\<D> oid = Some (DelList x    ) \<longrightarrow> x \<in> dom \<D> \<and> x \<noteq> oid) \<and>
-     (\<D> oid = Some (DelMap x s   ) \<longrightarrow> x \<in> dom \<D> \<and> x \<noteq> oid)"
+     (\<D> oid = Some (InsertAfter x) \<longrightarrow> x \<in> dom \<D> \<and> x < oid) \<and>
+     (\<D> oid = Some (LinkList x y ) \<longrightarrow> x \<in> dom \<D> \<and> x < oid \<and> y \<in> dom \<D> \<and> y < oid) \<and>
+     (\<D> oid = Some (LinkMap x s y) \<longrightarrow> x \<in> dom \<D> \<and> x < oid \<and> y \<in> dom \<D> \<and> y < oid) \<and>
+     (\<D> oid = Some (DelList x    ) \<longrightarrow> x \<in> dom \<D> \<and> x < oid) \<and>
+     (\<D> oid = Some (DelMap x s   ) \<longrightarrow> x \<in> dom \<D> \<and> x < oid)"
 
 locale datalog =
   fixes \<D> :: "('oid::{linorder}, 'val) database"
