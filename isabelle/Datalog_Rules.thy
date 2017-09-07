@@ -11,9 +11,18 @@ datatype ('oid, 'val) operation
   | LinkMap "'oid" "string" "'oid"
   | DelList "'oid"
   | DelMap  "'oid" "string"
+    
+fun oid_support :: "('o, 'v) operation \<Rightarrow> 'o set" where
+  "oid_support (InsertAfter oid) = {oid}" |
+  "oid_support (LinkList oid1 oid2) = {oid1, oid2}" |
+  "oid_support (LinkMap oid1 _ oid2) = {oid1, oid2}" |
+  "oid_support (DelList oid) = {oid}" |
+  "oid_support (DelMap oid _) = {oid}" |
+  "oid_support _ = {}"
 
 type_synonym ('oid, 'val) database = "'oid \<rightharpoonup> ('oid, 'val) operation"
 
+(*
 definition ref_integrity :: "('oid::{linorder}, 'val) database \<Rightarrow> bool" where
   "ref_integrity \<D> \<equiv> \<forall>oid \<in> dom \<D>. \<forall>x y s.
      (\<D> oid = Some (InsertAfter x) \<longrightarrow> x \<in> dom \<D> \<and> x < oid) \<and>
@@ -21,9 +30,17 @@ definition ref_integrity :: "('oid::{linorder}, 'val) database \<Rightarrow> boo
      (\<D> oid = Some (LinkMap x s y) \<longrightarrow> x \<in> dom \<D> \<and> x < oid \<and> y \<in> dom \<D> \<and> y < oid) \<and>
      (\<D> oid = Some (DelList x    ) \<longrightarrow> x \<in> dom \<D> \<and> x < oid) \<and>
      (\<D> oid = Some (DelMap x s   ) \<longrightarrow> x \<in> dom \<D> \<and> x < oid)"
+*)
 
 locale datalog =
   fixes \<D> :: "('oid::{linorder}, 'val) database"
+  assumes oid_support_in_db: "\<D> oid = Some oper \<Longrightarrow> oid_support oper \<subseteq> dom \<D>"
+    and oid_support_ref_integrity: "\<D> oid = Some oper \<Longrightarrow> x \<in> oid_support oper \<Longrightarrow> x < oid"
+    
+lemma (in datalog) InsertAfter_ref_integrity:
+  assumes "\<D> oid = Some (InsertAfter x)"
+  shows "x \<in> dom \<D>" and  "x < oid"
+  using assms oid_support_in_db oid_support_ref_integrity by fastforce+
 
 context datalog begin
 
@@ -128,7 +145,7 @@ lemma (in datalog) next_sibling_functional [simp]:
   using assms
   apply -
   apply(erule next_sibling_elim)+
-  apply(meson datalog.later_sibling_2.simps later_sibling.cases not_less_iff_gr_or_eq)
+  apply(meson later_sibling.cases later_sibling_2.simps not_less_iff_gr_or_eq)
   done
     
 lemma (in datalog) next_sibling_to_has_next_sibling [dest]:
@@ -161,43 +178,65 @@ lemma (in datalog) next_elem_dom_closed [elim]:
   shows "m \<in> dom \<D>"
   using assms by - (erule next_elem_elim, (force+))
 
-definition append_op :: "('oid::{linorder}, 'val) database \<Rightarrow> ('oid::{linorder}, 'val) database \<Rightarrow> 'oid \<Rightarrow> ('oid, 'val) operation \<Rightarrow> bool" where
+    (*
+definition append_op :: "('oid::{linorder}, 'val) database \<Rightarrow> ('oid, 'val) database \<Rightarrow> 'oid \<Rightarrow> ('oid, 'val) operation \<Rightarrow> bool" where
   "append_op \<D> \<D>' oid oper \<equiv>
      (\<D> oid = None \<and> \<D>' = \<D>(oid \<mapsto> oper) \<and>
      ref_integrity \<D> \<and> (\<forall>n \<in> dom \<D>. n < oid))"
+*)
+    
+locale extended_datalog = datalog +
+  fixes oid and oper
+  assumes oid_is_latest [simp]: "n \<in> dom \<D> \<Longrightarrow> n < oid"
+    and oid_not_present [simp]: "\<D> oid = None"
+    and still_valid_database: "datalog (\<D>(oid \<mapsto> oper))"
+    
+lemma extended_datalog_to_datalog:
+  assumes "extended_datalog \<D> oid oper"
+  shows "datalog \<D>"
+  using assms extended_datalog.axioms(1) by blast
 
 lemma is_list_parent_monotonic:
   assumes "datalog.is_list_parent \<D> x"
-    and "oid \<notin> dom \<D>"
+    and "extended_datalog \<D> oid oper"
   shows "datalog.is_list_parent (\<D>(oid \<mapsto> oper)) x"
-by(metis (full_types) assms datalog.is_list_elem.simps datalog.is_list_parent.intros
-  datalog.is_list_parent_elim domIff fun_upd_other option.simps(3))
+using assms
+  by (metis datalog.is_list_elem.intros datalog.is_list_elem_elim datalog.is_list_parent.cases
+    datalog.is_list_parent.intros extended_datalog.axioms extended_datalog_axioms_def fun_upd_other
+    option.simps(3))
 
 lemma is_list_parent_rev:
   assumes "datalog.is_list_parent (\<D>(oid \<mapsto> oper)) x"
     and "x \<noteq> oid"
+    and "extended_datalog \<D> oid oper"
   shows "datalog.is_list_parent \<D> x"
-by (metis (no_types, lifting) assms datalog.is_list_elem.simps
-  datalog.is_list_parent.intros(1) datalog.is_list_parent.intros(2)
-  datalog.is_list_parent_elim fun_upd_other)
+using assms
+  by (metis (no_types, lifting) datalog.is_list_elem.intros datalog.is_list_elem_elim
+      datalog.is_list_parent.cases datalog.is_list_parent.intros extended_datalog.axioms
+      extended_datalog.still_valid_database fun_upd_other)
 
 lemma insert_first_child:
-  assumes "append_op \<D> \<D>' y (InsertAfter x)"
-    and "datalog.is_list_parent \<D> x"
-  shows "datalog.first_child \<D>' x y"
+  assumes "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+  shows "datalog.first_child (\<D>(y \<mapsto> InsertAfter x)) x y"
   using assms
-  apply(unfold append_op_def, clarsimp)
   apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) x y")
   apply(metis (no_types, lifting) datalog.first_child.intros datalog.later_child_elim
-    datalog.parent_child.cases domIff dual_order.asym fun_upd_other option.simps(3))
-  apply(simp add: datalog.parent_child.intros domIff is_list_parent_monotonic)
-done
-
+    datalog.parent_child_elim domIff extended_datalog.oid_is_latest
+    extended_datalog.still_valid_database fun_upd_apply option.distinct(1) order.asym)
+  apply(simp add: datalog.parent_child.intros extended_datalog.still_valid_database
+      is_list_parent_monotonic)
+  done
+    
 lemma insert_has_no_child:
-  assumes "append_op \<D> \<D>' y (InsertAfter x)"
-    and "datalog.is_list_parent \<D> x"
-  shows "\<not> datalog.has_child \<D>' y"
-using assms
+  assumes "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+  shows "\<not> datalog.has_child (\<D>(y \<mapsto> InsertAfter x)) y"
+  using assms
+  apply(subgoal_tac "x \<in> dom \<D>")
+   apply(subgoal_tac "x \<noteq> y")
+      sorry
+(*
   apply(unfold append_op_def, clarsimp)
   apply(erule datalog.has_child_elim)
   apply(erule datalog.parent_child_elim)
@@ -208,13 +247,14 @@ using assms
   apply(meson map_upd_Some_unfold operation.inject(2))
   apply(unfold ref_integrity_def, blast)
   done
-
+*)
 lemma first_child_has_no_sibling:
-  assumes "append_op \<D> \<D>' y (InsertAfter x)"
-    and "datalog.is_list_parent \<D> x"
+  assumes "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
     and "\<not> datalog.has_child \<D> x"
-  shows "\<not> datalog.has_next_sibling \<D>' y"
-  using assms
+  shows "\<not> datalog.has_next_sibling (\<D>(y \<mapsto> InsertAfter x)) y"
+  using assms sorry
+(*
   apply(unfold append_op_def, clarsimp)
   apply(erule datalog.has_next_sibling_elim)
   apply(erule datalog.later_sibling_elim)
@@ -225,13 +265,15 @@ lemma first_child_has_no_sibling:
   apply(metis datalog.parent_child.cases fun_upd_other neq_iff)
   using datalog.has_child.intros datalog.parent_child.intros apply blast
   done
+*)
 
 lemma insert_next_sibling:
-  assumes "append_op \<D> \<D>' y (InsertAfter x)"
-    and "datalog.is_list_parent \<D> x"
+  assumes "datalog.is_list_parent \<D> x"
     and "datalog.first_child \<D> x z"
-  shows "datalog.next_sibling \<D>' y z"
-  using assms
+    and "extended_datalog \<D> y (InsertAfter x)"
+  shows "datalog.next_sibling (\<D>(y \<mapsto> InsertAfter x)) y z"
+  using assms sorry
+(*
   apply(unfold append_op_def, clarsimp)
   apply(subgoal_tac "datalog.parent_child \<D>' x y") prefer 2
   using insert_first_child datalog.first_child_elim apply blast
@@ -246,13 +288,15 @@ lemma insert_next_sibling:
   apply(metis datalog.later_child.simps datalog.parent_child.cases
     datalog.parent_child.intros datalog.sibling_elim fun_upd_other neq_iff)
 done
+*)
 
 lemma insert_unchanged_parent_child:
-  assumes "append_op \<D> \<D>' y (InsertAfter x)"
-    and "datalog.is_list_parent \<D> x"
+  assumes "datalog.is_list_parent \<D> x"
     and "a \<noteq> x"
-  shows "datalog.parent_child \<D> a b \<longleftrightarrow> datalog.parent_child \<D>' a b"
-  using assms
+    and "extended_datalog \<D> y (InsertAfter x)"
+  shows "datalog.parent_child \<D> a b \<longleftrightarrow> datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) a b"
+using assms sorry
+    (*
   apply(unfold append_op_def, clarsimp)
   apply(rule iffI)
    apply(erule datalog.parent_child_elim)
@@ -266,26 +310,183 @@ lemma insert_unchanged_parent_child:
   apply(case_tac "b = y", simp)
   using ref_integrity_def apply fastforce
   done
+*)
 
-lemma insert_unchanged_no_child:
-  assumes "append_op \<D> \<D>' y (InsertAfter x)"
-    and "datalog.is_list_parent \<D> x"
+lemma insert_unchanged_has_child:
+  assumes "datalog.is_list_parent \<D> x"
     and "a \<noteq> x"
-    and "\<not> datalog.has_child \<D> a"
-  shows "\<not> datalog.has_child \<D>' a"
-by(meson assms datalog.has_child.simps insert_unchanged_parent_child)
+    and "extended_datalog \<D> y (InsertAfter x)"
+  shows "datalog.has_child (\<D>(y \<mapsto> InsertAfter x)) a \<longleftrightarrow> datalog.has_child \<D> a"
+  using assms
+  by(meson datalog.has_child.intros datalog.has_child_elim extended_datalog.still_valid_database
+    extended_datalog_to_datalog insert_unchanged_parent_child)
+  
+lemma insert_unchanged_later_child:
+  assumes "datalog.is_list_parent \<D> x"
+    and "a \<noteq> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+  shows "datalog.later_child (\<D>(y \<mapsto> InsertAfter x)) a c \<longleftrightarrow> datalog.later_child \<D> a c"
+    using assms by(meson datalog.later_child.simps extended_datalog.still_valid_database extended_datalog_to_datalog insert_unchanged_parent_child)
+
+lemma insert_unchanged_sibling1:
+  assumes "datalog.sibling \<D> a b"
+    and "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+    and "a \<noteq> y"
+    and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
+  shows "datalog.sibling \<D>' a b"
+  using assms
+  apply(induction rule: datalog.sibling.induct[where \<D>=\<D>])
+  using assms extended_datalog_to_datalog apply force+
+  apply clarsimp
+  apply(rule_tac parent=parent in datalog.sibling.intros)
+    apply(simp add: extended_datalog_axioms_def extended_datalog_def)
+   apply(metis (no_types, lifting) datalog.first_child.cases insert_unchanged_parent_child datalog.parent_child.intros datalog.parent_child_elim extended_datalog.still_valid_database extended_datalog_to_datalog fun_upd_other insert_first_child)+
+  done
     
+lemma insert_unchanged_sibling2:
+  assumes "datalog.sibling \<D>' a b"
+    and "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+    and "a \<noteq> y"
+    and "b \<noteq> y"
+    and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
+  shows "datalog.sibling \<D> a b"
+  using assms
+  apply(induction rule: datalog.sibling.induct[where \<D>=\<D>'])
+  using assms apply(simp add: extended_datalog.still_valid_database)
+  using assms apply blast
+  apply clarsimp
+  apply(rule_tac parent=parent in datalog.sibling.intros)
+  using assms extended_datalog_to_datalog apply blast
+   apply(metis (no_types, hide_lams) datalog.parent_child.simps extended_datalog_axioms_def extended_datalog_def fun_upd_apply insert_unchanged_parent_child)+
+  done
+    
+corollary insert_unchanged_sibling:
+  assumes "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+    and "a \<noteq> y"
+    and "b \<noteq> y"
+    and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
+  shows "datalog.sibling \<D>' a b \<longleftrightarrow> datalog.sibling \<D> a b"
+  using insert_unchanged_sibling1 insert_unchanged_sibling2 assms by blast
+    
+lemma (in datalog) later_sibling_2_interpolate:
+  assumes "later_sibling_2 x z"
+  shows "\<exists>y. sibling x y \<and> sibling x z \<and> z < y \<and> y < x"
+  using assms
+  apply(induction rule: later_sibling_2.induct)
+  apply(rule_tac x=n in exI)
+  apply auto
+  done
+    
+lemma insert_unchanged_later_sibling:
+  assumes "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+    and "a \<noteq> y"
+    and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
+  shows "datalog.later_sibling \<D> a b \<longleftrightarrow> datalog.later_sibling \<D>' a b"
+  using assms by(metis (no_types, hide_lams) datalog.later_sibling.simps datalog.parent_child_elim
+      datalog.sibling.simps domIff extended_datalog.oid_is_latest extended_datalog.still_valid_database extended_datalog_to_datalog insert_unchanged_sibling not_less_iff_gr_or_eq option.distinct(1))
+
+lemma insert_unchanged_later_sibling_2_1:
+  assumes "datalog.later_sibling_2 \<D> a b"
+    and "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+    and "a \<noteq> y"
+    and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
+  shows "datalog.later_sibling_2 \<D>' a b"
+  using assms
+  apply(induction rule: datalog.later_sibling_2.induct[where \<D>=\<D>])
+  using assms apply(simp add: extended_datalog_def)
+  using assms apply blast
+  apply(rule_tac n=n in datalog.later_sibling_2.intros)
+  using extended_datalog.still_valid_database apply blast
+  using insert_unchanged_sibling1 apply blast+
+  done
+    
+lemma insert_unchanged_later_sibling_2_2:
+  assumes "datalog.later_sibling_2 \<D>' a b"
+    and "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+    and "a \<noteq> y"
+    and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
+  shows "datalog.later_sibling_2 \<D> a b"
+  using assms
+  apply(induction rule: datalog.later_sibling_2.induct[where \<D>=\<D>'])
+  using assms apply(simp add: extended_datalog_def)
+  using assms extended_datalog_axioms_def apply blast
+  using assms apply force
+  apply(meson datalog.later_sibling.cases datalog.later_sibling.intros datalog.later_sibling_2.intros extended_datalog.still_valid_database extended_datalog_to_datalog insert_unchanged_later_sibling less_trans)
+  done
+    
+corollary insert_unchanged_later_sibling_2:
+  assumes "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+    and "a \<noteq> y"
+    and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
+  shows "datalog.later_sibling_2 \<D> a b \<longleftrightarrow> datalog.later_sibling_2 \<D>' a b"
+  using assms insert_unchanged_later_sibling_2_1 insert_unchanged_later_sibling_2_2 by blast
+    
+lemma insert_unchanged_next_sibling:
+  assumes "datalog.next_sibling \<D> a b"
+    and "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+    and "a \<noteq> y"
+    and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
+  shows "datalog.next_sibling \<D>' a b"
+  using assms
+  apply(induction rule: datalog.next_sibling.induct[where \<D>=\<D>])
+  using assms extended_datalog_to_datalog apply force+
+  apply clarsimp
+  apply(rule datalog.next_sibling.intros)
+    apply(simp add: extended_datalog_axioms_def extended_datalog_def)
+  using insert_unchanged_later_sibling apply blast
+  apply(rule notI)
+    apply(subgoal_tac "p < y") defer
+    apply (metis datalog.later_sibling.cases datalog.parent_child_elim datalog.sibling.cases domIff extended_datalog.oid_is_latest extended_datalog_to_datalog option.distinct(1))
+  apply (subgoal_tac "datalog.later_sibling_2 \<D> p n") 
+   apply blast
+  apply(case_tac "datalog.sibling \<D> y p")
+   apply(metis datalog.parent_child_elim datalog.sibling_elim extended_datalog.oid_not_present extended_datalog_to_datalog option.distinct(1))
+  apply(frule datalog.later_sibling_2_interpolate[rotated])
+  using assms extended_datalog.still_valid_database apply blast
+  using insert_unchanged_later_sibling_2 apply blast
+  done
+    
+lemma insert_unchanged_sibling_anc:
+  assumes "datalog.next_sibling_anc \<D> a b"
+    and "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
+    and "a \<noteq> y"
+    and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
+  shows "datalog.next_sibling_anc \<D>' a b"
+  using assms
+    apply -
+  apply(induction rule: datalog.next_sibling_anc.induct[where \<D>=\<D>])
+  using assms extended_datalog_to_datalog apply force+
+   apply clarsimp
+   apply(rule datalog.next_sibling_anc.intros)
+    apply(simp add: extended_datalog_axioms_def extended_datalog_def)
+  using insert_unchanged_next_sibling apply blast
+  apply clarsimp
+  apply(metis (no_types, lifting) datalog.first_child_has_child datalog.has_child.simps datalog.has_next_sibling.cases datalog.has_next_sibling.intros datalog.next_sibling_anc.simps datalog.parent_child.intros datalog.parent_child_elim extended_datalog.still_valid_database extended_datalog_to_datalog fun_upd_other insert_first_child insert_has_no_child insert_unchanged_has_child insert_unchanged_later_sibling)
+  done
+  
 (* I think this is correct because InsertAfter creates a greatest
    sibling, but next_sibling_anc never visits greatest siblings --
    only first_child visits those. *)
 lemma insert_unchanged_sibling_anc:
-  assumes "append_op \<D> \<D>' y (InsertAfter x)"
-    and "datalog.is_list_parent \<D> x"
+  assumes "datalog.is_list_parent \<D> x"
+    and "extended_datalog \<D> y (InsertAfter x)"
     and "a \<noteq> y"
+    and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
   shows "datalog.next_sibling_anc \<D> a b \<longleftrightarrow> datalog.next_sibling_anc \<D>' a b"
   using assms
-  apply(unfold append_op_def, clarsimp)
-  sorry (* TODO *)
+    apply -
+  apply(rule iffI)
+    apply(induction rule: datalog.next_sibling_anc.induct)
+    
 
 lemma insert_next_sibling_anc:
   assumes "append_op \<D> \<D>' y (InsertAfter x)"
