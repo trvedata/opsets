@@ -188,8 +188,8 @@ using assms
     db_extension_axioms_def fun_upd_other)
 
 lemma insert_first_child:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
   shows "datalog.first_child (\<D>(y \<mapsto> InsertAfter x)) x y"
   using assms
   apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) x y")
@@ -202,8 +202,7 @@ lemma insert_first_child:
   done
 
 lemma insert_has_no_child:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
   shows "\<not> datalog.has_child (\<D>(y \<mapsto> InsertAfter x)) y"
   using assms apply clarsimp
   apply(subgoal_tac "\<exists>child. (\<D>(y \<mapsto> InsertAfter x)) child = Some (InsertAfter y)") prefer 2
@@ -215,11 +214,11 @@ lemma insert_has_no_child:
   done
 
 lemma first_child_has_no_sibling:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "\<not> datalog.has_child \<D> x"
   shows "\<not> datalog.has_next_sibling (\<D>(y \<mapsto> InsertAfter x)) y"
   using assms apply clarsimp
+  apply(case_tac "datalog.is_list_parent \<D> x")
   apply(subgoal_tac "\<exists>sib. datalog.sibling (\<D>(y \<mapsto> InsertAfter x)) y sib \<and> sib < y") prefer 2
   apply(meson datalog.has_next_sibling.cases datalog.later_sibling_elim
     db_extension.still_valid_database)
@@ -232,12 +231,20 @@ lemma first_child_has_no_sibling:
   apply(metis (no_types, lifting) datalog.parent_child.cases datalog.parent_child.intros
     db_extension.still_valid_database db_extension_datalog fun_upd_other neq_iff)
   apply(simp add: datalog.has_child.intros db_extension_datalog)
+  apply(subgoal_tac "\<exists>s. datalog.sibling (\<D>(y \<mapsto> InsertAfter x)) y s", clarify) prefer 2
+  apply(meson datalog.has_next_sibling.cases datalog.later_sibling.cases
+    db_extension.still_valid_database)
+  apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) x y") prefer 2
+  using datalog.parent_child.simps datalog.sibling.cases db_extension.still_valid_database
+    apply fastforce
+  apply(metis datalog.has_child.intros datalog.parent_child.cases db_extension.still_valid_database
+    insert_has_no_child is_list_parent_unchanged)
   done
 
 lemma insert_next_sibling:
-  assumes "datalog.is_list_parent \<D> x"
+  assumes "db_extension \<D> y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
     and "datalog.first_child \<D> x z"
-    and "db_extension \<D> y (InsertAfter x)"
   shows "datalog.next_sibling (\<D>(y \<mapsto> InsertAfter x)) y z"
   using assms apply -
   apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) x y") prefer 2
@@ -264,9 +271,8 @@ lemma insert_next_sibling:
   done
 
 lemma insert_unchanged_parent_child:
-  assumes "datalog.is_list_parent \<D> x"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> x"
-    and "db_extension \<D> y (InsertAfter x)"
   shows "datalog.parent_child \<D> a b \<longleftrightarrow> datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) a b"
   using assms apply -
   apply(rule iffI)
@@ -284,25 +290,22 @@ lemma insert_unchanged_parent_child:
   done
 
 lemma insert_unchanged_has_child:
-  assumes "datalog.is_list_parent \<D> x"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> x"
-    and "db_extension \<D> y (InsertAfter x)"
   shows "datalog.has_child (\<D>(y \<mapsto> InsertAfter x)) a \<longleftrightarrow> datalog.has_child \<D> a"
   using assms
   by(meson datalog.has_child.intros datalog.has_child_elim db_extension.still_valid_database
     db_extension_datalog insert_unchanged_parent_child)
-  
+
 lemma insert_unchanged_later_child:
-  assumes "datalog.is_list_parent \<D> x"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> x"
-    and "db_extension \<D> y (InsertAfter x)"
   shows "datalog.later_child (\<D>(y \<mapsto> InsertAfter x)) a c \<longleftrightarrow> datalog.later_child \<D> a c"
   using assms by(meson datalog.later_child.simps db_extension.still_valid_database
     db_extension_datalog insert_unchanged_parent_child)
 
 lemma insert_unchanged_sibling:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> y" and "b \<noteq> y"
   shows "datalog.sibling \<D> a b \<longleftrightarrow> datalog.sibling (\<D>(y \<mapsto> InsertAfter x)) a b"
   using assms apply -
@@ -312,7 +315,7 @@ lemma insert_unchanged_sibling:
   apply(meson datalog.parent_child.cases datalog.sibling_elim db_extension_datalog)
   apply clarify
   apply(subgoal_tac "datalog.is_list_parent (\<D>(y \<mapsto> InsertAfter x)) p") prefer 2
-  apply (metis datalog.is_list_elem.intros datalog.is_list_parent.intros(2)
+  apply(metis datalog.is_list_elem.intros datalog.is_list_parent.intros(2)
     db_extension.still_valid_database fun_upd_same is_list_parent_unchanged)
   apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) p a") prefer 2
   apply(simp add: datalog.parent_child.intros db_extension.still_valid_database)
@@ -321,16 +324,18 @@ lemma insert_unchanged_sibling:
   using datalog.sibling.intros db_extension.still_valid_database apply blast
   apply(subgoal_tac "\<exists>p. (\<D>(y \<mapsto> InsertAfter x)) a = Some (InsertAfter p) \<and>
                          (\<D>(y \<mapsto> InsertAfter x)) b = Some (InsertAfter p) \<and>
-                         datalog.is_list_parent (\<D>(y \<mapsto> InsertAfter x)) p")
+                         datalog.is_list_parent (\<D>(y \<mapsto> InsertAfter x)) p", clarify)
   prefer 2
   apply(meson datalog.parent_child_elim datalog.sibling.cases db_extension.still_valid_database)
-  apply(metis datalog.parent_child.intros datalog.sibling.intros db_extension.still_valid_database
-    db_extension_datalog fun_upd_other insert_unchanged_parent_child)
+  apply(subgoal_tac "\<D> a = Some (InsertAfter p)")
+  apply(subgoal_tac "\<D> b = Some (InsertAfter p)")
+  apply(metis datalog.insert_ref_older datalog.parent_child.intros datalog.sibling.intros
+    db_extension.oid_is_latest db_extension_datalog domI is_list_parent_unchanged order.asym)
+  apply simp_all
   done
 
 lemma insert_unchanged_later_sibling:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> y"
   shows "datalog.later_sibling \<D> a b \<longleftrightarrow> datalog.later_sibling (\<D>(y \<mapsto> InsertAfter x)) a b"
   using assms by(metis (no_types, hide_lams) datalog.later_sibling.simps datalog.parent_child_elim
@@ -347,8 +352,7 @@ lemma (in datalog) later_sibling_2_interpolate:
   done
 
 lemma insert_unchanged_later_sibling_2:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> y"
   shows "datalog.later_sibling_2 \<D> a b \<longleftrightarrow> datalog.later_sibling_2 (\<D>(y \<mapsto> InsertAfter x)) a b"
   using assms apply -
@@ -377,8 +381,7 @@ lemma insert_unchanged_later_sibling_2:
   done
 
 lemma insert_unchanged_has_next_sibling:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> y"
   shows "datalog.has_next_sibling \<D> a \<longleftrightarrow> datalog.has_next_sibling (\<D>(y \<mapsto> InsertAfter x)) a"
   using assms apply -
@@ -395,25 +398,22 @@ lemma insert_unchanged_has_next_sibling:
   done
 
 lemma insert_unchanged_first_child:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> x"
   shows "datalog.first_child \<D> a b \<longleftrightarrow> datalog.first_child (\<D>(y \<mapsto> InsertAfter x)) a b"
   using assms by (meson datalog.first_child.simps db_extension.still_valid_database
     db_extension_datalog insert_unchanged_later_child insert_unchanged_parent_child)
 
 lemma insert_unchanged_next_sibling:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> y"
   shows "datalog.next_sibling \<D> a b \<longleftrightarrow> datalog.next_sibling (\<D>(y \<mapsto> InsertAfter x)) a b"
   using assms by (simp add: datalog.next_sibling.simps db_extension.still_valid_database
     db_extension_datalog insert_unchanged_later_sibling insert_unchanged_later_sibling_2)
 
 lemma insert_unchanged_sibling_anc_fwd:
-  assumes "datalog.next_sibling_anc \<D> a b"
-    and "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
+    and "datalog.next_sibling_anc \<D> a b"
     and "a \<noteq> y"
   shows "datalog.next_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) a b"
   using assms apply(induction rule: datalog.next_sibling_anc.induct[where \<D>=\<D>])
@@ -422,9 +422,9 @@ lemma insert_unchanged_sibling_anc_fwd:
   using insert_unchanged_next_sibling apply blast
   using datalog.next_sibling_anc.intros(1) db_extension.still_valid_database apply blast
   apply(subgoal_tac "p \<noteq> y") prefer 2
-  apply(metis datalog.first_child_has_child datalog.has_child.intros
-    db_extension.still_valid_database db_extension_datalog insert_first_child
-    insert_has_no_child insert_unchanged_has_child)
+  apply(metis datalog.first_child_has_child datalog.has_child.intros datalog.parent_child_elim
+    db_extension.still_valid_database db_extension_datalog insert_first_child insert_has_no_child
+    insert_unchanged_has_child)
   apply clarsimp
   apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) p s") prefer 2
   apply(metis (no_types, lifting) datalog.parent_child.cases datalog.parent_child.intros
@@ -434,9 +434,8 @@ lemma insert_unchanged_sibling_anc_fwd:
   done
 
 lemma insert_unchanged_sibling_anc_back:
-  assumes "datalog.next_sibling_anc \<D>' a b"
-    and "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
+    and "datalog.next_sibling_anc \<D>' a b"
     and "a \<noteq> y"
     and "\<D>' = \<D>(y \<mapsto> InsertAfter x)"
   shows "datalog.next_sibling_anc \<D> a b"
@@ -447,22 +446,20 @@ lemma insert_unchanged_sibling_anc_back:
   using datalog.has_child.intros db_extension.still_valid_database insert_has_no_child apply blast
   apply clarsimp
   apply(subgoal_tac "datalog.parent_child \<D> p s") prefer 2
-  apply(metis (no_types, lifting) datalog.parent_child.intros datalog.parent_child_elim
-    db_extension.still_valid_database db_extension_datalog fun_upd_def insert_unchanged_parent_child)
+  apply(simp add: datalog.parent_child.simps db_extension.still_valid_database
+    db_extension_datalog is_list_parent_unchanged)
   using datalog.next_sibling_anc.intros(2) db_extension_datalog
     insert_unchanged_has_next_sibling apply blast
   done
 
 lemma insert_unchanged_next_sibling_anc:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> y"
   shows "datalog.next_sibling_anc \<D> a b \<longleftrightarrow> datalog.next_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) a b"
   using assms insert_unchanged_sibling_anc_fwd insert_unchanged_sibling_anc_back by blast
 
 lemma insert_unchanged_has_sibling_anc:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> y"
   shows "datalog.has_sibling_anc \<D> a \<longleftrightarrow> datalog.has_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) a"
   using assms apply -
@@ -477,8 +474,8 @@ lemma insert_unchanged_has_sibling_anc:
   done
 
 lemma insert_extend_next_sibling_anc:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
     and "\<not> datalog.has_child \<D> x"
   shows "datalog.next_sibling_anc \<D> x z \<longleftrightarrow> datalog.next_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) y z"
   using assms apply -
@@ -501,15 +498,15 @@ lemma insert_extend_next_sibling_anc:
   done
 
 lemma insert_immediately_after:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
   shows "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) x (Some y)"
   using assms
   by (simp add: datalog.next_elem.intros(1) db_extension.still_valid_database insert_first_child)
 
 lemma insert_connect_next:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
     and "datalog.next_elem \<D> x z"
   shows "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) y z"
   using assms apply -
@@ -529,8 +526,7 @@ lemma insert_connect_next:
   done
 
 lemma insert_unchanged_next_elem:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
     and "a \<noteq> x" and "a \<noteq> y"
   shows "datalog.next_elem \<D> a b \<longleftrightarrow> datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) a b"
   using assms apply -
@@ -549,8 +545,9 @@ lemma insert_unchanged_next_elem:
   apply(subgoal_tac "\<not> datalog.has_child (\<D>(y \<mapsto> InsertAfter x)) a") prefer 2
   using datalog.next_elem.cases db_extension_datalog insert_unchanged_has_child apply fastforce
   apply(subgoal_tac "datalog.is_list_elem (\<D>(y \<mapsto> InsertAfter x)) a") prefer 2
-  apply(metis datalog.first_child_has_child datalog.is_list_elem.simps datalog.next_elem.cases
-    db_extension.still_valid_database db_extension_datalog fun_upd_apply insert_unchanged_has_child)
+  apply(metis (no_types, lifting) datalog.first_child_has_child datalog.is_list_elem.simps
+    datalog.next_elem.cases db_extension.still_valid_database db_extension_datalog fun_upd_apply
+    insert_unchanged_has_child)
   using datalog.next_elem.intros(2) db_extension.still_valid_database apply blast
   apply(case_tac b)
   apply(subgoal_tac "\<not> datalog.has_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) a") prefer 2
@@ -564,8 +561,8 @@ lemma insert_unchanged_next_elem:
   done
 
 theorem insert_serial:
-  assumes "datalog.is_list_parent \<D> x"
-    and "db_extension \<D> y (InsertAfter x)"
+  assumes "db_extension \<D> y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
     and "(x, z) \<in> datalog.next_elem_rel \<D>"
   shows "datalog.next_elem_rel (\<D>(y \<mapsto> InsertAfter x)) =
          datalog.next_elem_rel \<D> - {(x, z)} \<union> {(x, Some y), (y, z)}"
