@@ -12,25 +12,24 @@ datatype ('oid, 'val) operation
   | DelList "'oid"
   | DelMap  "'oid" "string"
     
-fun oid_support :: "('o, 'v) operation \<Rightarrow> 'o set" where
-  "oid_support (InsertAfter oid) = {oid}" |
-  "oid_support (LinkList oid1 oid2) = {oid1, oid2}" |
-  "oid_support (LinkMap oid1 _ oid2) = {oid1, oid2}" |
-  "oid_support (DelList oid) = {oid}" |
-  "oid_support (DelMap oid _) = {oid}" |
-  "oid_support _ = {}"
+fun oid_references :: "('o, 'v) operation \<Rightarrow> 'o set" where
+  "oid_references (InsertAfter oid) = {oid}" |
+  "oid_references (LinkList oid1 oid2) = {oid1, oid2}" |
+  "oid_references (LinkMap oid1 _ oid2) = {oid1, oid2}" |
+  "oid_references (DelList oid) = {oid}" |
+  "oid_references (DelMap oid _) = {oid}" |
+  "oid_references _ = {}"
 
 type_synonym ('oid, 'val) database = "'oid \<rightharpoonup> ('oid, 'val) operation"
 
 locale datalog =
   fixes \<D> :: "('oid::{linorder}, 'val) database"
-  assumes oid_support_in_db: "\<D> oid = Some oper \<Longrightarrow> oid_support oper \<subseteq> dom \<D>"
-    and oid_support_ref_integrity: "\<D> oid = Some oper \<Longrightarrow> x \<in> oid_support oper \<Longrightarrow> x < oid"
-    
-lemma (in datalog) InsertAfter_ref_integrity:
+  assumes ref_older: "\<D> oid = Some oper \<Longrightarrow> x \<in> oid_references oper \<Longrightarrow> x < oid"
+
+lemma (in datalog) insert_ref_older:
   assumes "\<D> oid = Some (InsertAfter x)"
-  shows "x \<in> dom \<D>" and  "x < oid"
-  using assms oid_support_in_db oid_support_ref_integrity by fastforce+
+  shows "x < oid"
+  using assms ref_older by fastforce
 
 context datalog begin
 
@@ -211,7 +210,7 @@ lemma insert_has_no_child:
   apply(meson datalog.has_child.simps datalog.parent_child.cases db_extension.still_valid_database)
   apply clarify
   apply(subgoal_tac "y < child") prefer 2
-  using datalog.InsertAfter_ref_integrity(2) db_extension.still_valid_database apply blast
+  using datalog.insert_ref_older db_extension.still_valid_database apply blast
   apply (metis db_extension.oid_is_latest domI dual_order.asym map_upd_Some_unfold)
   done
 
@@ -313,8 +312,8 @@ lemma insert_unchanged_sibling:
   apply(meson datalog.parent_child.cases datalog.sibling_elim db_extension_datalog)
   apply clarify
   apply(subgoal_tac "datalog.is_list_parent (\<D>(y \<mapsto> InsertAfter x)) p") prefer 2
-  apply(metis datalog.InsertAfter_ref_integrity(1) db_extension.oid_not_present
-    db_extension_datalog domIff is_list_parent_unchanged)
+  apply (metis datalog.is_list_elem.intros datalog.is_list_parent.intros(2)
+    db_extension.still_valid_database fun_upd_same is_list_parent_unchanged)
   apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) p a") prefer 2
   apply(simp add: datalog.parent_child.intros db_extension.still_valid_database)
   apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) p b") prefer 2
