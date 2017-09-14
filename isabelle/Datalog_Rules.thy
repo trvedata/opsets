@@ -76,10 +76,9 @@ inductive next_sibling_anc :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
 inductive has_sibling_anc :: "'oid \<Rightarrow> bool" where
   "\<lbrakk>next_sibling_anc s n\<rbrakk> \<Longrightarrow> has_sibling_anc s"
 
-inductive next_elem :: "'oid \<Rightarrow> 'oid option \<Rightarrow> bool" where
-  "\<lbrakk>first_child p n\<rbrakk> \<Longrightarrow> next_elem p (Some n)" |
-  "\<lbrakk>is_list_elem p; \<not> has_child p; next_sibling_anc p n\<rbrakk> \<Longrightarrow> next_elem p (Some n)" |  
-  "\<lbrakk>is_list_elem p; \<not> has_child p; \<not> has_sibling_anc p\<rbrakk> \<Longrightarrow> next_elem p None"  
+inductive next_elem :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>first_child p n\<rbrakk> \<Longrightarrow> next_elem p n" |
+  "\<lbrakk>is_list_elem p; \<not> has_child p; next_sibling_anc p n\<rbrakk> \<Longrightarrow> next_elem p n"
   
 lemmas [intro] = next_elem.intros
 lemmas [intro] = has_sibling_anc.intros
@@ -115,7 +114,7 @@ inductive_cases is_list_parent_elim [elim]: "is_list_parent p"
   
 end
 
-definition (in datalog) next_elem_rel :: "('oid \<times> 'oid option) set" where
+definition (in datalog) next_elem_rel :: "('oid \<times> 'oid) set" where
   "next_elem_rel \<equiv> {(x, y). next_elem x y}"
 
 lemma (in datalog) first_child_functional [simp]:
@@ -500,29 +499,45 @@ lemma insert_extend_next_sibling_anc:
 lemma insert_immediately_after:
   assumes "db_extension \<D> y (InsertAfter x)"
     and "datalog.is_list_parent \<D> x"
-  shows "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) x (Some y)"
+  shows "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) x y"
   using assms
   by (simp add: datalog.next_elem.intros(1) db_extension.still_valid_database insert_first_child)
 
 lemma insert_connect_next:
   assumes "db_extension \<D> y (InsertAfter x)"
     and "datalog.is_list_parent \<D> x"
-    and "datalog.next_elem \<D> x z"
-  shows "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) y z"
+  shows "datalog.next_elem \<D> x z \<longleftrightarrow> datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) y z"
   using assms apply -
-  apply(case_tac z)
-  apply(metis datalog.has_sibling_anc.simps datalog.is_list_elem.intros datalog.next_elem.simps
-    db_extension.still_valid_database db_extension_datalog fun_upd_same
-    insert_extend_next_sibling_anc insert_has_no_child option.distinct(1))
-  apply(case_tac "datalog.first_child \<D> x a")
+  apply(rule iffI)
+  apply(case_tac "datalog.first_child \<D> x z")
   apply(simp add: datalog.is_list_elem.intros datalog.next_elem.intros(2)
     datalog.next_sibling_anc.intros(1) db_extension.still_valid_database insert_has_no_child
     insert_next_sibling)
-  apply(subgoal_tac "datalog.next_sibling_anc \<D> x a") prefer 2
+  apply(subgoal_tac "datalog.next_sibling_anc \<D> x z") prefer 2
   using datalog.next_elem.cases db_extension_datalog apply fastforce
   apply(metis datalog.is_list_elem.intros datalog.next_elem.cases datalog.next_elem.intros(2)
     db_extension.still_valid_database db_extension_datalog fun_upd_same
-    insert_extend_next_sibling_anc insert_has_no_child option.sel)
+    insert_extend_next_sibling_anc insert_has_no_child)
+  apply(subgoal_tac "datalog (\<D>(y \<mapsto> InsertAfter x))")
+   apply(rule datalog.next_elem_elim, assumption, assumption)
+  using datalog.first_child_has_child db_extension.still_valid_database insert_has_no_child apply blast
+   apply(rule datalog.next_sibling_anc_elim, assumption, assumption)
+    apply(subgoal_tac "datalog.first_child \<D> x z")
+  using datalog.next_elem.intros(1) db_extension_datalog apply blast
+    apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) x z")
+     prefer 2
+     apply(metis datalog.is_list_parent.intros(2) datalog.later_sibling.cases datalog.next_sibling.cases datalog.parent_child.simps datalog.sibling.cases fun_upd_same is_list_parent_unchanged)
+    apply(subgoal_tac "datalog.parent_child \<D> x z")
+    prefer 2
+    apply(metis datalog.later_sibling.cases datalog.next_sibling.cases datalog.parent_child.simps db_extension_datalog fun_upd_apply order.asym)
+    apply(rule datalog.first_child.intros)
+  using db_extension_datalog apply blast
+     apply force
+    apply clarsimp
+    defer
+  apply(subgoal_tac "datalog.next_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) y z") prefer 2
+  using datalog.next_elem_elim db_extension.still_valid_database 
+  
   done
 
 lemma insert_unchanged_next_elem:
@@ -531,15 +546,10 @@ lemma insert_unchanged_next_elem:
   shows "datalog.next_elem \<D> a b \<longleftrightarrow> datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) a b"
   using assms apply -
   apply(rule iffI)
-  apply(case_tac b)
-  apply(subgoal_tac "\<not> datalog.has_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) a") prefer 2
-  using datalog.next_elem.cases db_extension_datalog insert_unchanged_has_sibling_anc apply fastforce
-  apply(simp add: datalog.is_list_elem.simps datalog.next_elem.simps db_extension.still_valid_database
-    db_extension_datalog insert_unchanged_has_child)
-  apply(case_tac "datalog.first_child \<D> a aa")
+  apply(case_tac "datalog.first_child \<D> a b")
   apply(simp add: datalog.next_elem.intros(1) db_extension.still_valid_database
     insert_unchanged_first_child)
-  apply(subgoal_tac "datalog.next_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) a aa") prefer 2
+  apply(subgoal_tac "datalog.next_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) a b") prefer 2
   apply(metis datalog.next_elem.cases db_extension_datalog insert_unchanged_sibling_anc_fwd
     option.sel option.simps(3))
   apply(subgoal_tac "\<not> datalog.has_child (\<D>(y \<mapsto> InsertAfter x)) a") prefer 2
@@ -549,23 +559,18 @@ lemma insert_unchanged_next_elem:
     datalog.next_elem.cases db_extension.still_valid_database db_extension_datalog fun_upd_apply
     insert_unchanged_has_child)
   using datalog.next_elem.intros(2) db_extension.still_valid_database apply blast
-  apply(case_tac b)
-  apply(subgoal_tac "\<not> datalog.has_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) a") prefer 2
-  using datalog.next_elem.cases db_extension.still_valid_database apply fastforce
-  apply(simp add: datalog.is_list_elem.simps datalog.next_elem.simps db_extension.still_valid_database
-    db_extension_datalog insert_unchanged_has_child insert_unchanged_has_sibling_anc)
-  apply(case_tac "datalog.first_child (\<D>(y \<mapsto> InsertAfter x)) a aa")
+  apply(case_tac "datalog.first_child (\<D>(y \<mapsto> InsertAfter x)) a b")
   using datalog.next_elem.intros(1) db_extension_datalog insert_unchanged_first_child apply blast
   apply(simp add: datalog.is_list_elem.simps datalog.next_elem.simps db_extension.still_valid_database
     db_extension_datalog insert_unchanged_has_child insert_unchanged_next_sibling_anc)
   done
-
+    
 theorem insert_serial:
   assumes "db_extension \<D> y (InsertAfter x)"
     and "datalog.is_list_parent \<D> x"
     and "(x, z) \<in> datalog.next_elem_rel \<D>"
   shows "datalog.next_elem_rel (\<D>(y \<mapsto> InsertAfter x)) =
-         datalog.next_elem_rel \<D> - {(x, z)} \<union> {(x, Some y), (y, z)}"
+         datalog.next_elem_rel \<D> - {(x, z)} \<union> {(x, y), (y, z)}"
   using assms apply -
   apply(subgoal_tac "datalog \<D>") prefer 2
   apply(simp add: db_extension_datalog)
@@ -575,7 +580,7 @@ theorem insert_serial:
   apply(clarsimp simp add: datalog.next_elem_rel_def)
   apply(metis datalog.next_elem_functional insert_connect_next insert_immediately_after
     insert_unchanged_next_elem)
-  apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) x (Some y)")
+  apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) x y")
   apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) y z")
   apply(subgoal_tac "datalog.next_elem_rel \<D> \<subseteq> datalog.next_elem_rel (\<D>(y \<mapsto> InsertAfter x)) \<union> {(x, z)}")
   apply(clarsimp simp add: datalog.next_elem_rel_def, blast)
@@ -585,6 +590,68 @@ theorem insert_serial:
   apply(simp add: datalog.next_elem_rel_def insert_connect_next)
   apply(simp add: insert_immediately_after)
   done
+    
+(************** Groundwork for separation logic ******************)
+    
+definition (in datalog) pfun_of_next_elem :: "'oid \<rightharpoonup> 'oid" where
+  "pfun_of_next_elem x \<equiv>
+     if \<not>(\<exists>y. next_elem x y) then
+       None
+     else Some (THE y. next_elem x y)"
+  
+lemma (in datalog) pfun_of_next_elem_equality [simp]:
+  shows "next_elem x y \<longleftrightarrow> (pfun_of_next_elem x = Some y)"
+  apply(unfold pfun_of_next_elem_def)
+  apply(clarsimp split!: if_split)
+  apply(drule next_elem_functional, assumption)
+   apply(simp add: the_equality)+
+  done
+    
+term "f(x := z)"
+    
+theorem insert_serial_pfun_of_next_elem:
+  assumes "db_extension \<D> y (InsertAfter x)"
+    and "datalog.is_list_parent \<D> x"
+    and "datalog.pfun_of_next_elem \<D> x = z"
+  shows "datalog.pfun_of_next_elem (\<D>(y \<mapsto> InsertAfter x)) =
+           (((datalog.pfun_of_next_elem \<D>)(x := Some y))(y := z))"
+  using assms
+  apply(subgoal_tac "datalog \<D> \<and> datalog (\<D>(y \<mapsto> InsertAfter x))")
+   prefer 2
+   apply(simp add: db_extension.still_valid_database db_extension_datalog)
+  apply clarsimp
+  apply(cases z; clarsimp)
+   apply(subgoal_tac "\<not>(\<exists>y. datalog.next_elem \<D> x y)")
+    prefer 2
+  using datalog.pfun_of_next_elem_equality datalog.pfun_of_next_elem_def apply fastforce
+   apply clarsimp
+   prefer 2
+   apply(subgoal_tac "datalog.next_elem \<D> x a")
+    prefer 2
+    apply(clarsimp simp add: datalog.pfun_of_next_elem_def split!: if_split_asm)
+    apply(subst (asm) the_equality, assumption)
+     apply(simp add: datalog.next_elem_functional)
+    apply(meson datalog.pfun_of_next_elem_def datalog.pfun_of_next_elem_equality)
+   apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) x y")
+    apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) y a")
+     apply(rule ext, clarsimp simp add: datalog.pfun_of_next_elem_def split!: if_split if_split_asm)
+         apply(simp add: datalog.next_elem_functional the_equality)
+        apply(metis datalog.pfun_of_next_elem_def datalog.pfun_of_next_elem_equality option.sel)
+  using insert_unchanged_next_elem apply blast
+  using insert_unchanged_next_elem apply blast
+     apply(metis datalog.next_elem_functional insert_unchanged_next_elem the_equality)
+  using insert_connect_next apply blast
+  using insert_immediately_after apply blast
+  apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) x y")
+   apply(rule ext, clarsimp simp add: datalog.pfun_of_next_elem_def split!: if_split if_split_asm)
+       defer
+       apply(simp add: datalog.next_elem_functional the_equality)
+  using insert_unchanged_next_elem apply blast
+  using insert_unchanged_next_elem apply blast
+    apply(metis datalog.next_elem_functional insert_unchanged_next_elem the_equality)
+  using insert_immediately_after apply blast
+    sorry
+    
 
 (*********** Links between objects and register assignment ***************)
 
