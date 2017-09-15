@@ -7,17 +7,17 @@ datatype ('oid, 'val) operation
   | MakeMap
   | MakeVal "'val"
   | InsertAfter "'oid"
-  | LinkList "'oid" "'oid"
-  | LinkMap "'oid" "string" "'oid"
-  | DelList "'oid"
-  | DelMap  "'oid" "string"
-    
+  | ListAssign "'oid" "'oid"
+  | MapAssign "'oid" "string" "'oid"
+  | ListRemove "'oid"
+  | MapRemove  "'oid" "string"
+
 fun oid_references :: "('o, 'v) operation \<Rightarrow> 'o set" where
   "oid_references (InsertAfter oid) = {oid}" |
-  "oid_references (LinkList oid1 oid2) = {oid1, oid2}" |
-  "oid_references (LinkMap oid1 _ oid2) = {oid1, oid2}" |
-  "oid_references (DelList oid) = {oid}" |
-  "oid_references (DelMap oid _) = {oid}" |
+  "oid_references (ListAssign oid1 oid2) = {oid1, oid2}" |
+  "oid_references (MapAssign oid1 _ oid2) = {oid1, oid2}" |
+  "oid_references (ListRemove oid) = {oid}" |
+  "oid_references (MapRemove oid _) = {oid}" |
   "oid_references _ = {}"
 
 type_synonym ('oid, 'val) database = "'oid \<rightharpoonup> ('oid, 'val) operation"
@@ -706,70 +706,54 @@ inductive is_map :: "'oid \<Rightarrow> bool" where
 inductive is_val :: "'oid \<Rightarrow> bool" where
   "\<lbrakk>\<D> oid = Some (MakeVal v)\<rbrakk> \<Longrightarrow> is_val oid"
 
-inductive link_target :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>\<D> oid = Some (LinkList el target); is_list_elem el\<rbrakk> \<Longrightarrow> link_target oid target" |
-  "\<lbrakk>\<D> oid = Some (LinkMap m k target); is_map m       \<rbrakk> \<Longrightarrow> link_target oid target"
+inductive ref_target :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>\<D> oid = Some (ListAssign el v); is_list_elem el\<rbrakk> \<Longrightarrow> ref_target oid v" |
+  "\<lbrakk>\<D> oid = Some (MapAssign m k v); is_map m       \<rbrakk> \<Longrightarrow> ref_target oid v"
 
-inductive stolen_link :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>link_target o1 target; link_target o2 target; o1 < o2\<rbrakk> \<Longrightarrow> stolen_link o1 target"
+inductive stolen_ref :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>ref_target o1 v; ref_target o2 v; o1 < o2\<rbrakk> \<Longrightarrow> stolen_ref o1 v"
 
-inductive map_write :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool" where
-  "\<lbrakk>\<D> oid = Some (LinkMap m k t); is_map m\<rbrakk> \<Longrightarrow> map_write oid m k" |
-  "\<lbrakk>\<D> oid = Some (DelMap m k);    is_map m\<rbrakk> \<Longrightarrow> map_write oid m k"
+inductive latest_ref :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>ref_target oid v; \<not> stolen_ref oid v\<rbrakk> \<Longrightarrow> latest_ref oid v"
 
-inductive map_write_old :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool" where
-  "\<lbrakk>map_write o1 m k; map_write o2 m k; o1 < o2\<rbrakk> \<Longrightarrow> map_write_old o1 m k"
+inductive map_update :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool" where
+  "\<lbrakk>\<D> oid = Some (MapAssign m k v); is_map m\<rbrakk> \<Longrightarrow> map_update oid m k" |
+  "\<lbrakk>\<D> oid = Some (MapRemove m k);   is_map m\<rbrakk> \<Longrightarrow> map_update oid m k"
 
-inductive list_write :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>\<D> oid = Some (LinkList el t); is_list_elem el\<rbrakk> \<Longrightarrow> list_write oid el" |
-  "\<lbrakk>\<D> oid = Some (DelList el);    is_list_elem el\<rbrakk> \<Longrightarrow> list_write oid el"
+inductive old_map_update :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool" where
+  "\<lbrakk>map_update o1 m k; map_update o2 m k; o1 < o2\<rbrakk> \<Longrightarrow> old_map_update o1 m k"
 
-inductive list_write_old :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>list_write o1 el; list_write o2 el; o1 < o2\<rbrakk> \<Longrightarrow> list_write_old o1 el"
+inductive list_update :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>\<D> oid = Some (ListAssign el t); is_list_elem el\<rbrakk> \<Longrightarrow> list_update oid el" |
+  "\<lbrakk>\<D> oid = Some (ListRemove el);   is_list_elem el\<rbrakk> \<Longrightarrow> list_update oid el"
 
-inductive latest_link :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>link_target oid target; \<not> stolen_link oid target\<rbrakk> \<Longrightarrow> latest_link oid target"
+inductive old_list_update :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>list_update o1 el; list_update o2 el; o1 < o2\<rbrakk> \<Longrightarrow> old_list_update o1 el"
 
-inductive latest_map_write :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool" where
-  "\<lbrakk>map_write oid m k; \<not> map_write_old oid m k\<rbrakk> \<Longrightarrow> latest_map_write oid m k"
+inductive latest_map_update :: "'oid \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> bool" where
+  "\<lbrakk>map_update oid m k; \<not> old_map_update oid m k\<rbrakk> \<Longrightarrow> latest_map_update oid m k"
 
-inductive latest_map_link :: "'oid \<Rightarrow> string \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>\<D> oid = Some (LinkMap m k target); latest_map_write oid m k; latest_link oid target\<rbrakk>
-      \<Longrightarrow> latest_map_link m k target"
+inductive map_val :: "'oid \<Rightarrow> string \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>\<D> oid = Some (MapAssign m k v); latest_map_update oid m k; latest_ref oid v\<rbrakk> \<Longrightarrow> map_val m k v"
 
 inductive has_map_val :: "'oid \<Rightarrow> string \<Rightarrow> bool" where
-  "\<lbrakk>latest_map_link m k v\<rbrakk> \<Longrightarrow> has_map_val m k"
+  "\<lbrakk>map_val m k v\<rbrakk> \<Longrightarrow> has_map_val m k"
 
-inductive latest_list_write :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>list_write oid el; \<not> list_write_old oid el\<rbrakk> \<Longrightarrow> latest_list_write oid el"
+inductive latest_list_update :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>list_update oid el; \<not> old_list_update oid el\<rbrakk> \<Longrightarrow> latest_list_update oid el"
 
-inductive latest_list_link :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>\<D> oid = Some (LinkList el target); latest_list_write oid el; latest_link oid target\<rbrakk>
-      \<Longrightarrow> latest_list_link el target"
+inductive list_val :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>\<D> oid = Some (ListAssign el v); latest_list_update oid el; latest_ref oid v\<rbrakk> \<Longrightarrow> list_val el v"
 
 inductive has_list_val :: "'oid \<Rightarrow> bool" where
-  "\<lbrakk>latest_list_link el v\<rbrakk> \<Longrightarrow> has_list_val el"
+  "\<lbrakk>list_val el v\<rbrakk> \<Longrightarrow> has_list_val el"
 
 end
 
-definition latest_link_rel :: "('oid::{linorder}, 'val) database \<Rightarrow> ('oid \<times> 'oid) set" where
-  "latest_link_rel \<D> \<equiv> {(oid, target). datalog.latest_link \<D> oid target}"
-
-definition latest_map_rel :: "('oid::{linorder}, 'val) database \<Rightarrow> ('oid \<times> string \<times> 'oid) set" where
-  "latest_map_rel \<D> \<equiv> {(m, k, v). datalog.latest_map_link \<D> m k v}"
-
-lemma map_val_unique:
-  assumes "(m, k, v1) \<in> latest_map_rel \<D>"
-    and "(m, k, v2) \<in> latest_map_rel \<D>"
+lemma (in datalog) map_val_functional:
+  assumes "map_val m k v1"
+    and "map_val m k v2"
   shows "v1 = v2"
-  oops
-
-lemma link_map_serial:
-  assumes "\<D> oid = None" and "\<D>' = \<D>(oid \<mapsto> LinkMap m k target)"
-    and "\<And>n. n \<in> dom \<D> \<Longrightarrow> n < oid"
-    and "\<nexists>prev. (prev, target) \<in> latest_link_rel \<D>" (* TODO define semantics for stealing *)
-    and "(m, k, v1) \<in> latest_map_rel \<D>" (* TODO case where there's no prior value *)
-  shows "latest_map_rel \<D>' = latest_map_rel \<D> - {(m, k, v1)} \<union> {(m, k, target)}"
   oops
 
 
@@ -785,11 +769,11 @@ inductive has_next_nonempty :: "'oid \<Rightarrow> bool" where
   "\<lbrakk>next_nonempty el n\<rbrakk> \<Longrightarrow> has_next_nonempty el"
 
 inductive list_elem :: "'oid \<Rightarrow> 'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>latest_list_link el v; next_nonempty el next\<rbrakk> \<Longrightarrow> list_elem el v next"
+  "\<lbrakk>list_val el v; next_nonempty el next\<rbrakk> \<Longrightarrow> list_elem el v next"
 
 inductive list_suffix :: "'oid \<Rightarrow> ('oid \<times> 'oid) list \<Rightarrow> bool" where
   "\<lbrakk>\<not> has_next_nonempty el\<rbrakk> \<Longrightarrow> list_suffix el []" |
-  "\<lbrakk>next_nonempty el n; latest_list_link n v; list_suffix n suf\<rbrakk> \<Longrightarrow> list_suffix el ((n,v)#suf)"
+  "\<lbrakk>next_nonempty el n; list_val n v; list_suffix n suf\<rbrakk> \<Longrightarrow> list_suffix el ((n,v)#suf)"
 
 inductive list_full :: "'oid \<Rightarrow> ('oid \<times> 'oid) list \<Rightarrow> bool" where
   "\<lbrakk>\<D> oid = Some MakeList; list_suffix oid suf\<rbrakk> \<Longrightarrow> list_full oid suf"
