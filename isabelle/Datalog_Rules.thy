@@ -619,66 +619,55 @@ theorem insert_serial:
     
 (************** Groundwork for separation logic ******************)
     
-definition (in datalog) pfun_of_next_elem :: "'oid \<rightharpoonup> 'oid" where
-  "pfun_of_next_elem x \<equiv>
-     if \<not>(\<exists>y. next_elem x y) then
-       None
+definition (in datalog) next_elem_fun :: "'oid \<rightharpoonup> 'oid" where
+  "next_elem_fun x \<equiv>
+     if \<nexists>y. next_elem x y
+     then None
      else Some (THE y. next_elem x y)"
-  
-lemma (in datalog) pfun_of_next_elem_equality [simp]:
-  shows "next_elem x y \<longleftrightarrow> (pfun_of_next_elem x = Some y)"
-  apply(unfold pfun_of_next_elem_def)
+
+lemma (in datalog) next_elem_fun_equality [simp]:
+  shows "next_elem x y \<longleftrightarrow> (next_elem_fun x = Some y)"
+  apply(unfold next_elem_fun_def)
   apply(clarsimp split!: if_split)
   apply(drule next_elem_functional, assumption)
-   apply(simp add: the_equality)+
+  apply(simp add: the_equality)+
   done
-    
-term "f(x := z)"
-    
-theorem insert_serial_pfun_of_next_elem:
+
+theorem insert_serial_fun:
   assumes "db_extension \<D> y (InsertAfter x)"
     and "datalog.is_list_parent \<D> x"
-    and "datalog.pfun_of_next_elem \<D> x = z"
-  shows "datalog.pfun_of_next_elem (\<D>(y \<mapsto> InsertAfter x)) =
-           (((datalog.pfun_of_next_elem \<D>)(x := Some y))(y := z))"
+    and "datalog.next_elem_fun \<D> x = z"
+  shows "datalog.next_elem_fun (\<D>(y \<mapsto> InsertAfter x)) =
+       ((datalog.next_elem_fun \<D>)(x := Some y))(y := z)"
   using assms
-  apply(subgoal_tac "datalog \<D> \<and> datalog (\<D>(y \<mapsto> InsertAfter x))")
-   prefer 2
-   apply(simp add: db_extension.still_valid_database db_extension_datalog)
+  apply(subgoal_tac "datalog \<D> \<and> datalog (\<D>(y \<mapsto> InsertAfter x))") prefer 2
+  apply(simp add: db_extension.still_valid_database db_extension_datalog)
   apply clarsimp
   apply(cases z; clarsimp)
-   apply(subgoal_tac "\<not>(\<exists>y. datalog.next_elem \<D> x y)")
-    prefer 2
-  using datalog.pfun_of_next_elem_equality datalog.pfun_of_next_elem_def apply fastforce
-   apply clarsimp
-   prefer 2
-   apply(subgoal_tac "datalog.next_elem \<D> x a")
-    prefer 2
-    apply(clarsimp simp add: datalog.pfun_of_next_elem_def split!: if_split_asm)
-    apply(subst (asm) the_equality, assumption)
-     apply(simp add: datalog.next_elem_functional)
-    apply(meson datalog.pfun_of_next_elem_def datalog.pfun_of_next_elem_equality)
-   apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) x y")
-    apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) y a")
-     apply(rule ext, clarsimp simp add: datalog.pfun_of_next_elem_def split!: if_split if_split_asm)
-         apply(simp add: datalog.next_elem_functional the_equality)
-        apply(metis datalog.pfun_of_next_elem_def datalog.pfun_of_next_elem_equality option.sel)
+  apply(subgoal_tac "\<nexists>y. datalog.next_elem \<D> x y") prefer 2
+  using datalog.next_elem_fun_equality datalog.next_elem_fun_def apply fastforce
+  apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) x y") prefer 2
+  using insert_immediately_after apply blast
+  apply(rule ext, clarsimp simp add: datalog.next_elem_fun_def split!: if_split if_split_asm)
+  using insert_connect_next apply blast
+  using datalog.next_elem_functional apply blast
   using insert_unchanged_next_elem apply blast
   using insert_unchanged_next_elem apply blast
-     apply(metis datalog.next_elem_functional insert_unchanged_next_elem the_equality)
+  apply(metis datalog.next_elem_functional insert_unchanged_next_elem theI_unique)
+  apply(subgoal_tac "datalog.next_elem \<D> x a") prefer 2
+  apply (simp add: datalog.next_elem_fun_equality)
+  apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) x y")
+  apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) y a")
+  apply(rule ext, clarsimp simp add: datalog.next_elem_fun_def split!: if_split if_split_asm)
+  apply(simp add: datalog.next_elem_functional the_equality)
+  apply(metis datalog.next_elem_fun_def datalog.next_elem_fun_equality option.sel)
+  using insert_unchanged_next_elem apply blast
+  using insert_unchanged_next_elem apply blast
+  apply(metis datalog.next_elem_functional insert_unchanged_next_elem the_equality)
   using insert_connect_next apply blast
   using insert_immediately_after apply blast
-  apply(subgoal_tac "datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) x y")
-   apply(rule ext, clarsimp simp add: datalog.pfun_of_next_elem_def split!: if_split if_split_asm)
-       defer
-       apply(simp add: datalog.next_elem_functional the_equality)
-  using insert_unchanged_next_elem apply blast
-  using insert_unchanged_next_elem apply blast
-    apply(metis datalog.next_elem_functional insert_unchanged_next_elem the_equality)
-  using insert_immediately_after apply blast
-    using insert_connect_next apply blast
   done
-    
+
 
 (*********** Links between objects and register assignment ***************)
 
@@ -761,17 +750,19 @@ lemma link_map_serial:
 
 context datalog begin
 
-inductive next_nonempty :: "'oid \<Rightarrow> 'oid option \<Rightarrow> bool" where
-  "\<lbrakk>next_elem el None\<rbrakk> \<Longrightarrow> next_nonempty el None" |
-  "\<lbrakk>next_elem el (Some n); has_list_val n\<rbrakk> \<Longrightarrow> next_nonempty el (Some n)" |
-  "\<lbrakk>next_elem el (Some n); \<not> has_list_val n; next_nonempty n m\<rbrakk> \<Longrightarrow> next_nonempty el m"
+inductive next_nonempty :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>next_elem el n; has_list_val n\<rbrakk> \<Longrightarrow> next_nonempty el n" |
+  "\<lbrakk>next_elem el n; \<not> has_list_val n; next_nonempty n m\<rbrakk> \<Longrightarrow> next_nonempty el m"
 
-inductive list_elem :: "'oid \<Rightarrow> 'oid \<Rightarrow> 'oid option \<Rightarrow> bool" where
+inductive has_next_nonempty :: "'oid \<Rightarrow> bool" where
+  "\<lbrakk>next_nonempty el n\<rbrakk> \<Longrightarrow> has_next_nonempty el"
+
+inductive list_elem :: "'oid \<Rightarrow> 'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
   "\<lbrakk>latest_list_link el v; next_nonempty el next\<rbrakk> \<Longrightarrow> list_elem el v next"
 
 inductive list_suffix :: "'oid \<Rightarrow> ('oid \<times> 'oid) list \<Rightarrow> bool" where
-  "\<lbrakk>next_nonempty el None\<rbrakk> \<Longrightarrow> list_suffix el []" |
-  "\<lbrakk>next_nonempty el (Some n); latest_list_link n v; list_suffix n suf\<rbrakk> \<Longrightarrow> list_suffix el ((n,v)#suf)"
+  "\<lbrakk>\<not> has_next_nonempty el\<rbrakk> \<Longrightarrow> list_suffix el []" |
+  "\<lbrakk>next_nonempty el n; latest_list_link n v; list_suffix n suf\<rbrakk> \<Longrightarrow> list_suffix el ((n,v)#suf)"
 
 inductive list_full :: "'oid \<Rightarrow> ('oid \<times> 'oid) list \<Rightarrow> bool" where
   "\<lbrakk>\<D> oid = Some MakeList; list_suffix oid suf\<rbrakk> \<Longrightarrow> list_full oid suf"
