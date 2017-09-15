@@ -591,6 +591,33 @@ lemma insert_unchanged_next_elem:
     db_extension_datalog insert_unchanged_has_child insert_unchanged_next_sibling_anc)
   done
 
+lemma insert_unrelated_next_elem:
+  assumes "db_extension \<D> y (InsertAfter x)"
+    and "\<not> datalog.is_list_parent \<D> x"
+  shows "datalog.next_elem \<D> a b \<longleftrightarrow> datalog.next_elem (\<D>(y \<mapsto> InsertAfter x)) a b"
+  using assms apply -
+  apply(rule iffI)
+  apply(metis datalog.first_child_elim datalog.is_list_parent.intros(2) datalog.next_elem.simps
+    datalog.next_elem_dom_closed datalog.parent_child.cases db_extension.oid_not_present
+    db_extension_datalog domIff insert_unchanged_next_elem)
+  apply(case_tac "a = y", clarify)
+  apply(subgoal_tac "datalog.next_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) y b") prefer 2
+  using datalog.first_child_has_child datalog.next_elem_elim db_extension.still_valid_database
+    insert_has_no_child apply blast
+  apply(subgoal_tac "datalog (\<D>(y \<mapsto> InsertAfter x))") prefer 2
+  using db_extension.still_valid_database apply blast
+  apply(subgoal_tac "\<exists>p. datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) p y", clarify) prefer 2
+  apply(meson datalog.has_child.simps datalog.next_sibling_anc.simps
+    datalog.next_sibling_to_has_next_sibling datalog.parent_child.cases db_extension_datalog
+    first_child_has_no_sibling)
+  apply(metis (mono_tags) datalog.has_child.intros datalog.parent_child.cases
+    db_extension.oid_not_present db_extension_datalog insert_has_no_child
+    insert_unchanged_parent_child is_list_parent_unchanged option.simps(3))
+  apply(metis datalog.first_child_elim datalog.is_list_parent.simps datalog.next_elem.simps
+    datalog.parent_child.cases db_extension.still_valid_database insert_unchanged_next_elem
+    is_list_parent_unchanged)
+  done
+
 theorem insert_serial:
   assumes "db_extension \<D> y (InsertAfter x)"
     and "datalog.is_list_parent \<D> x"
