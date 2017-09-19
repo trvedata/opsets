@@ -871,7 +871,7 @@ lemma unchanged_is_map:
 
 lemma map_unchanged_ref_target:
   assumes "db_extension \<D> oid (MapAssign m k v)"
-    and "y \<noteq> v"
+    and "oid \<noteq> x \<or> y \<noteq> v"
   shows "datalog.ref_target \<D> x y \<longleftrightarrow> datalog.ref_target (\<D>(oid \<mapsto> MapAssign m k v)) x y"
   using assms apply -
   apply(rule iffI)
@@ -903,7 +903,7 @@ lemma map_unchanged_ref_target:
 
 lemma list_unchanged_ref_target:
   assumes "db_extension \<D> oid (ListAssign el v)"
-    and "y \<noteq> v"
+    and "x \<noteq> oid \<or> y \<noteq> v"
   shows "datalog.ref_target \<D> x y \<longleftrightarrow> datalog.ref_target (\<D>(oid \<mapsto> ListAssign el v)) x y"
   using assms apply -
   apply(rule iffI)
@@ -1178,14 +1178,74 @@ lemma list_remove_unchanged_latest_list_update:
   by (meson assms datalog.latest_list_update.simps datalog.old_list_update.simps
     db_extension.still_valid_database db_extension_datalog list_remove_unchanged_list_update)
 
-lemma map_assign_serial:
+lemma map_assign_map_val:
+  assumes "db_extension \<D> oid (MapAssign m k v)"
+    and "datalog.is_map \<D> m"
+  shows "datalog.map_val (\<D>(oid \<mapsto> MapAssign m k v)) m k v"
+  by (meson assms datalog.map_val.simps db_extension.still_valid_database fun_upd_same
+    map_assign_latest_map_update map_assign_latest_ref)
+
+lemma map_assign_unchanged_map_val:
+  assumes "db_extension \<D> oid (MapAssign m k v)"
+    and "x \<noteq> m \<or> y \<noteq> k"
+    and "datalog.latest_ref_fun \<D> v = None"
+  shows "datalog.map_val \<D> x y z \<longleftrightarrow> datalog.map_val (\<D>(oid \<mapsto> MapAssign m k v)) x y z"
+  using assms apply -
+  apply(subgoal_tac "datalog \<D> \<and> datalog (\<D>(oid \<mapsto> MapAssign m k v))", clarsimp) prefer 2
+  apply(simp add: db_extension.still_valid_database db_extension_datalog)
+  apply(rule iffI)
+  apply(erule datalog.map_val_elim, assumption)
+  apply(subgoal_tac "datalog.latest_map_update (\<D>(oid \<mapsto> MapAssign m k v)) oida x y") prefer 2
+  using map_assign_unchanged_latest_map_update apply blast
+  apply(subgoal_tac "datalog.latest_ref (\<D>(oid \<mapsto> MapAssign m k v)) oida z") prefer 2
+  apply(metis datalog.latest_ref_fun_def db_extension_datalog map_unchanged_latest_ref option.simps(3))
+  apply(metis (no_types, lifting) assms(1) datalog.map_val.intros db_extension.oid_not_present
+    domI domIff fun_upd_def)
+  apply(erule datalog.map_val_elim, assumption)
+  apply(subgoal_tac "datalog.latest_map_update \<D> oida x y") prefer 2
+  using map_assign_unchanged_latest_map_update apply blast
+  apply(subgoal_tac "datalog.latest_ref \<D> oida z") prefer 2
+  apply(subgoal_tac "datalog.stolen_ref \<D> oida z \<Longrightarrow> False")
+  apply(subgoal_tac "datalog.ref_target \<D> oida z") prefer 2
+  apply(metis datalog.latest_map_update.cases datalog.map_update.simps datalog.ref_target.intros(2)
+    map_upd_Some_unfold operation.inject(4))
+  using datalog.latest_ref.intros apply blast
+  apply(erule datalog.stolen_ref_elim, assumption)
+  apply(subgoal_tac "datalog.ref_target (\<D>(oid \<mapsto> MapAssign m k v)) o2 z") prefer 2
+  apply(metis datalog.ref_target.simps db_extension.oid_not_present db_extension_datalog
+    map_unchanged_ref_target option.simps(3))
+  apply(meson datalog.latest_ref_elim datalog.stolen_ref.intros db_extension.still_valid_database)
+  apply(metis (mono_tags, lifting) datalog.map_val.intros map_upd_Some_unfold operation.inject(4))
+  done
+
+lemma map_remove_map_val:
+  assumes "db_extension \<D> oid (MapRemove m k)"
+  shows "\<nexists>v. datalog.map_val (\<D>(oid \<mapsto> MapRemove m k)) m k v"
+  by (metis (no_types, lifting) assms datalog.is_map.simps datalog.latest_map_update.cases
+    datalog.latest_map_update_functional datalog.map_update.simps datalog.map_val.cases
+    db_extension.still_valid_database fun_upd_same map_remove_latest_map_update
+    operation.distinct(25) operation.distinct(53) option.sel unchanged_is_map)
+
+theorem map_assign_serial:
   assumes "db_extension \<D> oid (MapAssign m k v)"
     and "datalog.is_map \<D> m"
     and "datalog.latest_ref_fun \<D> v = None"
     and "datalog.map_val_fun \<D> m = old_map"
   shows "datalog.map_val_fun (\<D>(oid \<mapsto> MapAssign m k v)) =
        ((datalog.map_val_fun \<D>)(m := old_map(k \<mapsto> v)))"
-  oops
+  using assms
+  apply(subgoal_tac "datalog \<D> \<and> datalog (\<D>(oid \<mapsto> MapAssign m k v))", clarsimp) prefer 2
+  apply(simp add: db_extension.still_valid_database db_extension_datalog)
+  apply(rule ext, rule ext)
+  apply(clarsimp simp: datalog.map_val_fun_def split!: if_split if_split_asm)
+  apply(meson datalog.map_val.intros fun_upd_same map_assign_latest_map_update map_assign_latest_ref)
+  using datalog.map_val_functional map_assign_map_val apply blast
+  using map_assign_unchanged_map_val apply(blast, blast)
+  apply(metis (no_types, lifting) datalog.map_val_fun_def datalog.map_val_fun_equality
+    map_assign_unchanged_map_val option.inject)
+  using map_assign_unchanged_map_val apply(blast, blast)
+  apply(metis datalog.map_val_functional map_assign_unchanged_map_val the_equality)
+  done
 
 (*********** List iteration skipping blank elements ***************)
 
