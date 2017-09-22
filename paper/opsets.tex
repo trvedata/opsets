@@ -12,7 +12,7 @@
 
 \begin{document}
 \sloppy
-\title{OpSets}
+\title{OpSets: Concurrent Datatypes with Sequential Specifications}
 \author{}
 \date{}
 \maketitle
@@ -22,7 +22,8 @@
 \section{Introduction}
 
 A common requirement across a great variety of systems is that several participants may concurrently access and manipulate some shared data structure.
-However, unconstrained concurrent manipulation may introduce inconsistencies that applications cannot tolerate, and thus various approaches for providing \emph{consistency guarantees} have been developed, ensuring that the data structure continues to obey certain invariants or semantics under concurrent access. For example:
+However, unconstrained concurrent manipulation may introduce inconsistencies that applications cannot tolerate.
+Thus, various approaches for providing \emph{consistency guarantees} have been developed, ensuring that the data structure continues to obey certain invariants or semantics under concurrent access. For example:
 
 \begin{description}
 \item[Transaction isolation] in databases restricts the degree to which concurrent transactions can affect each other while accessing the same database.
@@ -35,11 +36,12 @@ This has the consequence that the state of replicas may temporarily diverge, but
 As with CRDTs, OT allows each user's changes to be applied immediately to their local copy, while ensuring that other users' concurrent edits can be integrated in a consistent way.
 \end{description}
 
+We discuss these techniques in more detail in Section~\ref{sec:relwork}.
 Despite decades of research in the above topics, consistency mechanisms for concurrent data access remain poorly understood, and tools for reasoning about them (both formally and informally) are subtle and error-prone.
 
-In this work we introduce \emph{Operation Sets} (or \emph{OpSets} for short), a novel approach to describing and reasoning about algorithms for concurrent data access and manipulation.
-OpSets trivially ensure that replicas converge, and they simplify the tasks of extending algorithms and verifying more complex correctness properties.
-The OpSets approach builds upon existing work on CRDTs, and extends it by incorporating ideas from database query languages, transaction isolation, and operational transformation.
+In this work we introduce \emph{Operation Sets} (or \emph{OpSets} for short), a novel approach for describing and reasoning about algorithms for concurrent data access and manipulation.
+The OpSets approach trivially ensures that replicas converge, and it simplifies the tasks of extending algorithms and verifying more complex correctness properties.
+It builds upon existing work on CRDTs, and extends it by incorporating ideas from database query languages, transaction isolation, and operational transformation.
 
 Our contributions in this paper are as follows:
 
@@ -57,7 +59,8 @@ Furthermore, we demonstrate that our correctness properties capture intuitive re
 \item We discuss the distinction between three families of CRDTs in the literature (operation-based, state-based, and delta-based), and argue that our OpSet approach makes this distinction largely redundant: we require only a basic set CRDT as foundation, and show that other abstract datatypes can efficiently be implemented on top of that set, without making further assumptions about the properties of the underlying network.
 \end{itemize}
 
-\cite{Attiya:2016kh}
+\input{approach}
+\input{relwork}
 
 % Topological orderings are also closely related to the concept of a linear
 % extension of a partial order in mathematics.
