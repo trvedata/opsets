@@ -1226,18 +1226,20 @@ lemma map_remove_map_val:
     db_extension.still_valid_database fun_upd_same map_remove_latest_map_update
     operation.distinct(25) operation.distinct(53) option.sel unchanged_is_map)
 
+definition set_map_key :: "('oid \<Rightarrow> string \<rightharpoonup> 'oid) \<Rightarrow> 'oid \<Rightarrow> string \<Rightarrow> 'oid option \<Rightarrow> ('oid \<Rightarrow> string \<rightharpoonup> 'oid)"
+where "set_map_key view m k v \<equiv> view(m := (view m)(k := v))"
+
 theorem map_assign_serial:
   assumes "db_extension \<D> oid (MapAssign m k v)"
     and "datalog.is_map \<D> m"
     and "datalog.latest_ref_fun \<D> v = None"
-    and "datalog.map_val_fun \<D> m = old_map"
   shows "datalog.map_val_fun (\<D>(oid \<mapsto> MapAssign m k v)) =
-       ((datalog.map_val_fun \<D>)(m := old_map(k \<mapsto> v)))"
+         set_map_key (datalog.map_val_fun \<D>) m k (Some v)"
   using assms
   apply(subgoal_tac "datalog \<D> \<and> datalog (\<D>(oid \<mapsto> MapAssign m k v))", clarsimp) prefer 2
   apply(simp add: db_extension.still_valid_database db_extension_datalog)
   apply(rule ext, rule ext)
-  apply(clarsimp simp: datalog.map_val_fun_def split!: if_split if_split_asm)
+  apply(clarsimp simp: datalog.map_val_fun_def set_map_key_def split!: if_split if_split_asm)
   apply(meson datalog.map_val.intros fun_upd_same map_assign_latest_map_update map_assign_latest_ref)
   using datalog.map_val_functional map_assign_map_val apply blast
   using map_assign_unchanged_map_val apply(blast, blast)
@@ -1246,6 +1248,24 @@ theorem map_assign_serial:
   using map_assign_unchanged_map_val apply(blast, blast)
   apply(metis datalog.map_val_functional map_assign_unchanged_map_val the_equality)
   done
+
+lemma map_assign_move_from_map:
+  assumes "db_extension \<D> oid (MapAssign m k v)"
+    and "datalog.is_map \<D> m"
+    and "datalog.map_val_fun \<D> m' k' = Some v"
+  shows "datalog.map_val_fun (\<D>(oid \<mapsto> MapAssign m k v)) =
+         set_map_key (set_map_key (datalog.map_val_fun \<D>) m' k' None) m k (Some v)"
+  using assms
+  apply(subgoal_tac "datalog \<D> \<and> datalog (\<D>(oid \<mapsto> MapAssign m k v))", clarsimp) prefer 2
+  apply(simp add: db_extension.still_valid_database db_extension_datalog)
+  apply(rule ext, rule ext)
+  apply(clarsimp simp: datalog.map_val_fun_def set_map_key_def split!: if_split if_split_asm)
+  using map_assign_map_val apply blast
+  using datalog.map_val_functional map_assign_map_val apply blast
+(*
+  sledgehammer[no_smt_proofs]
+*)
+  oops
 
 (*********** List iteration skipping blank elements ***************)
 
