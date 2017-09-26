@@ -46,7 +46,7 @@ lemma (in list_spec) oid_list_sorted_base:
     using assms sorted_many_eq sorted_list_of_set
     by (metis distinct_length_2_or_more order.not_eq_order_implies_strict)
     
-lemma (in list_spec) oid_list_sorted:
+lemma (in list_spec) sorted_list_of_set_sorted:
   assumes "finite A" "sorted_list_of_set A = xs@x#y#ys"
   shows "x < y"
   using assms
@@ -63,6 +63,11 @@ lemma (in list_spec) oid_list_sorted:
    apply (simp add: sorted_list_of_set_remove)
    apply (metis order.not_eq_order_implies_strict sorted_append sorted_list_of_set sorted_many_eq)
   by (metis distinct_sorted_list_of_set)
+    
+lemma (in list_spec) oid_list_sorted:
+  assumes "finite (dom op_set)" "oid_list = xs@x#y#ys"
+  shows "x < y"
+  using assms oid_list_def sorted_list_of_set_sorted by fastforce
 
 lemma unique_previous:
   assumes "interp_list ops p1 = Some x"
