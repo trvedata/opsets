@@ -27,7 +27,6 @@ fun oid_reference :: "'oid list_op \<Rightarrow> 'oid" where
   "oid_reference (InsertAfter ref) = ref" |
   "oid_reference (Remove ref) = ref"
 
-
 locale list_spec =
   fixes op_set :: "'oid::{linorder} \<rightharpoonup> 'oid list_op"
   assumes ref_older: "op_set oid = Some oper \<Longrightarrow> oid_reference oper < oid"
@@ -40,12 +39,30 @@ definition (in list_spec) op_list :: "('oid \<times> 'oid list_op) list" where
 
 definition (in list_spec) next_elem :: "'oid \<rightharpoonup> 'oid" where
   "next_elem \<equiv> interp_list op_list"
-
-lemma (in list_spec) oid_list_sorted:
-  assumes "oid_list = xs@x#y#ys"
+ 
+lemma (in list_spec) oid_list_sorted_base:
+  assumes "finite A" "sorted_list_of_set A = [x, y]"
   shows "x < y"
-  using assms apply(simp add: oid_list_def sorted_list_of_set_def)
-  apply(induction rule: ) (* TODO... *)
+    using assms sorted_many_eq sorted_list_of_set
+    by (metis distinct_length_2_or_more order.not_eq_order_implies_strict)
+    
+lemma (in list_spec) oid_list_sorted:
+  assumes "finite A" "sorted_list_of_set A = xs@x#y#ys"
+  shows "x < y"
+  using assms
+  apply (induction ys arbitrary: A rule: rev_induct)
+   apply (induction xs arbitrary: A)
+    apply (simp add: oid_list_sorted_base)
+   apply clarsimp
+   apply (erule_tac x="A-{a}" in meta_allE)
+   apply clarsimp
+   apply (simp add: sorted_list_of_set_remove)
+   apply (erule_tac x="A-{xa}" in meta_allE)
+  apply clarsimp
+  apply (subgoal_tac "distinct (xs @ x # y # xsa @ [xa])")
+   apply (simp add: sorted_list_of_set_remove)
+   apply (metis order.not_eq_order_implies_strict sorted_append sorted_list_of_set sorted_many_eq)
+  by (metis distinct_sorted_list_of_set)
 
 lemma unique_previous:
   assumes "interp_list ops p1 = Some x"
