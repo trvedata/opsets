@@ -18,13 +18,16 @@ function camelCase(str,       i, pieces, result) {
     return result
 }
 
-function formatAtom(str,       i, matches, tokens, final, result) {
-    if (match(str, /^(\w+) < (\w+)$/, matches)) {
+function formatAtom(str,       i, matches, tokens, result) {
+    if (match(str, /^(\w+) *< *(\w+)$/, matches)) {
         return "\\mathit{" capitalise(matches[1]) "} < \\mathit{" capitalise(matches[2]) "}"
     }
+    if (match(str, /^(\w+) *> *(\w+)$/, matches)) {
+        return "\\mathit{" capitalise(matches[1]) "} > \\mathit{" capitalise(matches[2]) "}"
+    }
 
-    if (match(str, /^\\<D> +(\w+) *= *Some *\(?([^\)]+)\)?$/, matches)) {
-        return "\\mathit{" capitalise(matches[1]) "} \\mapsto " formatAtom(matches[2])
+    if (match(str, /^\\<D> +(\w+) *= *Some *\(?(\w+)([^\)]*)\)?$/, matches)) {
+        str = matches[2] " " matches[1] matches[3]
     }
 
     result = ""
@@ -38,22 +41,16 @@ function formatAtom(str,       i, matches, tokens, final, result) {
     patsplit(str, tokens, /[^ ]+/)
     for (i in tokens) {
         if (i == 1) {
-            result = result "\\mathrm{" camelCase(tokens[1]) "}"
-            final = ""
+            result = result "\\mathrm{" camelCase(tokens[1]) "}("
         } else {
-            if (i > 2) {
-                result = result ", "
-            } else {
-                result = result "("
-                final = ")"
-            }
+            if (i > 2) result = result ", "
             result = result "\\mathit{" capitalise(tokens[i]) "}"
         }
     }
-    return result final
+    return result ")"
 }
 
-/lbrakk/ {
+/\\<lbrakk>/ {
     if (match($0, /"\\<lbrakk>(.*)\\<rbrakk> *\\<Longrightarrow> *(.*)"/, rule) == 0) {
         print "Could not match line:", $0 > "/dev/stderr"
         next
@@ -63,7 +60,7 @@ function formatAtom(str,       i, matches, tokens, final, result) {
 
     patsplit(rule[1], body, /[^ ;]+[^;]*/)
     for (i in body) {
-        if (i > 1) latex = latex ",\n"
+        if (i > 1) latex = latex ",\\;\n"
         latex = latex "    " formatAtom(body[i])
     }
 
