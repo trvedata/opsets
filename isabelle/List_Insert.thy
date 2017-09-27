@@ -18,69 +18,77 @@ inductive has_child :: "'oid \<Rightarrow> bool" where
   "\<lbrakk>parent_child parent child\<rbrakk> \<Longrightarrow> has_child parent"
 
 inductive later_child :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>parent_child parent c;  parent_child parent p; c < p\<rbrakk> \<Longrightarrow> later_child parent c"
-
-inductive sibling :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>parent_child parent c1; parent_child parent c2\<rbrakk> \<Longrightarrow> sibling c1 c2"
-
-inductive later_sibling :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>sibling p l; l < p\<rbrakk> \<Longrightarrow> later_sibling p l"
-
-inductive later_sibling_2 :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>sibling p n; sibling p l; l < n; n < p\<rbrakk> \<Longrightarrow> later_sibling_2 p l"
-
-inductive has_next_sibling :: "'oid \<Rightarrow> bool" where
-  "\<lbrakk>later_sibling p n\<rbrakk> \<Longrightarrow> has_next_sibling p"
+  "\<lbrakk>parent_child parent child1; parent_child parent child2; child1 > child2\<rbrakk> \<Longrightarrow> later_child parent child2"
 
 inductive first_child :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>parent_child parent c; \<not> later_child parent c\<rbrakk> \<Longrightarrow> first_child parent c"
+  "\<lbrakk>parent_child parent child; \<not> later_child parent child\<rbrakk> \<Longrightarrow> first_child parent child"
+
+inductive sibling :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>parent_child parent child1; parent_child parent child2\<rbrakk> \<Longrightarrow> sibling child1 child2"
+
+inductive later_sibling :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>sibling sib1 sib2; sib1 > sib2\<rbrakk> \<Longrightarrow> later_sibling sib1 sib2"
+
+inductive later_sibling_2 :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
+  "\<lbrakk>sibling sib1 sib2; sibling sib1 sib3; sib1 > sib2; sib2 > sib3\<rbrakk> \<Longrightarrow> later_sibling_2 sib1 sib3"
 
 inductive next_sibling :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>later_sibling p n; \<not> later_sibling_2 p n\<rbrakk> \<Longrightarrow> next_sibling p n"
+  "\<lbrakk>later_sibling sib1 sib2; \<not> later_sibling_2 sib1 sib2\<rbrakk> \<Longrightarrow> next_sibling sib1 sib2"
+
+inductive has_next_sibling :: "'oid \<Rightarrow> bool" where
+  "\<lbrakk>later_sibling sib1 sib2\<rbrakk> \<Longrightarrow> has_next_sibling sib1"
 
 inductive next_sibling_anc :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>next_sibling s n\<rbrakk> \<Longrightarrow> next_sibling_anc s n" |
-  "\<lbrakk>\<not> has_next_sibling s; parent_child p s; next_sibling_anc p n\<rbrakk> \<Longrightarrow> next_sibling_anc s n"
+  "\<lbrakk>next_sibling start next\<rbrakk> \<Longrightarrow> next_sibling_anc start next" |
+  "\<lbrakk>\<not> has_next_sibling start; parent_child parent start; next_sibling_anc parent next\<rbrakk> \<Longrightarrow> next_sibling_anc start next"
 
 inductive has_sibling_anc :: "'oid \<Rightarrow> bool" where
-  "\<lbrakk>next_sibling_anc s n\<rbrakk> \<Longrightarrow> has_sibling_anc s"
+  "\<lbrakk>next_sibling_anc start next\<rbrakk> \<Longrightarrow> has_sibling_anc start"
 
 inductive next_elem :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "\<lbrakk>first_child p n\<rbrakk> \<Longrightarrow> next_elem p n" |
-  "\<lbrakk>is_list_elem p; \<not> has_child p; next_sibling_anc p n\<rbrakk> \<Longrightarrow> next_elem p n"
-  
-lemmas [intro] = next_elem.intros
-lemmas [intro] = has_sibling_anc.intros
-lemmas [intro] = next_sibling_anc.intros
-lemmas [intro] = next_sibling.intros
+  "\<lbrakk>first_child prev next\<rbrakk> \<Longrightarrow> next_elem prev next" |
+  "\<lbrakk>is_list_elem prev; \<not> has_child prev; next_sibling_anc prev next\<rbrakk> \<Longrightarrow> next_elem prev next"
+
+(*
+  grep '^inductive ' isabelle/List_Insert.thy |
+  sed -e 's/^inductive //' -e 's/ .*//' -e 's/^/lemmas [intro] = /' -e 's/$/.intros/'
+*)
+lemmas [intro] = is_list_elem.intros
+lemmas [intro] = is_list_parent.intros
+lemmas [intro] = parent_child.intros
+lemmas [intro] = has_child.intros
+lemmas [intro] = later_child.intros
 lemmas [intro] = first_child.intros
-lemmas [intro] = has_next_sibling.intros
-lemmas [intro] = later_sibling_2.intros
-lemmas [intro] = later_sibling.intros
 lemmas [intro] = sibling.intros
-lemmas [intro] = later_child.intros has_child.intros parent_child.intros
-lemmas [intro] = is_list_parent.intros is_list_elem.intros
+lemmas [intro] = later_sibling.intros
+lemmas [intro] = later_sibling_2.intros
+lemmas [intro] = next_sibling.intros
+lemmas [intro] = has_next_sibling.intros
+lemmas [intro] = next_sibling_anc.intros
+lemmas [intro] = has_sibling_anc.intros
+lemmas [intro] = next_elem.intros
 
-inductive_cases next_elem_elim [elim]: "next_elem oid opt"
+(*
+  grep 'lbrakk.*Longrightarrow' isabelle/List_Insert.thy |
+  sed -e 's/.*Longrightarrow> //' -e 's/".*//' |
+  uniq |
+  sed -e 's/^\([^ ]*\)/inductive_cases \1_elim [elim]: "\1/' -e 's/$/"/'
+*)
+inductive_cases is_list_elem_elim [elim]: "is_list_elem oid"
+inductive_cases is_list_parent_elim [elim]: "is_list_parent oid"
+inductive_cases parent_child_elim [elim]: "parent_child parent child"
+inductive_cases has_child_elim [elim]: "has_child parent"
+inductive_cases later_child_elim [elim]: "later_child parent child2"
+inductive_cases first_child_elim [elim]: "first_child parent child"
+inductive_cases sibling_elim [elim]: "sibling child1 child2"
+inductive_cases later_sibling_elim [elim]: "later_sibling sib1 sib2"
+inductive_cases later_sibling_2_elim [elim]: "later_sibling_2 sib1 sib3"
+inductive_cases next_sibling_elim [elim]: "next_sibling sib1 sib2"
+inductive_cases has_next_sibling_elim [elim]: "has_next_sibling sib1"
+inductive_cases next_sibling_anc_elim [elim]: "next_sibling_anc start next"
+inductive_cases has_sibling_anc_elim [elim]: "has_sibling_anc start"
+inductive_cases next_elem_elim [elim]: "next_elem prev next"
 
-inductive_cases has_sibling_anc_elim [elim]: "has_sibling_anc m"
-inductive_cases next_sibling_anc_elim [elim]: "next_sibling_anc m n"
-inductive_cases next_sibling_elim [elim]: "next_sibling m n"
-    
-inductive_cases first_child_elim [elim]: "first_child p n"
-
-inductive_cases has_next_sibling_elim [elim]: "has_next_sibling m"
-inductive_cases later_sibling_2_elim [elim]: "later_sibling_2 m n"
-inductive_cases later_sibling_elim [elim]: "later_sibling m n"
-inductive_cases sibling_elim [elim]: "sibling m n"
-  
-inductive_cases parent_child_elim [elim]: "parent_child p m"
-inductive_cases has_child_elim [elim]: "has_child p"
-inductive_cases later_child_elim [elim]: "later_child p n"
-  
-inductive_cases is_list_elem_elim [elim]: "is_list_elem p"
-inductive_cases is_list_parent_elim [elim]: "is_list_parent p"
-  
 end
 
 definition (in datalog) next_elem_rel :: "('oid \<times> 'oid) set" where
@@ -287,7 +295,7 @@ lemma (in datalog) later_sibling_2_interpolate:
   shows "\<exists>y. sibling x y \<and> sibling x z \<and> z < y \<and> y < x"
   using assms
   apply(induction rule: later_sibling_2.induct)
-  apply(rule_tac x=n in exI)
+  apply(rule_tac x=sib2 in exI)
   apply auto
   done
 
@@ -420,15 +428,15 @@ lemma insert_unchanged_sibling_anc_fwd:
   shows "datalog.next_sibling_anc (\<D>(y \<mapsto> InsertAfter x)) a b"
   using assms apply(induction rule: datalog.next_sibling_anc.induct[where \<D>=\<D>])
   using assms db_extension_datalog apply force+
-  apply(subgoal_tac "datalog.next_sibling (\<D>(y \<mapsto> InsertAfter x)) s n") prefer 2 
+  apply(subgoal_tac "datalog.next_sibling (\<D>(y \<mapsto> InsertAfter x)) start next") prefer 2 
   using insert_unchanged_next_sibling apply blast
   using datalog.next_sibling_anc.intros(1) db_extension.still_valid_database apply blast
-  apply(subgoal_tac "p \<noteq> y") prefer 2
+  apply(subgoal_tac "parent \<noteq> y") prefer 2
   apply(metis datalog.first_child_has_child datalog.has_child.intros datalog.parent_child_elim
     db_extension.still_valid_database db_extension_datalog insert_first_child insert_has_no_child
     insert_unchanged_has_child)
   apply clarsimp
-  apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) p s") prefer 2
+  apply(subgoal_tac "datalog.parent_child (\<D>(y \<mapsto> InsertAfter x)) parent start") prefer 2
   apply(metis (no_types, lifting) datalog.parent_child.cases datalog.parent_child.intros
     db_extension.still_valid_database db_extension_datalog is_list_parent_unchanged map_upd_Some_unfold)
   using datalog.next_sibling_anc.intros(2) db_extension.still_valid_database
@@ -444,10 +452,10 @@ lemma insert_unchanged_sibling_anc_back:
   using assms apply(induction rule: datalog.next_sibling_anc.induct[where \<D>="\<D>'"])
   using assms apply(simp add: db_extension.still_valid_database, simp)
   using datalog.next_sibling_anc.intros(1) db_extension_datalog insert_unchanged_next_sibling apply blast
-  apply(subgoal_tac "p \<noteq> y") prefer 2
+  apply(subgoal_tac "parent \<noteq> y") prefer 2
   using datalog.has_child.intros db_extension.still_valid_database insert_has_no_child apply blast
   apply clarsimp
-  apply(subgoal_tac "datalog.parent_child \<D> p s") prefer 2
+  apply(subgoal_tac "datalog.parent_child \<D> parent start") prefer 2
   apply(simp add: datalog.parent_child.simps db_extension.still_valid_database
     db_extension_datalog is_list_parent_unchanged)
   using datalog.next_sibling_anc.intros(2) db_extension_datalog
@@ -527,7 +535,7 @@ lemma insert_connect_next:
   using datalog.first_child_has_child db_extension.still_valid_database insert_has_no_child apply blast
   apply(rule datalog.next_sibling_anc_elim, assumption, assumption)
   using datalog.next_elem.intros(1) insert_next_sibling apply blast
-  apply(subgoal_tac "p = x", clarsimp) prefer 2
+  apply(subgoal_tac "parent = x", clarsimp) prefer 2
   using datalog.parent_child.cases apply fastforce
   apply(subgoal_tac "\<not> datalog.has_child \<D> x") prefer 2
   using insert_has_next_sibling apply blast
