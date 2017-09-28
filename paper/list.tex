@@ -19,6 +19,8 @@ We do this by arranging the operations into a tree, and traversing the tree in a
 The algorithm in this section is based on Attiya et al.'s timestamped insertion tree \cite{Attiya:2016kh}, which is similar to Grishchenko's causal tree \cite{Grishchenko:2014eh}.
 
 \begin{figure}
+\centering
+\begin{minipage}{8cm}
 \begin{align*}
 \mathit{OpSet} = \{ &
     \mathrm{makeList}(0),\; \mathrm{insertAfter}(5, 0) \\ &
@@ -26,9 +28,10 @@ The algorithm in this section is based on Attiya et al.'s timestamped insertion 
     \mathrm{insertAfter}(14, 13),\; \mathrm{insertAfter}(15, 14), \\&
     \mathrm{insertAfter}(17, 14),\; \mathrm{insertAfter}(23, 14) \}
 \end{align*}
-\centering
-\begin{tikzpicture}
-  \tikzstyle{every node}=[shape=circle,draw,minimum size=8mm]
+\end{minipage}
+\hspace{20pt}
+\begin{minipage}{6cm}
+\begin{tikzpicture}[level distance=10mm]
   \tikzstyle{edge from parent}=[draw,{Stealth[length=2.5mm]}-]
   \node {0}
     child {node {13}
@@ -42,6 +45,7 @@ The algorithm in this section is based on Attiya et al.'s timestamped insertion 
       child {node {9}}
     };
 \end{tikzpicture}
+\end{minipage}
 \caption{OpSet and corresponding tree representation of the list [13, 14, 23, 17, 15, 5, 9].}\label{fig:list-tree}
 \end{figure}
 
@@ -51,46 +55,54 @@ A makeList operation forms the root of this tree.
 The list order is determined by a depth-first pre-order traversal of this tree, ignoring the root node, and visiting any sibling nodes in order of descending oid.
 
 \begin{figure}
-\begin{align*}
-\mathit{nextElem} = \{ &
-   (0, 13),\; (13, 14),\; (14, 23),\; (23, 17),\\ &
-   (17, 15),\; (15, 5),\; (5, 9) \}
-\end{align*}
 \centering
+\[ \mathit{nextElem} = \{ (0, 13),\; (13, 14),\; (14, 23),\; (23, 17),\; (17, 15),\; (15, 5),\; (5, 9) \} \]
 \begin{tikzpicture}
-  \tikzstyle{every node}=[anchor=base,minimum width=6mm,text height=8pt,text depth=3pt]
-  \matrix [column sep={6mm,between origins},nodes=draw] {
-    \node      {0};  & \node (a1) {13}; &&
-    \node (a2) {13}; & \node (b1) {14}; &&
-    \node (b2) {14}; & \node (c1) {23}; &&
-    \node (c2) {23}; & \node (d1) {17}; && \node (d2) [draw=none] {\dots}; \\
+  \tikzstyle{every node}=[anchor=base,minimum width=7mm,text height=9pt,text depth=2pt]
+  \matrix [column sep={7mm,between origins},nodes=draw] {
+    \node (1a) {0};  & \node (1b) {13}; &&
+    \node (2a) {13}; & \node (2b) {14}; &&
+    \node (3a) {14}; & \node (3b) {23}; &&
+    \node (4a) {23}; & \node (4b) {17}; &&
+    \node (5a) {17}; & \node (5b) {15}; &&
+    \node (6a) {15}; & \node (6b) {5};  &&
+    \node (7a) {5};  & \node (7b) {9};  && \node (8a) [draw=none] {None}; \\
   };
-  \draw [->,thick] (a1) -- (a2);
-  \draw [->,thick] (b1) -- (b2);
-  \draw [->,thick] (c1) -- (c2);
-  \draw [->,thick] (d1) -- (d2);
+  \draw [->] (1b) -- (2a);
+  \draw [->] (2b) -- (3a);
+  \draw [->] (3b) -- (4a);
+  \draw [->] (4b) -- (5a);
+  \draw [->] (5b) -- (6a);
+  \draw [->] (6b) -- (7a);
+  \draw [->] (7b) -- (8a);
 \end{tikzpicture}
-\vskip 18pt
+\vskip 12pt
 After adding insertAfter(25, 13) to $\mathit{OpSet}$:
-\[ \mathit{nextElem}' = \mathit{nextElem} - \{(13, 14)\} \;\cup\; \{(13, 25),\; (25, 14)\} \]
 \begin{tikzpicture}
-  \tikzstyle{every node}=[anchor=base,minimum width=6mm,text height=8pt,text depth=3pt]
-  \matrix [column sep={6mm,between origins},nodes=draw,matrix anchor=west] at (0.9,1) {
+  \tikzstyle{every node}=[anchor=base,minimum width=7mm,text height=9pt,text depth=2pt]
+  \node [anchor=west] at (4,1) {$\mathit{nextElem}' = \mathit{nextElem} \;-\; \{(13, 14)\} \;\cup\; \{(13, 25),\; (25, 14)\}$};
+  \matrix [column sep={7mm,between origins},nodes=draw,matrix anchor=west] at (1,1) {
     \node (n1) {13}; & \node (n2) {25}; \\
   };
-  \matrix [column sep={6mm,between origins},nodes=draw,matrix anchor=west] at (0,0) {
-    \node      {0};  & \node (a1) {13}; &&
-    \node (a2) {13}; & \node (b1) {14}; &&
-    \node (b2) {14}; & \node (c1) {23}; &&
-    \node (c2) {23}; & \node (d1) {17}; && \node (d2) [draw=none] {\dots}; \\
+  \matrix [column sep={7mm,between origins},nodes=draw,matrix anchor=west] at (0,0) {
+    \node (1a) {0};  & \node (1b) {13}; &&
+    \node (2a) {25}; & \node (2b) {14}; &&
+    \node (3a) {14}; & \node (3b) {23}; &&
+    \node (4a) {23}; & \node (4b) {17}; &&
+    \node (5a) {17}; & \node (5b) {15}; &&
+    \node (6a) {15}; & \node (6b) {5};  &&
+    \node (7a) {5};  & \node (7b) {9};  && \node (8a) [draw=none] {None}; \\
   };
-  \draw [->,thick] (a1.east) .. controls (2.3,0) and (0,1) .. (n1.west);
-  \draw [->,thick] (n2.east) .. controls (3.3,1) and (0.9,0) .. (a2.west);
-  \draw [->,thick] (b1) -- (b2);
-  \draw [->,thick] (c1) -- (c2);
-  \draw [->,thick] (d1) -- (d2);
+  \draw [->] (1b.east) .. controls (2.7,0) and (0,1) .. (n1.west);
+  \draw [->] (n2.east) .. controls (3.6,1) and (1.2,0) .. (2a.west);
+  \draw [->] (2b) -- (3a);
+  \draw [->] (3b) -- (4a);
+  \draw [->] (4b) -- (5a);
+  \draw [->] (5b) -- (6a);
+  \draw [->] (6b) -- (7a);
+  \draw [->] (7b) -- (8a);
 \end{tikzpicture}
-\caption{The nextElem relation describes the order of list elements similarly to a linked list.}\label{fig:next-elem}
+\caption{The nextElem relation derived from the OpSet in Figure~\ref{fig:list-tree}. It describes the order of list elements similarly to a linked list.}\label{fig:next-elem}
 \end{figure}
 
 \begin{figure*}
@@ -105,9 +117,3 @@ More formally,
 Figure~\ref{fig:list-insert-datalog} gives a Datalog query that expresses this traversal.
 For readers who are unfamiliar with Datalog, it can informally be read as follows: if all predicates on the right-hand side of an arrow can be satisfied by some variable assignment, then we can conclude that the left-hand side is also true.
 Later rules build upon earlier rules to create more complex constructions.
-
-\begin{figure*}
-\centering
-\input{rga-example}
-\caption{RGA example}\label{fig.two-lists}
-\end{figure*}
