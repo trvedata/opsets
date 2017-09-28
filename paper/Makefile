@@ -9,7 +9,7 @@ all:	opsets.pdf
 %.bbl:	references.bib %.aux
 	bibtex $(@:.bbl=)
 
-%.aux:	*.tex
+%.aux:	*.tex list-insert.tex
 	pdflatex $(@:.aux=)
 
 %-arxiv.tex: %.tex %.bbl

@@ -7,7 +7,10 @@
 \usepackage{hyperref}
 \usepackage[numbers,sort]{natbib}
 \usepackage{amsmath}
-\hyphenation{da-ta-cen-ter da-ta-cen-ters}
+\usepackage{setspace}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\hyphenation{da-ta-cen-ter da-ta-cen-ters time-stamp time-stamps time-stamped Grish-chen-ko}
 \frenchspacing
 
 \begin{document}
@@ -27,13 +30,13 @@ However, unconstrained concurrent manipulation may introduce inconsistencies tha
 Thus, various approaches for providing \emph{consistency guarantees} have been developed, ensuring that the data structure continues to obey certain invariants or semantics under concurrent access. For example:
 
 \begin{description}
-\item[Transaction isolation] in databases restricts the degree to which concurrent transactions can affect each other while accessing the same database.
+\item[Transaction isolation] in databases restricts the degree to which concurrently executing transactions can affect each other while accessing the same database.
 The strongest isolation level, \emph{serializability}, ensures that transactions behave as if there were no concurrency at all, i.e.\ as if transactions were executed serially, one at a time.
 
 \item[Conflict-free Replicated Data Types (CRDTs)] allow each participant to modify a local copy (\emph{replica}) of a shared data structure without waiting for communication with other replicas.
 This has the consequence that the state of replicas may temporarily diverge, but the definition of CRDTs ensures that all replicas eventually converge towards a consistent state.
 
-\item[Operational Transformation (OT)] algorithms are designed for several users who are collaboratively editing a shared document, as implemented for example in Google Docs.
+\item[Operational Transformation (OT)] algorithms are designed for several users who are concurrently editing a shared document, as implemented for example in Google Docs.
 As with CRDTs, OT allows each user's changes to be applied immediately to their local copy, while ensuring that other users' concurrent edits can be integrated in a consistent way.
 \end{description}
 
@@ -61,14 +64,9 @@ Furthermore, we demonstrate that our correctness properties capture intuitive re
 \end{itemize}
 
 \input{approach}
+\input{list}
+\input{assign}
 \input{relwork}
-
-\begin{figure*}
-\begin{align*}
-\input{list-insert}
-\end{align*}
-\caption{Datalog rules for an ordered list (insertion only).}
-\end{figure*}
 
 {\footnotesize
 \bibliographystyle{plainnat}

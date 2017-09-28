@@ -30,6 +30,7 @@ Although such a system would not be useful in practice, the definition of eventu
 \item In a system that allows nodes to make progress while they are partitioned from other nodes, it is inevitable that the local state of individual nodes might diverge due to concurrent modifications.
 Such divergent states must then be merged at a later time, when communication between the nodes is restored.
 Even if we require that this merge operation does not discard data that has been written, eventual consistency does not specify which states should be considered valid results of the merge operation.
+We show in Section~\ref{sec:list} how such under-specification can lead to undesirable outcomes.
 \end{itemize}
 
 \subsection{Introducing OpSets}\label{sec:opsets-intro}
@@ -50,7 +51,7 @@ Whenever a node receives an operation from another node, that operation is also 
 Any operations that are lost in the network are retransmitted as necessary.
 Operations remain immutable throughout this process.
 
-Thus, the OpSet is a monotonically growing set of operations, and every operation is eventually contained in the OpSet of every node from which it is not permanently partitioned.
+Thus, the OpSet at each node is a monotonically growing set of operations, and every operation is eventually contained in the OpSet of every node from which it is not permanently partitioned.
 (To deal with unbounded growth, we discuss garbage collection later in this paper.)
 Any two communicating nodes can merge their OpSets using the standard set union, which is commutative, associative, and idempotent, ensuring that communicating nodes converge towards the same OpSet contents.
 
@@ -87,7 +88,7 @@ However, the OpSets model enables us to reason about operation semantics in a se
 
 We previously required that every operation has a unique identifier.
 We now assume that we also have a total ordering on operation identifiers, and that this total order is a linear extension of the partial order that captures their causal dependencies (the \emph{happens-before} relation).
-That is, whenever a node generates a new operation, the identifier of the new operation must be greater than that of any existing operation in the OpSet of the node generating the new operation.
+That is, whenever a node changes the shared data and generates a new operation, the identifier of the new operation must be greater than that of any existing operation in the OpSet of the node generating the new operation.
 This requirement can easily be met by using Lamport timestamps \cite{Lamport:1978jq} as identifiers.
 
 Now observe that for any OpSet there exists a unique sequence of operations, containing all operations of the OpSet in ascending order of their identifier.
