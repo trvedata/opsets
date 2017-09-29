@@ -26,7 +26,93 @@ definition interp_list :: "('oid \<times> 'oid list_op) list \<Rightarrow> ('oid
 fun oid_reference :: "'oid list_op \<Rightarrow> 'oid" where
   "oid_reference (InsertAfter ref) = ref" |
   "oid_reference (Remove ref) = ref"
+  
+locale list_spec =
+  fixes op_list :: "('oid::{linorder} \<times> 'oid list_op) list"
+  assumes op_sorted_list: "sorted (map fst op_list)"
+    and distinct_oids: "distinct (map fst op_list)"
+    and ref_older: "(oid, oper) \<in> set op_list \<Longrightarrow> oid_reference oper < oid"
+context list_spec begin
+  
+definition op_set :: "_" where
+  "op_set \<equiv> set op_list"
+  
+definition elems :: "('oid \<times> 'oid list_op) list" where
+  "elems \<equiv> filter (\<lambda>(_, oper). case oper of InsertAfter x \<Rightarrow> True | _ \<Rightarrow> False ) op_list"
+  
+definition next_elem :: "'oid \<rightharpoonup> 'oid" where
+  "next_elem \<equiv> interp_list op_list"
+  
+inductive next_elem_tc :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" (infix "\<sqsubset>" 50) where
+  next_elem_tcI1: "next_elem a = Some b \<Longrightarrow> a \<sqsubset> b " |
+  next_elem_tcI2: "a \<sqsubset> b \<Longrightarrow> next_elem b = Some c \<Longrightarrow> a \<sqsubset> c"
+  
+inductive_cases next_elem_tcE [elim]: "a \<sqsubset> b"
+  thm next_elem_tcE
 
+end
+  
+lemma list_spec_rm_last: "list_spec (xs @[x]) \<Longrightarrow> list_spec xs"
+  apply (clarsimp simp: list_spec_def)
+  using sorted_append by blast
+    
+lemma next_elem_in_opset: "list_spec A \<Longrightarrow> list_spec.next_elem A a = Some b \<Longrightarrow> a \<in> fst ` set A"
+  apply (induct A rule: rev_induct)
+   apply (simp add: list_spec.next_elem_def interp_list_def insert_after_def)
+  apply clarsimp
+  apply (frule list_spec_rm_last)
+  apply clarsimp
+  apply (case_tac ba)
+   apply (clarsimp simp add: list_spec.next_elem_def interp_list_def insert_after_def)
+   apply (case_tac "a=aa")
+    apply force
+   apply clarsimp
+   apply (case_tac "a=x1")
+    apply clarsimp
+    
+  sorry
+
+lemma "list_spec.next_elem_tc A a b \<Longrightarrow> list_spec A \<Longrightarrow> a \<in> (fst ` set A)"
+  apply (erule list_spec.next_elem_tc.induct[rotated])
+    prefer 3
+    apply simp
+  prefer 2
+   apply force
+    using next_elem_in_opset
+  apply (force simp add: list_spec.next_elem_def interp_list_def insert_after_def)
+done
+    
+  
+lemma "list_spec.next_elem_tc A a b \<Longrightarrow> list_spec A \<Longrightarrow> list_spec (A@[(oid, InsertAfter ref)]) \<Longrightarrow> list_spec.next_elem_tc (A@[(oid, InsertAfter ref)]) a b" 
+
+  apply (erule list_spec.next_elem_tc.cases)
+    apply assumption
+   apply clarsimp
+   apply (case_tac "a=ref")
+    prefer 2
+   apply (rule list_spec.next_elem_tcI1)
+     apply assumption
+    apply (frule list_spec_rm_last)
+    apply (simp add: list_spec.next_elem_def interp_list_def)
+    apply (unfold insert_after_def)
+    apply clarsimp
+
+    apply (subgoal_tac "a \<noteq> oid")
+     apply force
+  using list_spec.distinct_oids 
+    
+
+  
+lemma "list_spec A \<Longrightarrow> list_spec B \<Longrightarrow> (set A) \<subseteq> (set B) \<Longrightarrow> list_spec.next_elem_tc A a b \<Longrightarrow> list_spec.next_elem_tc (list_spec.elems B) a b" 
+  apply (induct A rule: rev_induct)
+   apply simp
+     apply (erule list_spec.next_elem_tcE[rotated])
+     apply (simp add: list_spec.next_elem_def interp_list_def)+
+
+   apply clarsimp
+  apply (erule list_spec.next_elem_tcE[rotated])
+    apply (subgoal_tac "list_spec.next_elem xs a = Some b")
+    
 locale list_spec =
   fixes op_set :: "'oid::{linorder} \<rightharpoonup> 'oid list_op"
   assumes ref_older: "op_set oid = Some oper \<Longrightarrow> oid_reference oper < oid"
@@ -40,6 +126,23 @@ definition (in list_spec) op_list :: "('oid \<times> 'oid list_op) list" where
 
 definition (in list_spec) next_elem :: "'oid \<rightharpoonup> 'oid" where
   "next_elem \<equiv> interp_list op_list"
+  
+definition (in list_spec) elems :: "('oid \<times> 'oid list_op) list" where
+  "elems \<equiv> filter (\<lambda>(_, oper). case oper of InsertAfter x \<Rightarrow> True | _ \<Rightarrow> False ) op_list"
+  
+inductive (in list_spec) next_elem_tc :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" (infix "\<sqsubset>" 50) where
+  "next_elem a = Some b \<Longrightarrow> a \<sqsubset> b " |
+  "a \<sqsubset> b \<Longrightarrow> next_elem b = Some c \<Longrightarrow> a \<sqsubset> c"
+  
+lemma (in list_spec) next_elem_tc_tran: "a \<sqsubset> b \<Longrightarrow> b \<sqsubset> c \<Longrightarrow> a \<sqsubset> c"
+  oops
+find_consts name: next_elem_tc
+
+
+lemma "(map_of A) \<subseteq>\<^sub>m B \<Longrightarrow> list_spec.next_elem_tc (map_of A) a b \<Longrightarrow> list_spec.next_elem_tc (map_of (list_spec.elems B)) a b" 
+  apply (induct A)
+   apply simp
+    oops
  
 lemma sorted_list_of_set_base:
   assumes "finite A" "sorted_list_of_set A = [x, y]"
@@ -84,6 +187,31 @@ lemma (in list_spec) dom_member_oid_list:
   shows "\<exists>xs ys. oid_list = xs@x#ys"
   by (simp add: assms finite_opset oid_list_def split_list)
 
+(*
+let A subset opset
+  assumes x < y in listA
+A subset B subset opset
+  then  x < y in listB
+*)
+    
+(*
+let A subset opset
+  assumes x < y in listA
+A subset B subset opset
+  then  x < y in listB
+*)
+    
+(*
+  exteded xs = xs + extra opers
+
+  assumes x < y in some list
+  then  x < y in extended list 
+*)
+
+lemma (in list_spec)
+  
+    
+    
 lemma oid_list_last_none:
   assumes "list_spec.oid_list op_set = xs @ [x]"
     and "list_spec op_set"
