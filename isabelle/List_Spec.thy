@@ -84,7 +84,6 @@ done
     
   
 lemma "list_spec.next_elem_tc A a b \<Longrightarrow> list_spec A \<Longrightarrow> list_spec (A@[(oid, InsertAfter ref)]) \<Longrightarrow> list_spec.next_elem_tc (A@[(oid, InsertAfter ref)]) a b" 
-
   apply (erule list_spec.next_elem_tc.cases)
     apply assumption
    apply clarsimp
@@ -100,8 +99,7 @@ lemma "list_spec.next_elem_tc A a b \<Longrightarrow> list_spec A \<Longrightarr
     apply (subgoal_tac "a \<noteq> oid")
      apply force
   using list_spec.distinct_oids 
-    
-
+oops
   
 lemma "list_spec A \<Longrightarrow> list_spec B \<Longrightarrow> (set A) \<subseteq> (set B) \<Longrightarrow> list_spec.next_elem_tc A a b \<Longrightarrow> list_spec.next_elem_tc (list_spec.elems B) a b" 
   apply (induct A rule: rev_induct)
@@ -112,36 +110,6 @@ lemma "list_spec A \<Longrightarrow> list_spec B \<Longrightarrow> (set A) \<sub
    apply clarsimp
   apply (erule list_spec.next_elem_tcE[rotated])
     apply (subgoal_tac "list_spec.next_elem xs a = Some b")
-    
-locale list_spec =
-  fixes op_set :: "'oid::{linorder} \<rightharpoonup> 'oid list_op"
-  assumes ref_older: "op_set oid = Some oper \<Longrightarrow> oid_reference oper < oid"
-    and finite_opset: "finite (dom op_set)"
-
-definition (in list_spec) oid_list :: "'oid list" where
-  "oid_list \<equiv> sorted_list_of_set (dom op_set)"
-
-definition (in list_spec) op_list :: "('oid \<times> 'oid list_op) list" where
-  "op_list \<equiv> map (\<lambda>oid. (oid, the (op_set oid))) oid_list"
-
-definition (in list_spec) next_elem :: "'oid \<rightharpoonup> 'oid" where
-  "next_elem \<equiv> interp_list op_list"
-  
-definition (in list_spec) elems :: "('oid \<times> 'oid list_op) list" where
-  "elems \<equiv> filter (\<lambda>(_, oper). case oper of InsertAfter x \<Rightarrow> True | _ \<Rightarrow> False ) op_list"
-  
-inductive (in list_spec) next_elem_tc :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" (infix "\<sqsubset>" 50) where
-  "next_elem a = Some b \<Longrightarrow> a \<sqsubset> b " |
-  "a \<sqsubset> b \<Longrightarrow> next_elem b = Some c \<Longrightarrow> a \<sqsubset> c"
-  
-lemma (in list_spec) next_elem_tc_tran: "a \<sqsubset> b \<Longrightarrow> b \<sqsubset> c \<Longrightarrow> a \<sqsubset> c"
-  oops
-find_consts name: next_elem_tc
-
-
-lemma "(map_of A) \<subseteq>\<^sub>m B \<Longrightarrow> list_spec.next_elem_tc (map_of A) a b \<Longrightarrow> list_spec.next_elem_tc (map_of (list_spec.elems B)) a b" 
-  apply (induct A)
-   apply simp
     oops
  
 lemma sorted_list_of_set_base:
@@ -167,11 +135,22 @@ lemma sorted_list_of_set_sorted:
    apply (simp add: sorted_list_of_set_remove)
    apply (metis order.not_eq_order_implies_strict sorted_append sorted_list_of_set sorted_many_eq)
   by (metis distinct_sorted_list_of_set)
+   
+lemma (in list_spec) finite_opset: "finite opset"
+  sorry
     
 lemma (in list_spec) oid_list_sorted:
   assumes "oid_list = xs@x#y#ys"
   shows "x < y"
-  using assms finite_opset oid_list_def sorted_list_of_set_sorted by fastforce
+  using assms finite_opset  sorted_list_of_set_sorted by fastforce
+    
+    
+lemma (in list_spec) unique_previous:
+  assumes "next_elem p1 = Some x"
+    and "next_elem p2 = Some x"
+  shows "p1 = p2"
+  using assms 
+    apply (auto simp: next_elem_def)
 
 lemma (in list_spec) oid_list_set_dom:
   shows "set oid_list = dom op_set"
