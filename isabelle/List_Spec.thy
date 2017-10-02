@@ -29,14 +29,15 @@ fun oid_reference :: "'oid list_op \<Rightarrow> 'oid" where
   
 locale list_spec =
   fixes op_list :: "('oid::{linorder} \<times> 'oid list_op) list"
-  assumes op_sorted_list: "sorted (map fst op_list)"
+  assumes sorted_oids: "sorted (map fst op_list)"
     and distinct_oids: "distinct (map fst op_list)"
     and ref_older: "(oid, oper) \<in> set op_list \<Longrightarrow> oid_reference oper < oid"
+
 context list_spec begin
   
-definition op_set :: "_" where
+definition op_set :: "('oid::{linorder} \<times> 'oid list_op) set" where
   "op_set \<equiv> set op_list"
-  
+
 definition elems :: "('oid \<times> 'oid list_op) list" where
   "elems \<equiv> filter (\<lambda>(_, oper). case oper of InsertAfter x \<Rightarrow> True | _ \<Rightarrow> False ) op_list"
   
@@ -48,29 +49,69 @@ inductive next_elem_tc :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" (infix "\
   next_elem_tcI2: "a \<sqsubset> b \<Longrightarrow> next_elem b = Some c \<Longrightarrow> a \<sqsubset> c"
   
 inductive_cases next_elem_tcE [elim]: "a \<sqsubset> b"
-  thm next_elem_tcE
 
 end
   
-lemma list_spec_rm_last: "list_spec (xs @[x]) \<Longrightarrow> list_spec xs"
-  apply (clarsimp simp: list_spec_def)
+lemma list_spec_rm_last:
+  assumes "list_spec (xs @ [x])"
+  shows "list_spec xs"
+  using assms apply (clarsimp simp: list_spec_def)
   using sorted_append by blast
-    
-lemma next_elem_in_opset: "list_spec A \<Longrightarrow> list_spec.next_elem A a = Some b \<Longrightarrow> a \<in> fst ` set A"
-  apply (induct A rule: rev_induct)
-   apply (simp add: list_spec.next_elem_def interp_list_def insert_after_def)
-  apply clarsimp
-  apply (frule list_spec_rm_last)
-  apply clarsimp
-  apply (case_tac ba)
-   apply (clarsimp simp add: list_spec.next_elem_def interp_list_def insert_after_def)
-   apply (case_tac "a=aa")
-    apply force
-   apply clarsimp
-   apply (case_tac "a=x1")
-    apply clarsimp
-    
-  sorry
+
+lemma insert_next_1:
+  assumes "list_spec (op_list @ [(oid, InsertAfter ref)])"
+  shows "list_spec.next_elem (op_list @ [(oid, InsertAfter ref)]) ref = Some oid"
+  using assms apply(simp add: list_spec.next_elem_def interp_list_def insert_after_def)
+  using list_spec.ref_older by fastforce
+
+lemma insert_next_2:
+  assumes "list_spec (op_list @ [(oid, InsertAfter ref)])"
+  shows "list_spec.next_elem (op_list @ [(oid, InsertAfter ref)]) oid =
+         list_spec.next_elem op_list ref"
+  using assms apply(simp add: list_spec.next_elem_def interp_list_def insert_after_def)
+  by (metis interp_list_def list_spec.next_elem_def list_spec_rm_last)
+
+lemma insert_next_3:
+  assumes "list_spec (op_list @ [(oid, InsertAfter ref)])"
+    and "x \<noteq> oid" and "x \<noteq> ref"
+  shows "list_spec.next_elem (op_list @ [(oid, InsertAfter ref)]) x =
+         list_spec.next_elem op_list x"
+  using assms apply(simp add: list_spec.next_elem_def interp_list_def insert_after_def)
+  by (metis interp_list_def list_spec.next_elem_def list_spec_rm_last)
+
+lemma unique_previous:
+  assumes "list_spec op_list"
+    and "list_spec.next_elem op_list p1 = Some x"
+    and "list_spec.next_elem op_list p2 = Some x"
+  shows "p1 = p2"
+  using assms apply(induct op_list rule: rev_induct)
+  apply(simp add: list_spec.next_elem_def interp_list_def)
+  apply(frule list_spec_rm_last, clarsimp)
+  apply(case_tac b)
+  apply(case_tac "p1=x1")
+
+
+lemma remove_next_1:
+  assumes "list_spec (op_list @ [(oid, Remove ref)])"
+    and "list_spec.next_elem op_list prev = Some ref"
+  shows "list_spec.next_elem (op_list @ [(oid, Remove ref)]) prev =
+         list_spec.next_elem op_list ref"
+  using assms apply(simp add: list_spec.next_elem_def interp_list_def)
+  apply(subgoal_tac "\<exists>p. foldl interp Map.empty op_list p = Some ref") prefer 2
+  apply(metis interp_list_def list_spec.next_elem_def list_spec_rm_last)
+  apply(simp add: remove_def)
+  oops
+
+lemma next_elem_in_opset:
+  assumes "list_spec op_list"
+    and "list_spec.next_elem op_list a = Some b"
+  shows "{a, b} \<subseteq> set (map fst op_list) \<union> set (map (oid_reference \<circ> snd) op_list)"
+  using assms apply (induct op_list arbitrary: a b rule: rev_induct)
+  apply(simp add: list_spec.next_elem_def interp_list_def insert_after_def)
+  apply(frule list_spec_rm_last, clarsimp)
+  apply(case_tac b, clarsimp)
+  apply(metis insert_next_1 insert_next_2 insert_next_3 option.sel)
+
 
 lemma "list_spec.next_elem_tc A a b \<Longrightarrow> list_spec A \<Longrightarrow> a \<in> (fst ` set A)"
   apply (erule list_spec.next_elem_tc.induct[rotated])
