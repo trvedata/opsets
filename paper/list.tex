@@ -80,13 +80,13 @@ The list order is determined by a depth-first pre-order traversal of this tree, 
 After adding insertAfter(25, 13) to $\mathit{OpSet}$:
 \begin{tikzpicture}
   \tikzstyle{every node}=[anchor=base,minimum width=7mm,text height=9pt,text depth=2pt]
-  \node [anchor=west] at (4,1) {$\mathit{nextElem}' = \mathit{nextElem} \;-\; \{(13, 14)\} \;\cup\; \{(13, 25),\; (25, 14)\}$};
+  \node [anchor=west] at (6,1) {$\mathit{nextElem}' = \mathit{nextElem} \;-\; \{(13, 14)\} \;\cup\; \{(13, 25),\; (25, 14)\}$};
   \matrix [column sep={7mm,between origins},nodes=draw,matrix anchor=west] at (1,1) {
-    \node (n1) {13}; & \node (n2) {25}; \\
+    \node (n1) {13}; & \node (n2) {25}; &&
+    \node (n3) {25}; & \node (n4) {14}; \\
   };
   \matrix [column sep={7mm,between origins},nodes=draw,matrix anchor=west] at (0,0) {
-    \node (1a) {0};  & \node (1b) {13}; &&
-    \node (2a) {25}; & \node (2b) {14}; &&
+    \node (1a) {0};  & \node (1b) {13}; &&&&&
     \node (3a) {14}; & \node (3b) {23}; &&
     \node (4a) {23}; & \node (4b) {17}; &&
     \node (5a) {17}; & \node (5b) {15}; &&
@@ -94,8 +94,8 @@ After adding insertAfter(25, 13) to $\mathit{OpSet}$:
     \node (7a) {5};  & \node (7b) {9};  && \node (8a) [draw=none] {None}; \\
   };
   \draw [->] (1b.east) .. controls (2.7,0) and (0,1) .. (n1.west);
-  \draw [->] (n2.east) .. controls (3.6,1) and (1.2,0) .. (2a.west);
-  \draw [->] (2b) -- (3a);
+  \draw [->] (n2) -- (n3);
+  \draw [->] (n4.east) .. controls (5.8,1) and (3.2,0) .. (3a.west);
   \draw [->] (3b) -- (4a);
   \draw [->] (4b) -- (5a);
   \draw [->] (5b) -- (6a);
