@@ -1,0 +1,55 @@
+\mathrm{isMap}(\mathit{Oid}) \leftarrow\; &
+    \mathrm{makeMap}(\mathit{Oid}).\\
+\mathrm{isVal}(\mathit{Oid}) \leftarrow\; &
+    \mathrm{makeVal}(\mathit{Oid}, \mathit{V}).\\
+\mathrm{refTarget}(\mathit{Oid}, \mathit{V}) \leftarrow\; &
+    \mathrm{listAssign}(\mathit{Oid}, \mathit{El}, \mathit{V}),\;
+    \mathrm{isListElem}(\mathit{El}).\\
+\mathrm{refTarget}(\mathit{Oid}, \mathit{V}) \leftarrow\; &
+    \mathrm{mapAssign}(\mathit{Oid}, \mathit{M}, \mathit{K}, \mathit{V}),\;
+    \mathrm{isMap}(\mathit{M}).\\
+\mathrm{stolenRef}(\mathit{O1}, \mathit{V}) \leftarrow\; &
+    \mathrm{refTarget}(\mathit{O1}, \mathit{V}),\;
+    \mathrm{refTarget}(\mathit{O2}, \mathit{V}),\;
+    \mathit{O1} < \mathit{O2}.\\
+\mathrm{latestRef}(\mathit{Oid}, \mathit{V}) \leftarrow\; &
+    \mathrm{refTarget}(\mathit{Oid}, \mathit{V}),\;
+    \neg\;\mathrm{stolenRef}(\mathit{Oid}, \mathit{V}).\\
+\mathrm{mapUpdate}(\mathit{Oid}, \mathit{M}, \mathit{K}) \leftarrow\; &
+    \mathrm{mapAssign}(\mathit{Oid}, \mathit{M}, \mathit{K}, \mathit{V}),\;
+    \mathrm{isMap}(\mathit{M}).\\
+\mathrm{mapUpdate}(\mathit{Oid}, \mathit{M}, \mathit{K}) \leftarrow\; &
+    \mathrm{mapRemove}(\mathit{Oid}, \mathit{M}, \mathit{K}),\;
+    \mathrm{isMap}(\mathit{M}).\\
+\mathrm{oldMapUpdate}(\mathit{O1}, \mathit{M}, \mathit{K}) \leftarrow\; &
+    \mathrm{mapUpdate}(\mathit{O1}, \mathit{M}, \mathit{K}),\;
+    \mathrm{mapUpdate}(\mathit{O2}, \mathit{M}, \mathit{K}),\;
+    \mathit{O1} < \mathit{O2}.\\
+\mathrm{listUpdate}(\mathit{Oid}, \mathit{El}) \leftarrow\; &
+    \mathrm{listAssign}(\mathit{Oid}, \mathit{El}, \mathit{T}),\;
+    \mathrm{isListElem}(\mathit{El}).\\
+\mathrm{listUpdate}(\mathit{Oid}, \mathit{El}) \leftarrow\; &
+    \mathrm{listRemove}(\mathit{Oid}, \mathit{El}),\;
+    \mathrm{isListElem}(\mathit{El}).\\
+\mathrm{oldListUpdate}(\mathit{O1}, \mathit{El}) \leftarrow\; &
+    \mathrm{listUpdate}(\mathit{O1}, \mathit{El}),\;
+    \mathrm{listUpdate}(\mathit{O2}, \mathit{El}),\;
+    \mathit{O1} < \mathit{O2}.\\
+\mathrm{latestMapUpdate}(\mathit{Oid}, \mathit{M}, \mathit{K}) \leftarrow\; &
+    \mathrm{mapUpdate}(\mathit{Oid}, \mathit{M}, \mathit{K}),\;
+    \neg\;\mathrm{oldMapUpdate}(\mathit{Oid}, \mathit{M}, \mathit{K}).\\
+\mathrm{mapVal}(\mathit{M}, \mathit{K}, \mathit{V}) \leftarrow\; &
+    \mathrm{mapAssign}(\mathit{Oid}, \mathit{M}, \mathit{K}, \mathit{V}),\;
+    \mathrm{latestMapUpdate}(\mathit{Oid}, \mathit{M}, \mathit{K}),\;
+    \mathrm{latestRef}(\mathit{Oid}, \mathit{V}).\\
+\mathrm{hasMapVal}(\mathit{M}, \mathit{K}) \leftarrow\; &
+    \mathrm{mapVal}(\mathit{M}, \mathit{K}, \mathit{V}).\\
+\mathrm{latestListUpdate}(\mathit{Oid}, \mathit{El}) \leftarrow\; &
+    \mathrm{listUpdate}(\mathit{Oid}, \mathit{El}),\;
+    \neg\;\mathrm{oldListUpdate}(\mathit{Oid}, \mathit{El}).\\
+\mathrm{listVal}(\mathit{El}, \mathit{V}) \leftarrow\; &
+    \mathrm{listAssign}(\mathit{Oid}, \mathit{El}, \mathit{V}),\;
+    \mathrm{latestListUpdate}(\mathit{Oid}, \mathit{El}),\;
+    \mathrm{latestRef}(\mathit{Oid}, \mathit{V}).\\
+\mathrm{hasListVal}(\mathit{El}) \leftarrow\; &
+    \mathrm{listVal}(\mathit{El}, \mathit{V}).\\
