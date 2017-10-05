@@ -16,6 +16,7 @@
 \begin{document}
 \sloppy
 \title{OpSets: Concurrent Datatypes with Sequential Specifications}
+%\title{OpSets: Sequential Specifications for Concurrent Editing}
 \author{}
 \date{}
 \maketitle
@@ -42,26 +43,27 @@ As with CRDTs, OT allows each user's changes to be applied immediately to their 
 
 We discuss these techniques in more detail in Section~\ref{sec:relwork}.
 Despite decades of research in the above topics, consistency mechanisms for concurrent data access remain poorly understood, and tools for reasoning about them (both formally and informally) are subtle and error-prone.
+As we show in the following sections, many published algorithms exhibit serious anomalies, or even fail to ensure convergence of replicas, leaving the system in a permanently inconsistent state.
 
 In this work we introduce \emph{Operation Sets} (or \emph{OpSets} for short), a novel approach for describing and reasoning about algorithms for concurrent data access and manipulation.
-The OpSets approach trivially ensures that replicas converge, and it simplifies the tasks of extending algorithms and verifying more complex correctness properties.
-It builds upon existing work on CRDTs, and extends that work by incorporating ideas from database query languages, transaction isolation, and operational transformation.
+We go beyond merely ensuring replica convergence, and show how this approach simplifies the tasks of specifying and verifying more complex correctness properties.
 
 Our contributions in this paper are as follows:
 
 \begin{itemize}
-\item We demonstrate how to express a variety of abstract datatypes (maps, lists, trees, and registers) as declarative definitions on top of a simple abstraction, the OpSet.
-By using the Datalog query language for our definitions, we strike an effective compromise between two competing requirements: being abstract enough to make formal verification feasible, and being concrete enough to enable efficient practical implementations.
+\item We introduce the OpSet, a new abstraction for specifying and reasoning about the consistency properties of concurrently editable data structures.
+On top of this abstraction, we specify a variety of abstract datatypes (maps, lists, trees, and registers), and we demonstrate that our specification is both simpler and more precise than previous efforts to specify the semantics of these data structures.
 
-\item We define correctness properties of the above abstract datatypes using a generalised notion of serializability, and we use the Isabelle/HOL proof assistant to formally verify that our implementation satisfies those correctness properties.
-Furthermore, we demonstrate that our correctness properties capture intuitive requirements by giving counter-examples for several existing algorithms in the literature, showing that they do not satisfy the required semantics.
+\item We demonstrate that our datatype specification captures an important correctness property that has been overlooked by prior work in this area.
+Using our specification we review a selection of algorithms from the literature, and identify those that satisfy this correctness property.
 
-\item To demonstrate the ease of extending OpSet definitions with new operations, we provide an implementation of a \emph{move} operation for lists and trees~-- an operation that is not supported by prior CRDT algorithms~-- and we verify its correctness against a specification.
-
-\item We show how to perform garbage collection on OpSets to prevent unbounded growth on a dataset. Unlike several prior proposals for garbage collection in CRDTs, our approach does not require any global coordination or consensus between nodes.
-
-\item We discuss the distinction between three families of CRDTs in the literature (operation-based, state-based, and delta-based), and argue that our OpSet approach makes this distinction largely redundant: we require only a basic set CRDT as foundation, and show that other abstract datatypes can efficiently be implemented on top of that set, without making further assumptions about the properties of the underlying network.
+\item Using the Isabelle/HOL proof assistant, we formally verify the consistency of our semantics with alternative approaches, and prove that selected algorithms satisfy the semantics.
+By using mechanised proofs we eliminate the ambiguity of previous informal approaches, and we can rule out reasoning errors that could occur in handwritten proofs.
 \end{itemize}
+
+% Uniform representation; easier to add new operation types
+
+% Constrain operation: not allowed to have a return value. For example, CAS
 
 \input{approach}
 \input{list}
