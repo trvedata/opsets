@@ -10,16 +10,12 @@ fun insert_after :: "'oid \<Rightarrow> 'oid \<Rightarrow> 'oid list \<Rightarro
   "insert_after oid ref [] = []" |
   "insert_after oid ref (x#xs) = (if x = ref then x#oid#xs else x # (insert_after oid ref xs))"
 
-fun remove :: "'oid \<Rightarrow> 'oid list \<Rightarrow> 'oid list" where
-  "remove ref [] = []" |
-  "remove ref (x # xs) = (if x = ref then xs else x # (remove ref xs))"
+fun interp :: "'oid list \<times> 'oid set \<Rightarrow> ('oid \<times> 'oid list_op) \<Rightarrow> 'oid list \<times> 'oid set" where
+  "interp (list, tomb) (oid, InsertAfter ref) = (insert_after oid ref list, tomb)" |
+  "interp (list, tomb) (oid, Remove      ref) = (list, tomb \<union> {ref})"
 
-fun interp :: "'oid list \<Rightarrow> ('oid \<times> 'oid list_op) \<Rightarrow> 'oid list" where
-  "interp list (oid, InsertAfter ref) = insert_after oid ref list" |
-  "interp list (oid, Remove      ref) = remove ref list"
-
-definition interp_list :: "('oid \<times> 'oid list_op) list \<Rightarrow> 'oid list" where
-  "interp_list ops \<equiv> foldl interp [] ops"
+definition interp_list :: "('oid \<times> 'oid list_op) list \<Rightarrow> 'oid list \<times> 'oid set" where
+  "interp_list ops \<equiv> foldl interp ([], {}) ops"
 
 fun oid_reference :: "'oid list_op \<Rightarrow> 'oid" where
   "oid_reference (InsertAfter ref) = ref" |
@@ -39,11 +35,14 @@ definition op_set :: "('oid::{linorder} \<times> 'oid list_op) set" where
 definition insertions :: "('oid \<times> 'oid list_op) list" where
   "insertions \<equiv> filter (\<lambda>(_, oper). case oper of InsertAfter x \<Rightarrow> True | _ \<Rightarrow> False ) op_list"
 
-definition the_list :: "'oid list" where
-  "the_list \<equiv> interp_list op_list"
+definition ins_list :: "'oid list" where
+  "ins_list \<equiv> fst (interp_list op_list)"
+
+definition tombstones :: "'oid set" where
+  "tombstones \<equiv> snd (interp_list op_list)"
 
 inductive list_order :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" (infix "\<sqsubset>" 50) where
-  "\<lbrakk>the_list = xs @ [x] @ ys @ [y] @ zs\<rbrakk> \<Longrightarrow> x \<sqsubset> y"
+  "\<lbrakk>ins_list = xs @ [x] @ ys @ [y] @ zs\<rbrakk> \<Longrightarrow> x \<sqsubset> y"
 
 inductive_cases list_order_elim [elim]: "x \<sqsubset> y"
 
@@ -91,37 +90,23 @@ lemma insert_after_distinct:
   apply auto
   done
 
-lemma list_remove_set:
-  assumes "distinct xs"
-  shows "set (remove ref xs) = set xs - {ref}"
-  using assms apply (induct xs, simp)
-  by (case_tac "a=ref", auto)
-
-lemma list_remove_subset:
-  shows "set (remove ref xs) \<subseteq> set xs"
-  by (induct xs, auto)
-
-lemma remove_distinct:
-  assumes "distinct xs"
-  shows "distinct (remove ref xs)"
-  using assms apply (induct xs, simp)
-  apply(case_tac "a=ref", simp)
-  using list_remove_subset by fastforce
-
 lemma list_oid_subset:
   assumes "list_spec op_list"
-  shows "set (list_spec.the_list op_list) \<subseteq> set (map fst op_list)"
+  shows "set (list_spec.ins_list op_list) \<subseteq> set (map fst op_list)"
   using assms apply (induct op_list rule: rev_induct)
-  apply(simp add: list_spec.the_list_def interp_list_def)
+  apply(simp add: list_spec.ins_list_def interp_list_def)
   apply(frule list_spec_rm_last, clarsimp)
   apply(case_tac b)
-  apply(clarsimp simp add: list_spec.the_list_def interp_list_def)
-  apply(case_tac "x1 \<in> set (list_spec.the_list xs)")
-  apply(metis UnE empty_iff insert_after_set insert_iff interp_list_def list_spec.the_list_def subsetCE)
-  apply(simp add: contra_subsetD insert_after_nonex interp_list_def list_spec.the_list_def)
-  apply(clarsimp simp add: list_spec.the_list_def interp_list_def)
-  apply(subgoal_tac "x \<in> set (foldl interp [] xs)", blast)
-  apply(meson contra_subsetD list_remove_subset)
+  apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
+  apply(case_tac "x1 \<in> set (list_spec.ins_list xs)")
+  apply(metis (no_types, lifting) Pair_inject Un_insert_right contra_subsetD insertE
+    insert_after_set interp.simps(1) interp_list_def list_spec.ins_list_def prod.collapse
+    sup_bot.comm_neutral)
+  apply(simp add: contra_subsetD insert_after_nonex interp_list_def list_spec.ins_list_def)
+  apply(metis (no_types, lifting) insert_after_nonex interp.simps(1) prod.collapse subsetCE)
+  apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
+  apply(subgoal_tac "x \<in> set (fst (foldl interp ([], {}) xs))", blast)
+  apply(metis Pair_inject interp.simps(2) prod.collapse)
   done
 
 lemma last_op_greatest:
@@ -140,17 +125,19 @@ lemma last_op_greatest:
 
 lemma list_distinct:
   assumes "list_spec op_list"
-  shows "distinct (list_spec.the_list op_list)"
+  shows "distinct (list_spec.ins_list op_list)"
   using assms apply (induct op_list rule: rev_induct)
-  apply(simp add: list_spec.the_list_def interp_list_def)
+  apply(simp add: list_spec.ins_list_def interp_list_def)
   apply(frule list_spec_rm_last, clarsimp)
   apply(case_tac b, clarsimp)
-  apply(simp add: list_spec.the_list_def interp_list_def)
-  apply(rule insert_after_distinct, assumption)
-  apply(metis last_op_greatest interp_list_def list_oid_subset list_spec.the_list_def subset_code(1))
-  apply(simp add: list_spec_def)
-  apply(simp add: list_spec.the_list_def interp_list_def)
-  apply(simp add: remove_distinct)
+  apply(subgoal_tac "\<forall>x\<in>set (list_spec.ins_list xs). x < a") prefer 2
+  using last_op_greatest list_oid_subset apply blast
+  apply(subgoal_tac "distinct (insert_after a x1 (list_spec.ins_list xs))") prefer 2
+  using insert_after_distinct insert_after_nonex apply fastforce
+  apply(simp add: list_spec.ins_list_def interp_list_def)
+  apply(metis Pair_inject interp.simps(1) prod.collapse)
+  apply(simp add: list_spec.ins_list_def interp_list_def)
+  apply(metis Pair_inject interp.simps(2) prod.collapse)
   done
 
 lemma suffix_eq_distinct_list:
@@ -174,12 +161,12 @@ lemma list_order_trans:
     and "list_spec.list_order op_list y z"
   shows "list_spec.list_order op_list x z"
   using assms apply -
-  apply(subgoal_tac "\<exists>ws xs ys zs. list_spec.the_list op_list = ws@[x]@xs@[y]@ys@[z]@zs")
+  apply(subgoal_tac "\<exists>ws xs ys zs. list_spec.ins_list op_list = ws@[x]@xs@[y]@ys@[z]@zs")
   apply(metis append.assoc list_spec.list_order.intros)
   apply(erule_tac x=x and y=y in list_spec.list_order_elim, assumption)
   using assms(1) apply -
   apply(erule_tac x=y and y=z in list_spec.list_order_elim, assumption)
-  apply(subgoal_tac "distinct (list_spec.the_list op_list)") prefer 2
+  apply(subgoal_tac "distinct (list_spec.ins_list op_list)") prefer 2
   using assms(1) list_distinct apply blast
   apply(subgoal_tac "zs = ysa @ z # zsa") prefer 2
   apply(frule_tac xa="xs @ x # ys" and xb=xsa and x=y and ya=zs
@@ -220,50 +207,51 @@ lemma insert_second_part:
 lemma insert_twice:
   assumes "list_spec (before @ (x1, InsertAfter r1) # after @ [(x2, InsertAfter r2)])"
     and   "list_spec (before @                        after @ [(x2, InsertAfter r2)])"
-    and "list_spec.the_list (before @                        after) = xs @      zs"
-    and "list_spec.the_list (before @ (x1, InsertAfter r1) # after) = xs @ ys @ zs"
+    and "list_spec.ins_list (before @                        after) = xs @      zs"
+    and "list_spec.ins_list (before @ (x1, InsertAfter r1) # after) = xs @ ys @ zs"
   shows "\<exists>xsa ysa zsa.
-    list_spec.the_list (before @                        after @ [(x2, InsertAfter r2)]) = xsa @       zsa \<and>
-    list_spec.the_list (before @ (x1, InsertAfter r1) # after @ [(x2, InsertAfter r2)]) = xsa @ ysa @ zsa"
+    list_spec.ins_list (before @                        after @ [(x2, InsertAfter r2)]) = xsa @       zsa \<and>
+    list_spec.ins_list (before @ (x1, InsertAfter r1) # after @ [(x2, InsertAfter r2)]) = xsa @ ysa @ zsa"
   using assms apply -
   apply(subgoal_tac "list_spec (before @ after)") prefer 2
   using list_spec_rm_last apply force
   apply(subgoal_tac "list_spec (before @ (x1, InsertAfter r1) # after)") prefer 2
   using list_spec_rm_last apply force
-  apply(simp add: list_spec.the_list_def interp_list_def)
+  apply(simp add: list_spec.ins_list_def interp_list_def)
   apply(case_tac "r2 \<in> set xs")
-  using insert_first_part apply fastforce
+  apply(metis fstI interp.simps(1) prod.collapse insert_first_part)
   apply(case_tac "r2 \<in> set ys")
   apply(rule_tac x=xs in exI)
   apply(rule_tac x="insert_after x2 r2 ys" in exI)
   apply(rule_tac x=zs in exI)
   apply(rule conjI)
   apply(subgoal_tac "r2 \<notin> set zs")
-  apply(simp add: insert_after_nonex)
+  apply(metis UnE insert_after_nonex interp.simps(1) prod.collapse set_append)
   using assms(4) distinct_append list.simps(15) list_distinct apply force
-  apply(simp add: insert_first_part insert_second_part)
+  apply(metis append_eq_append_conv fstI insert_after_nonex insert_first_part
+    insert_second_part insert_somewhere interp.simps(1) not_Cons_self2 prod.collapse)
   apply(case_tac "r2 \<in> set zs")
   apply(rule_tac x=xs in exI)
   apply(rule_tac x=ys in exI)
   apply(rule_tac x="insert_after x2 r2 zs" in exI)
-  apply(simp add: insert_second_part)
-  apply(metis UnE insert_after_nonex set_append)
+  apply(metis insert_second_part Un_iff fstI interp.simps(1) prod.collapse set_append)
+  apply(metis (no_types, lifting) insert_after_nonex UnE interp.simps(1) prod.collapse set_append)
   done
 
 lemma insert_preserves_order:
   assumes "list_spec op_list" and "list_spec rest"
     and "rest = before @ after"
     and "op_list = before @ (oid, InsertAfter ref) # after"
-  shows "\<exists>xs ys zs. list_spec.the_list rest    = xs @      zs \<and>
-                    list_spec.the_list op_list = xs @ ys @ zs"
+  shows "\<exists>xs ys zs. list_spec.ins_list rest    = xs @      zs \<and>
+                    list_spec.ins_list op_list = xs @ ys @ zs"
   using assms
   apply(induction after arbitrary: rest op_list rule: rev_induct)
-  apply(case_tac "ref \<in> set (list_spec.the_list before)")
-  apply(subgoal_tac "\<exists>xs zs. list_spec.the_list rest = xs@zs \<and>
-                             list_spec.the_list op_list = xs@[oid]@zs", blast)
-  apply(simp add: list_spec.the_list_def interp_list_def insert_somewhere)
-  apply(subgoal_tac "list_spec.the_list op_list = list_spec.the_list rest", force)
-  apply(simp add: list_spec.the_list_def interp_list_def insert_after_nonex)
+  apply(case_tac "ref \<in> set (list_spec.ins_list before)")
+  apply(subgoal_tac "\<exists>xs zs. list_spec.ins_list rest = xs@zs \<and>
+                             list_spec.ins_list op_list = xs@[oid]@zs", blast)
+  apply(simp add: list_spec.ins_list_def interp_list_def insert_somewhere)
+  (*apply(subgoal_tac "list_spec.ins_list op_list = list_spec.ins_list rest", force)
+  apply(simp add: list_spec.ins_list_def interp_list_def insert_after_nonex)
   apply(erule_tac x="before @ xs" in meta_allE)
   apply(erule_tac x="before @ (oid, InsertAfter ref) # xs" in meta_allE)
   apply(subgoal_tac "list_spec (before @ xs)") prefer 2
@@ -273,193 +261,14 @@ lemma insert_preserves_order:
     butlast_snoc list.distinct(1) list_spec_rm_last)
   apply clarsimp
   apply(case_tac b, simp add: insert_twice)
-  apply clarsimp
+  apply clarsimp*)
   oops
 
 lemma
   assumes "list_spec A" and "list_spec B"
     and "set A \<subseteq> set B"
-    and "A = list_spec.insertions A"
-    and "B = list_spec.insertions B"
     and "list_spec.list_order A x y"
   shows "list_spec.list_order B x y"
   oops
-
-lemma "list_spec.next_elem_tc A a b \<Longrightarrow> list_spec A \<Longrightarrow> list_spec (A@[(oid, InsertAfter ref)]) \<Longrightarrow> list_spec.next_elem_tc (A@[(oid, InsertAfter ref)]) a b" 
-  apply (erule list_spec.next_elem_tc.cases)
-    apply assumption
-   apply clarsimp
-   apply (case_tac "a=ref")
-    prefer 2
-   apply (rule list_spec.next_elem_tcI1)
-     apply assumption
-    apply (frule list_spec_rm_last)
-    apply (simp add: list_spec.next_elem_def interp_list_def)
-    apply (unfold insert_after_def)
-    apply clarsimp
-
-    apply (subgoal_tac "a \<noteq> oid")
-     apply force
-  using list_spec.distinct_oids 
-oops
-  
-lemma "list_spec A \<Longrightarrow> list_spec B \<Longrightarrow> (set A) \<subseteq> (set B) \<Longrightarrow> list_spec.next_elem_tc A a b \<Longrightarrow> list_spec.next_elem_tc (list_spec.elems B) a b" 
-  apply (induct A rule: rev_induct)
-   apply simp
-     apply (erule list_spec.next_elem_tcE[rotated])
-     apply (simp add: list_spec.next_elem_def interp_list_def)+
-
-   apply clarsimp
-  apply (erule list_spec.next_elem_tcE[rotated])
-    apply (subgoal_tac "list_spec.next_elem xs a = Some b")
-    oops
- 
-lemma sorted_list_of_set_base:
-  assumes "finite A" "sorted_list_of_set A = [x, y]"
-  shows "x < y"
-    using assms sorted_many_eq sorted_list_of_set
-    by (metis distinct_length_2_or_more order.not_eq_order_implies_strict)
-    
-lemma sorted_list_of_set_sorted:
-  assumes "finite A" "sorted_list_of_set A = xs@x#y#ys"
-  shows "x < y"
-  using assms
-  apply (induction ys arbitrary: A rule: rev_induct)
-   apply (induction xs arbitrary: A)
-    apply (simp add: sorted_list_of_set_base)
-   apply clarsimp
-   apply (erule_tac x="A-{a}" in meta_allE)
-   apply clarsimp
-   apply (simp add: sorted_list_of_set_remove)
-   apply (erule_tac x="A-{xa}" in meta_allE)
-  apply clarsimp
-  apply (subgoal_tac "distinct (xs @ x # y # xsa @ [xa])")
-   apply (simp add: sorted_list_of_set_remove)
-   apply (metis order.not_eq_order_implies_strict sorted_append sorted_list_of_set sorted_many_eq)
-  by (metis distinct_sorted_list_of_set)
-   
-lemma (in list_spec) finite_opset: "finite opset"
-  sorry
-    
-lemma (in list_spec) oid_list_sorted:
-  assumes "oid_list = xs@x#y#ys"
-  shows "x < y"
-  using assms finite_opset  sorted_list_of_set_sorted by fastforce
-    
-    
-lemma (in list_spec) unique_previous:
-  assumes "next_elem p1 = Some x"
-    and "next_elem p2 = Some x"
-  shows "p1 = p2"
-  using assms 
-    apply (auto simp: next_elem_def)
-
-lemma (in list_spec) oid_list_set_dom:
-  shows "set oid_list = dom op_set"
-  by (simp add: finite_opset oid_list_def)
-
-lemma (in list_spec) oid_list_dom_member:
-  assumes "oid_list = xs@x#ys"
-  shows "x \<in> dom op_set"
-  using assms oid_list_set_dom by auto
-
-lemma (in list_spec) dom_member_oid_list:
-  assumes "x \<in> dom op_set"
-  shows "\<exists>xs ys. oid_list = xs@x#ys"
-  by (simp add: assms finite_opset oid_list_def split_list)
-
-(*
-let A subset opset
-  assumes x < y in listA
-A subset B subset opset
-  then  x < y in listB
-*)
-    
-(*
-let A subset opset
-  assumes x < y in listA
-A subset B subset opset
-  then  x < y in listB
-*)
-    
-(*
-  exteded xs = xs + extra opers
-
-  assumes x < y in some list
-  then  x < y in extended list 
-*)
-
-lemma (in list_spec)
-  
-    
-    
-lemma oid_list_last_none:
-  assumes "list_spec.oid_list op_set = xs @ [x]"
-    and "list_spec op_set"
-  shows "list_spec.oid_list (op_set(x := None)) = xs"
-  using assms apply(induction xs arbitrary: op_set rule: rev_induct)
-  apply(subgoal_tac "dom op_set = {x}")
-  apply(simp add: list_spec.oid_list_def list_spec_def)
-  using list_spec.oid_list_set_dom apply fastforce
-  apply(erule_tac x="op_set(xa := None)" in meta_allE)
-  sorry
-
-lemma (in list_spec) oid_list_last_greatest:
-  assumes "oid_list = xs @ [x]"
-    and "y \<in> dom op_set"
-  shows "y \<le> x"
-  using assms by (metis UnE empty_iff eq_iff finite_opset insertE list.set(1)
-    list.set_intros(1) list.simps(15) oid_list_def set_append sorted_append sorted_list_of_set)
-
-lemma (in list_spec) op_list_last_oid:
-  assumes "op_list = xs @ [(oid, oper)]"
-  shows "oid \<in> dom op_set"
-  using assms by (metis Nil_is_map_conv last_in_set last_map oid_list_set_dom op_list_def
-    prod.sel(1) snoc_eq_iff_butlast)
-
-lemma (in list_spec) op_list_last_oper:
-  assumes "op_list = xs @ [(oid, oper)]"
-  shows "op_set oid = Some oper"
-  using assms by (metis (mono_tags, lifting) Pair_inject domD last_map map_is_Nil_conv
-    op_list_def op_list_last_oid option.sel snoc_eq_iff_butlast)
-
-lemma op_list_remove_last:
-  assumes "xs @ [(oid, oper)] = list_spec.op_list op_set"
-    and "list_spec op_set"
-  shows "xs = list_spec.op_list (op_set(oid := None))"
-  using assms apply -
-  apply(subgoal_tac "list_spec (op_set(oid := None))") prefer 2
-  apply(rule list_spec.intro)
-  apply(metis fun_upd_apply list_spec.ref_older option.distinct(1))
-  apply(simp add: list_spec.finite_opset)
-  apply(subgoal_tac "list_spec.oid_list (op_set(oid := None)) =
-                     butlast (list_spec.oid_list op_set)") prefer 2
-  sorry
-
-lemma (in list_spec) unique_previous:
-  assumes "next_elem p1 = Some x"
-    and "next_elem p2 = Some x"
-  shows "p1 = p2"
-  using assms 
-  apply(simp add: next_elem_def interp_list_def list_spec.op_list_def)
-  apply(induction op_list arbitrary: op_set rule: rev_induct)
-  apply(simp add: interp_list_def)
-  apply(clarsimp, case_tac b)
-  apply(simp add: interp.elims insert_after_def)
-
-(*
-fun insertAfter :: "'oid \<Rightarrow> 'oid \<Rightarrow> 'oid list \<Rightarrow> 'oid list" where
-  "insertAfter oid ref [] = []" |
-  "insertAfter oid ref (x#xs) =
-     (if ref = x then x#oid#xs else x # (insertAfter oid ref xs))"
-
-fun remove :: "'oid \<Rightarrow> 'oid list \<Rightarrow> 'oid list" where
-  "remove ref [] = []" |
-  "remove ref (x#xs) = (if ref = x then xs else x # (remove ref xs))"
-
-fun interp :: "('oid \<times> 'oid list_op) \<Rightarrow> 'oid list \<Rightarrow> 'oid list" where
-  "interp (oid, InsertAfter ref) list = insertAfter oid ref list" |
-  "interp (oid, Remove ref) list = remove ref list"
-*)
 
 end
