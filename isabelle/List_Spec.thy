@@ -1,5 +1,5 @@
 theory List_Spec
-  imports Main
+  imports Main "~~/src/HOL/Library/Product_Lexorder"
 begin
 
 datatype 'oid list_op
@@ -41,10 +41,18 @@ definition ins_list :: "'oid list" where
 definition tombstones :: "'oid set" where
   "tombstones \<equiv> snd (interp_list op_list)"
 
-inductive list_order :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" (infix "\<sqsubset>" 50) where
-  "\<lbrakk>ins_list = xs @ [x] @ ys @ [y] @ zs\<rbrakk> \<Longrightarrow> x \<sqsubset> y"
-
-inductive_cases list_order_elim [elim]: "x \<sqsubset> y"
+definition list_order :: "'oid \<Rightarrow> 'oid \<Rightarrow> bool" (infix "\<sqsubset>" 50) where
+  "list_order x y \<equiv> \<exists>xs ys zs. ins_list = xs @ [x] @ ys @ [y] @ zs"
+  
+lemma list_orderI [intro!]:
+  assumes "ins_list = xs @ [x] @ ys @ [y] @ zs"
+  shows "x \<sqsubset> y"
+  using assms by(auto simp add: list_order_def)
+    
+lemma list_orderE [elim]:
+  assumes "x \<sqsubset> y"
+  shows "\<exists>xs ys zs. ins_list = xs @ [x] @ ys @ [y] @ zs"
+  using assms by(auto simp add: list_order_def)
 
 end
   
@@ -162,12 +170,10 @@ lemma list_order_trans:
   shows "list_spec.list_order op_list x z"
   using assms apply -
   apply(subgoal_tac "\<exists>ws xs ys zs. list_spec.ins_list op_list = ws@[x]@xs@[y]@ys@[z]@zs")
-  apply(metis append.assoc list_spec.list_order.intros)
-  apply(erule_tac x=x and y=y in list_spec.list_order_elim, assumption)
-  using assms(1) apply -
-  apply(erule_tac x=y and y=z in list_spec.list_order_elim, assumption)
+   apply(metis append.assoc list_spec.list_orderI)
+  apply(clarsimp simp add: list_spec.list_order_def)
   apply(subgoal_tac "distinct (list_spec.ins_list op_list)") prefer 2
-  using assms(1) list_distinct apply blast
+  using assms(1) list_distinct apply blast    
   apply(subgoal_tac "zs = ysa @ z # zsa") prefer 2
   apply(frule_tac xa="xs @ x # ys" and xb=xsa and x=y and ya=zs
     and yb="ysa @ z # zsa" in distinct_list_split, simp, simp, simp)
@@ -262,13 +268,204 @@ lemma insert_preserves_order:
   apply clarsimp
   apply(case_tac b, simp add: insert_twice)
   apply clarsimp*)
-  oops
+  sorry
 
+lemma list_order_appI [intro!]:
+  assumes "list_spec.list_order xs x y"
+    and "list_spec (xs @ [(a, InsertAfter x1)])"
+  shows "list_spec.list_order (xs @ [(a, InsertAfter x1)]) x y"
+(*  using assms
+  apply -
+    apply(subgoal_tac "list_spec xs")
+   apply(clarsimp simp add: list_spec.list_order_def)
+   prefer 2
+  using list_spec_rm_last apply blast
+  apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
+  apply(subgoal_tac "\<exists>e. (foldl interp ([], {}) xs) = (xsa @ x # ys @ y # zs, e)")
+   apply clarsimp
+   apply(case_tac "x1 \<in> set xsa")
+    apply(meson insert_first_part)
+   apply(case_tac "x1 \<in> set ys")
+    apply(rule_tac x=xsa in exI, rule_tac x="insert_after a x1 ys" in exI, rule_tac x="zs" in exI)
+    apply(drule_tac oid=a in insert_second_part, assumption)
+*)
+  oops
+  
+lemma distinct_fst:
+  assumes "distinct (map fst A)"
+  shows "distinct A"
+  using assms by(induction A, auto)
+    
+lemma sorted_fst:
+  assumes "sorted (map fst A)"
+    and "distinct (map fst A)"
+  shows "sorted A"
+  using assms
+  apply(induction A)
+   apply force
+  apply(case_tac "a"; clarsimp)
+  apply(subgoal_tac "sorted (map fst A)")
+    apply(rule sorted.intros; clarsimp)
+   apply(metis fst_conv image_set le_neq_trans rev_image_eqI sorted_Cons)
+  using sorted_Cons by auto
+    
+lemma subset_distinct_le:
+  assumes "set A \<subseteq> set B" and "distinct A" and "distinct B"
+  shows "length A \<le> length B"
+  using assms
+  apply(induction B arbitrary: A)
+   apply clarsimp
+  apply clarsimp
+  apply(case_tac "a \<in> set A")
+   apply(erule_tac x="List.remove1 a A" in meta_allE)
+   apply clarsimp
+   apply(simp add: length_remove1 subset_insert_iff)
+  apply(erule_tac x="A" in meta_allE, clarsimp)
+    by(simp add: subset_insert)
+      
+lemma set_subset_length_eq:
+  assumes "set A \<subseteq> set B" and "length B \<le> length A" and "distinct A" and "distinct B"
+  shows "set A = set B"
+  using assms
+    apply -
+  apply(frule subset_distinct_le, assumption, assumption)
+  apply(rule card_subset_eq, force, force)
+  apply(simp add: distinct_card)
+  done
+    
+lemma length_diff_Suc_exists:
+  assumes "length xs - length ys = Suc m"
+    and "set ys \<subseteq> set xs"
+    and "distinct ys" and "distinct xs"
+  shows "\<exists>e. e \<in> set xs \<and> e \<notin> set ys"
+  using assms
+  apply(induction xs arbitrary: ys, clarsimp)
+  apply clarsimp
+  apply(case_tac "a \<in> set ys")
+   apply(erule_tac x="List.remove1 a ys" in meta_allE)
+   apply(subgoal_tac "length xs - length (remove1 a ys) = Suc m")
+    prefer 2
+    apply(metis Suc_diff_eq_diff_pred length_pos_if_in_set length_remove1)
+   apply clarsimp
+   apply(subgoal_tac "set ys - {a} \<subseteq> set xs")
+    prefer 2
+    apply blast
+   apply clarsimp
+   apply force
+  apply blast
+  done
+    
+lemma distinct_map_fst_remove1:
+  assumes "distinct (map fst xs)"
+  shows "distinct (map fst (remove1 x xs))"
+  using assms
+  apply(induction xs, clarsimp)
+  apply(subgoal_tac "distinct (map fst xs)")
+   prefer 2
+   apply force
+  apply clarsimp
+  apply(metis fst_conv image_eqI notin_set_remove1)
+  done
+    
+lemma list_spec_remove1:
+  assumes "list_spec xs"
+  shows "list_spec (remove1 x xs)"
+  using assms apply(clarsimp simp: list_spec_def)
+  using sorted_map_remove1 distinct_map_fst_remove1
+  apply(metis notin_set_remove1)
+  done
+    
+lemma app_length_lt_exists:
+  assumes "xsa @ zsa = xs @ ys"
+    and "length xsa \<le> length xs"
+  shows "\<exists>zs. xsa@zs = xs"
+  using assms
+  apply(induction xsa arbitrary: xs zsa ys, clarsimp)
+  apply clarsimp
+  apply(metis append_Cons append_eq_append_conv_if append_take_drop_id length_Cons)
+  done
+    
 lemma
   assumes "list_spec A" and "list_spec B"
     and "set A \<subseteq> set B"
     and "list_spec.list_order A x y"
   shows "list_spec.list_order B x y"
-  oops
+  using assms
+  apply(induction rule: measure_induct_rule[where f="\<lambda>x. (length x - length A)"])
+  apply(case_tac "length xa - length A")
+   apply(subgoal_tac "set A = set xa")
+    apply(clarsimp simp add: list_spec_def)
+    apply(metis distinct_map map_sorted_distinct_set_unique sup_idem)
+   apply(rule set_subset_length_eq, assumption, force)
+  using distinct_fst list_spec_def apply blast
+  using distinct_fst list_spec_def apply blast
+  apply clarsimp
+  apply(subgoal_tac "\<exists>e. e \<in> set xa \<and> e \<notin> set A")
+   prefer 2
+   apply(rule length_diff_Suc_exists, force, force)
+  using distinct_fst list_spec_def apply blast
+  using distinct_fst list_spec_def apply blast
+  apply(erule exE, erule conjE)
+  apply(erule_tac x="List.remove1 e xa" in meta_allE)
+  apply(subgoal_tac "length (remove1 e xa) - length A < Suc nat")
+   prefer 2
+   apply(metis (no_types, lifting) diff_Suc_1 diff_commute length_remove1 less_Suc_eq)
+  apply clarsimp
+  apply(frule_tac x="(a, b)" in list_spec_remove1) back
+  apply clarsimp
+  apply(subgoal_tac "set A \<subseteq> set (remove1 (a, b) xa)")
+   prefer 2
+   apply(metis (no_types, lifting) in_set_remove1 subset_iff)
+  apply clarsimp
+  apply(case_tac "b"; clarsimp simp add: list_spec.list_order_def list_spec.ins_list_def)
+   apply(subgoal_tac "\<exists>e. (interp_list (remove1 (a, InsertAfter x1) xa)) = (xs @ x # ys @ y # zs, e)")
+    prefer 2 apply(metis prod.collapse)
+   apply clarsimp
+   apply(subgoal_tac "\<exists>ps ss. xa = ps@[(a, InsertAfter x1)]@ss \<and> (a, InsertAfter x1) \<notin> set ps")
+    prefer 2 using split_list_first apply fastforce
+   apply clarsimp
+   apply(subgoal_tac "interp_list (remove1 (a, InsertAfter x1) (ps @ (a, InsertAfter x1) # ss)) = interp_list (ps @ ss)")
+    prefer 2
+    apply(simp add: remove1_append)
+   apply clarsimp
+   apply(frule_tac op_list="ps @ (a, InsertAfter x1) # ss" and rest="ps @ ss" in insert_preserves_order)
+      apply(simp add: remove1_append)
+     apply(rule refl)+
+   apply clarsimp
+   apply(subgoal_tac "xsa @ zsa = xs @ x # ys @ y # zs")
+    prefer 2
+    apply(simp add: list_spec.ins_list_def remove1_append)
+   apply clarsimp
+   apply(case_tac "length xsa \<le> length xs")
+    apply(subgoal_tac "\<exists>ts. xsa@ts = xs")
+     prefer 2
+  using app_length_lt_exists apply blast
+    apply clarsimp
+    apply(metis append.assoc list_spec.ins_list_def)
+   apply(case_tac "length xsa \<le> length (xs@x#ys)")
+    apply(subgoal_tac "\<exists>us. xsa@us = xs@x#ys")
+     prefer 2
+     apply(simp add: app_length_lt_exists)
+    apply clarsimp
+    apply(rule_tac x="xs" in exI, rule_tac x="(drop (Suc (length xs)) xsa)@ysa@us" in exI, rule_tac x="zs" in exI)
+    apply clarsimp
+    apply(subgoal_tac "fst (interp_list (ps @ (a, InsertAfter x1) # ss)) = xsa @ ysa @ zsa")
+     prefer 2
+     apply(simp add: list_spec.ins_list_def)
+    apply clarsimp
+  sorry
+    
+  (*apply(subgoal_tac "list_spec.ins_list op_list = list_spec.ins_list rest", force)
+  apply(simp add: list_spec.ins_list_def interp_list_def insert_after_nonex)
+  apply(erule_tac x="before @ xs" in meta_allE)
+  apply(erule_tac x="before @ (oid, InsertAfter ref) # xs" in meta_allE)
+  apply(subgoal_tac "list_spec (before @ xs)") prefer 2
+  apply(metis append_assoc list_spec_rm_last)
+  apply(subgoal_tac "list_spec (before @ (oid, InsertAfter ref) # xs)") prefer 2
+  apply(metis append_butlast_last_id append_is_Nil_conv butlast.simps(2) butlast_append
+    butlast_snoc list.distinct(1) list_spec_rm_last)
+  apply clarsimp
+  apply(case_tac b, simp add: insert_twice)
+  apply clarsimp*)
 
 end
