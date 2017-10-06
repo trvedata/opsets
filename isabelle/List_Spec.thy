@@ -3,12 +3,15 @@ theory List_Spec
 begin
 
 datatype 'oid list_op
-  = InsertAfter 'oid
+  = InsertAfter "'oid option"
   | Remove 'oid
 
-fun insert_after :: "'oid \<Rightarrow> 'oid \<Rightarrow> 'oid list \<Rightarrow> 'oid list" where
-  "insert_after oid ref [] = []" |
-  "insert_after oid ref (x#xs) = (if x = ref then x#oid#xs else x # (insert_after oid ref xs))"
+fun insert_after :: "'oid \<Rightarrow> 'oid option \<Rightarrow> 'oid list \<Rightarrow> 'oid list" where
+  "insert_after oid None list = oid # list" |
+  "insert_after oid _ [] = []" |
+  "insert_after oid (Some ref) (x#xs) = (
+     if x = ref then x # oid # xs
+                else x # (insert_after oid (Some ref) xs))"
 
 fun interp :: "'oid list \<times> 'oid set \<Rightarrow> ('oid \<times> 'oid list_op) \<Rightarrow> 'oid list \<times> 'oid set" where
   "interp (list, tomb) (oid, InsertAfter ref) = (insert_after oid ref list, tomb)" |
@@ -17,15 +20,11 @@ fun interp :: "'oid list \<times> 'oid set \<Rightarrow> ('oid \<times> 'oid lis
 definition interp_list :: "('oid \<times> 'oid list_op) list \<Rightarrow> 'oid list \<times> 'oid set" where
   "interp_list ops \<equiv> foldl interp ([], {}) ops"
 
-fun oid_reference :: "'oid list_op \<Rightarrow> 'oid" where
-  "oid_reference (InsertAfter ref) = ref" |
-  "oid_reference (Remove ref) = ref"
-  
 locale list_spec =
   fixes op_list :: "('oid::{linorder} \<times> 'oid list_op) list"
   assumes sorted_oids: "sorted (map fst op_list)"
     and distinct_oids: "distinct (map fst op_list)"
-    and ref_older: "(oid, oper) \<in> set op_list \<Longrightarrow> oid_reference oper < oid"
+    and ref_older: "(oid, InsertAfter (Some ref)) \<in> set op_list \<Longrightarrow> ref < oid"
 
 context list_spec begin
   
@@ -62,15 +61,19 @@ lemma list_spec_rm_last:
   using assms apply (clarsimp simp: list_spec_def)
   using sorted_append by blast
 
+lemma insert_after_none:
+  shows "set (insert_after oid None xs) = set xs \<union> {oid}"
+  by (induct xs, simp_all add: insert_commute sup_commute)
+
 lemma insert_after_set:
   assumes "ref \<in> set xs"
-  shows "set (insert_after oid ref xs) = set xs \<union> {oid}"
+  shows "set (insert_after oid (Some ref) xs) = set xs \<union> {oid}"
   using assms apply (induct xs, simp)
   by (case_tac "a=ref", simp_all add: insert_commute sup_commute)
 
 lemma insert_after_nonex:
   assumes "ref \<notin> set xs"
-  shows "insert_after oid ref xs = xs"
+  shows "insert_after oid (Some ref) xs = xs"
   using assms apply (induct xs, simp)
   by (case_tac "a=ref", simp_all add: insert_commute sup_commute)
 
@@ -83,19 +86,18 @@ lemma list_greater_non_memb:
 lemma insert_after_distinct:
   fixes oid :: "'oid::{linorder}"
   assumes "distinct xs"
-    and "\<forall>x \<in> set xs. x < oid" and "ref < oid"
+    and "\<forall>x \<in> set xs. x < oid"
+    and "ref = Some r \<longrightarrow> r < oid"
   shows "distinct (insert_after oid ref xs)"
-  using assms apply (induct xs, simp)
-  apply(case_tac "a=ref")
-  apply clarsimp
-  apply(rule conjI)
-  apply(metis list.set_intros(1) list_greater_non_memb set_ConsD)
-  using list_greater_non_memb apply blast
-  apply(subgoal_tac "a \<noteq> oid")
+  using assms apply (induct xs)
+  apply(metis distinct_singleton insert_after.elims insert_after.simps(2))
+  apply(case_tac ref, force)
+  apply(case_tac "a=aa", force)
+  apply(subgoal_tac "a \<noteq> oid") prefer 2 apply force
   apply(subgoal_tac "insert_after oid ref (a # xs) = a # insert_after oid ref xs")
   apply(metis UnE distinct.simps(2) empty_iff insertE insert_after_nonex insert_after_set
-    list.set_intros(2))
-  apply auto
+      list.set_intros(2))
+  apply force
   done
 
 lemma list_oid_subset:
@@ -104,12 +106,14 @@ lemma list_oid_subset:
   using assms apply (induct op_list rule: rev_induct)
   apply(simp add: list_spec.ins_list_def interp_list_def)
   apply(frule list_spec_rm_last, clarsimp)
-  apply(case_tac b)
+  apply(case_tac b, case_tac x1)
   apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
-  apply(case_tac "x1 \<in> set (list_spec.ins_list xs)")
+  apply(metis (no_types, lifting) contra_subsetD fstI insert_after.simps(1)
+    interp.simps(1) prod.collapse set_ConsD)
+  apply(case_tac "aa \<in> set (list_spec.ins_list xs)")
+  apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
   apply(metis (no_types, lifting) Pair_inject Un_insert_right contra_subsetD insertE
-    insert_after_set interp.simps(1) interp_list_def list_spec.ins_list_def prod.collapse
-    sup_bot.comm_neutral)
+    insert_after_set interp.simps(1) interp_list_def prod.collapse sup_bot.comm_neutral)
   apply(simp add: contra_subsetD insert_after_nonex interp_list_def list_spec.ins_list_def)
   apply(metis (no_types, lifting) insert_after_nonex interp.simps(1) prod.collapse subsetCE)
   apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
@@ -141,7 +145,7 @@ lemma list_distinct:
   apply(subgoal_tac "\<forall>x\<in>set (list_spec.ins_list xs). x < a") prefer 2
   using last_op_greatest list_oid_subset apply blast
   apply(subgoal_tac "distinct (insert_after a x1 (list_spec.ins_list xs))") prefer 2
-  using insert_after_distinct insert_after_nonex apply fastforce
+  apply(metis insert_after.simps(2) insert_after_distinct last_in_set)
   apply(simp add: list_spec.ins_list_def interp_list_def)
   apply(metis Pair_inject interp.simps(1) prod.collapse)
   apply(simp add: list_spec.ins_list_def interp_list_def)
@@ -182,32 +186,35 @@ lemma list_order_trans:
   done
 
 lemma insert_somewhere:
-  assumes "ref \<in> set list"
+  assumes "ref = None \<or> (ref = Some r \<and> r \<in> set list)"
   shows "\<exists>xs ys. list = xs@ys \<and> insert_after oid ref list = xs @ oid # ys"
   using assms apply(induction list, simp)
-  apply(case_tac "a=ref")
-  apply(rule_tac x="[ref]" in exI, rule_tac x=list in exI, simp)
-  apply(subgoal_tac "ref \<in> set list", simp) prefer 2 apply simp
+  apply(case_tac ref, force)
+  apply(case_tac "a=aa")
+  apply(rule_tac x="[aa]" in exI, rule_tac x=list in exI, simp)
+  apply(subgoal_tac "aa \<in> set list", simp) prefer 2 apply simp
   apply(erule exE)+
   apply(rule_tac x="a#xs" in exI, rule_tac x=ys in exI, force)
   done
 
 lemma insert_first_part:
-  assumes "ref \<in> set xs"
+  assumes "ref = None \<or> (ref = Some r \<and> r \<in> set xs)"
   shows "insert_after oid ref (xs @ ys) = (insert_after oid ref xs) @ ys"
   using assms
   apply(induction ys rule: rev_induct, simp, simp)
   apply(induction xs, simp)
-  apply(case_tac "a=ref", simp_all)
+  apply(case_tac ref, force)
+  apply(case_tac "a=aa", simp_all)
   done
 
 lemma insert_second_part:
-  assumes "ref \<notin> set xs"
-    and "ref \<in> set ys"
+  assumes "ref = Some r"
+    and "r \<notin> set xs"
+    and "r \<in> set ys"
   shows "insert_after oid ref (xs @ ys) = xs @ (insert_after oid ref ys)"
   using assms
-  apply(induction xs, simp, simp)
-  apply(subgoal_tac "a \<noteq> ref", blast+)
+  apply(induction xs, simp)
+  apply(subgoal_tac "a \<noteq> r", simp, force)
   done
 
 lemma insert_twice:
@@ -224,19 +231,21 @@ lemma insert_twice:
   apply(subgoal_tac "list_spec (before @ (x1, InsertAfter r1) # after)") prefer 2
   using list_spec_rm_last apply force
   apply(simp add: list_spec.ins_list_def interp_list_def)
-  apply(case_tac "r2 \<in> set xs")
+  apply(case_tac r2)
   apply(metis fstI interp.simps(1) prod.collapse insert_first_part)
-  apply(case_tac "r2 \<in> set ys")
+  apply(case_tac "a \<in> set xs")
+  apply(metis fstI interp.simps(1) prod.collapse insert_first_part)
+  apply(case_tac "a \<in> set ys")
   apply(rule_tac x=xs in exI)
   apply(rule_tac x="insert_after x2 r2 ys" in exI)
   apply(rule_tac x=zs in exI)
   apply(rule conjI)
-  apply(subgoal_tac "r2 \<notin> set zs")
+  apply(subgoal_tac "a \<notin> set zs")
   apply(metis UnE insert_after_nonex interp.simps(1) prod.collapse set_append)
   using assms(4) distinct_append list.simps(15) list_distinct apply force
   apply(metis append_eq_append_conv fstI insert_after_nonex insert_first_part
     insert_second_part insert_somewhere interp.simps(1) not_Cons_self2 prod.collapse)
-  apply(case_tac "r2 \<in> set zs")
+  apply(case_tac "a \<in> set zs")
   apply(rule_tac x=xs in exI)
   apply(rule_tac x=ys in exI)
   apply(rule_tac x="insert_after x2 r2 zs" in exI)
@@ -252,11 +261,11 @@ lemma insert_preserves_order:
                     list_spec.ins_list op_list = xs @ ys @ zs"
   using assms
   apply(induction after arbitrary: rest op_list rule: rev_induct)
-  apply(case_tac "ref \<in> set (list_spec.ins_list before)")
+  (*apply(case_tac "ref \<in> set (list_spec.ins_list before)")
   apply(subgoal_tac "\<exists>xs zs. list_spec.ins_list rest = xs@zs \<and>
                              list_spec.ins_list op_list = xs@[oid]@zs", blast)
   apply(simp add: list_spec.ins_list_def interp_list_def insert_somewhere)
-  (*apply(subgoal_tac "list_spec.ins_list op_list = list_spec.ins_list rest", force)
+  apply(subgoal_tac "list_spec.ins_list op_list = list_spec.ins_list rest", force)
   apply(simp add: list_spec.ins_list_def interp_list_def insert_after_nonex)
   apply(erule_tac x="before @ xs" in meta_allE)
   apply(erule_tac x="before @ (oid, InsertAfter ref) # xs" in meta_allE)
