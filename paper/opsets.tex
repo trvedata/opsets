@@ -32,21 +32,21 @@ Thus, various approaches for providing \emph{consistency guarantees} have been d
 
 \begin{description}
 \item[Transaction isolation] in databases restricts the degree to which concurrently executing transactions can affect each other while accessing the same database.
-The strongest isolation level, \emph{serializability}, ensures that transactions behave as if there were no concurrency at all, i.e.\ as if transactions were executed serially, one at a time.
+The strongest isolation level, \emph{serializability}, ensures that transactions behave as if there were no concurrency at all, i.e.\ as if transactions were executed serially, one at a time \cite{Kleppmann:2017wj}.
 
-\item[Conflict-free Replicated Data Types (CRDTs)] allow each participant to modify a local copy (\emph{replica}) of a shared data structure without waiting for communication with other replicas.
+\item[Conflict-free Replicated Data Types (CRDTs)] allow each participant to modify a local copy (\emph{replica}) of a shared data structure without waiting for communication with other replicas \cite{Shapiro:2011wy,Shapiro:2011un}.
 This has the consequence that the state of replicas may temporarily diverge, but the definition of CRDTs ensures that all replicas eventually converge towards a consistent state.
 
-\item[Operational Transformation (OT)] algorithms are designed for several users who are concurrently editing a shared document, as implemented for example in Google Docs.
+\item[Operational Transformation (OT)] algorithms are designed for several users who are concurrently editing a shared document \cite{Ellis:1989ue,Sun:1998un}, as implemented for example in Google Docs \cite{DayRichter:2010tt}.
 As with CRDTs, OT allows each user's changes to be applied immediately to their local copy, while ensuring that other users' concurrent edits can be integrated in a consistent way.
 \end{description}
 
 We discuss these techniques in more detail in Section~\ref{sec:relwork}.
 Despite decades of research in the above topics, consistency mechanisms for concurrent data access remain poorly understood, and tools for reasoning about them (both formally and informally) are subtle and error-prone.
-As we show in the following sections, many published algorithms exhibit serious anomalies, or even fail to ensure convergence of replicas, leaving the system in a permanently inconsistent state.
+As we show in the following sections, many published algorithms exhibit serious anomalies, or fail to even ensure convergence of replicas, leaving the system in a permanently inconsistent state \cite{Oster:2005vi,Imine:2003ks,Imine:2006kn}.
 
 In this work we introduce \emph{Operation Sets} (or \emph{OpSets} for short), a novel approach for describing and reasoning about algorithms for concurrent data access and manipulation.
-We go beyond merely ensuring replica convergence, and show how this approach simplifies the tasks of specifying and verifying more complex correctness properties.
+We go beyond merely ensuring replica convergence, and show how this approach simplifies the task of specifying and verifying stronger correctness properties.
 
 Our contributions in this paper are as follows:
 
@@ -55,7 +55,7 @@ Our contributions in this paper are as follows:
 On top of this abstraction, we specify a variety of abstract datatypes (maps, lists, trees, and registers), and we demonstrate that our specification is both simpler and more precise than previous efforts to specify the semantics of these data structures.
 
 \item We demonstrate that our datatype specification captures an important correctness property that has been overlooked by prior work in this area.
-Using our specification we review a selection of algorithms from the literature, and identify those that satisfy this correctness property.
+Using our specification we review a selection of algorithms from the literature, and identify several that fail to satisfy this correctness property.
 
 \item Using the Isabelle/HOL proof assistant, we formally verify the consistency of our semantics with alternative approaches, and prove that selected algorithms satisfy the semantics.
 By using mechanised proofs we eliminate the ambiguity of previous informal approaches, and we can rule out reasoning errors that could occur in handwritten proofs.
@@ -65,6 +65,7 @@ By using mechanised proofs we eliminate the ambiguity of previous informal appro
 
 % Constrain operation: not allowed to have a return value. For example, CAS
 
+\input{background}
 \input{approach}
 \input{list}
 \input{assign}

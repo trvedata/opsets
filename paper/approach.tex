@@ -1,43 +1,8 @@
 \section{The OpSets Approach}\label{sec:approach}
 
-At a high level, consistency models for distributed data systems can be classified into two categories:
-\begin{description}
-\item[Strong consistency models] such as serialisability or linearisability \cite{Herlihy:1990jq} attempt to make a system behave like a single sequentially executing node, even when it is in fact replicated and concurrent.
-An unavoidable downside of these models is that they require waiting for synchronous network communication before any operation or transaction is allowed to complete \cite{Davidson:1985hv,Gilbert:2002il}.
-Thus, a node cannot make progress while it is offline or partitioned from other nodes.
-In a formal sense, enforcing a strong consistency model is equivalent to consensus \cite{Chandra:1996cp,Herlihy:1991gk}, which implies that the algorithm cannot be guaranteed to terminate in an asynchronous system \cite{Fischer:1985tt}.
-
-\item[Weak consistency models] are employed by systems that prioritise availability over strong consistency; for example, systems that require nodes to be able to make progress while offline or while partitioned from other nodes.
-In such systems, each node typically reads and manipulates a local copy of the shared state, and propagates any changes to that state asynchronously to other nodes.
-Examples of weak consistency models in this category are \emph{causal consistency} \cite{Attiya:2015dm,Mahajan:2011wz,Lloyd:2011hz} and \emph{eventual consistency} \cite{Bailis:2013jc,Burckhardt:2014hy,Terry:1994fp,Vogels:2009ca}.
-\end{description}
-
-In this work we focus on the latter category of weak consistency models.
-However, as we shall demonstrate shortly, the OpSets approach allows us to specify our consistency model more precisely than existing techiques permit.
-
-\subsection{Eventual Consistency is Insufficient}\label{sec:eventual-consistency}
-
-Eventual consistency is usually informally defined as follows: \emph{if no new updates are made to the shared state, all nodes will eventually have the same data}.
-This is a very weak definition for several reasons:
-\begin{itemize}
-\item The premise, \emph{if no new updates are made}, may never be true (if the shared state is continually modified because the system is never quiescent).
-In that case, eventual consistency becomes a vacuous statement.
-
-\item Many trivial algorithms satisfy the requirement of converging towards the same state.
-For example, a system could simply discard writes, and thus converge to a state in which operations have been ignored.
-Although such a system would not be useful in practice, the definition of eventual consistency does not capture the requirement that writes should be persistent.
-
-\item In a system that allows nodes to make progress while they are partitioned from other nodes, it is inevitable that the local state of individual nodes might diverge due to concurrent modifications.
-Such divergent states must then be merged at a later time, when communication between the nodes is restored.
-Even if we require that this merge operation does not discard data that has been written, eventual consistency does not specify which states should be considered valid results of the merge operation.
-We show in Section~\ref{sec:list} how such under-specification can lead to undesirable outcomes.
-\end{itemize}
-
-\subsection{Introducing OpSets}\label{sec:opsets-intro}
-
 The OpSets approach is a simple abstraction that allows us to be more precise about the consistency properties of a replicated data system.
 We assume that the system consists of a set of \emph{nodes} connected by a network.
-These nodes concurrently access some \emph{shared data structure}, which may be a relational database (consisting of rows in tables), a text document (an ordered list of characters), a vector-graphics document (a tree of records describing graphical objects), or any other kind of data structure.
+These nodes concurrently access some \emph{shared data structure}, which may be a relational database (consisting of rows in tables), a text document (a sequence of characters), a vector-graphics document (a tree of records describing graphical objects), or any other kind of data structure.
 
 We assume that each node has a local copy of the shared data structure, which it can read and modify without locking or any other coordination with other nodes.
 Whenever a node makes a modification to that structure, it records the change as an \emph{operation}.
@@ -53,7 +18,7 @@ Operations remain immutable throughout this process.
 
 Thus, the OpSet at each node is a monotonically growing set of operations, and every operation is eventually contained in the OpSet of every node from which it is not permanently partitioned.
 (To deal with unbounded growth, we discuss garbage collection later in this paper.)
-Any two communicating nodes can merge their OpSets using the standard set union, which is commutative, associative, and idempotent, ensuring that communicating nodes converge towards the same OpSet contents.
+Any two communicating nodes can merge their OpSets using the standard set union operator, which is commutative, associative, and idempotent, ensuring that communicating nodes converge towards the same OpSet contents.
 
 \subsection{Data Structures as Queries}\label{sec:queries}
 
