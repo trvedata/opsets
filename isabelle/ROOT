@@ -1,0 +1,8 @@
+session "OpSets" = "HOL" +
+  options [document = pdf, document_output = "output"]
+  theories [document = false]
+    "~~/src/HOL/Library/Product_Lexorder"
+  theories
+    List_Spec
+  document_files
+    "root.tex"
