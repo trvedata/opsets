@@ -424,6 +424,30 @@ lemma app_length_lt_exists':
     and "length xsa \<le> length xs"
   shows "\<exists>zs. xsa@zs = xs"
   using assms app_length_lt_exists by blast
+
+lemma diff_tomb: "fst (foldl interp (ys, A) xs) = fst (foldl interp (ys, B) xs)"
+  apply (induct xs rule: rev_induct)
+   apply force
+  apply (case_tac x)
+  apply clarsimp
+  apply (case_tac ba)
+   apply clarsimp
+   apply (case_tac "foldl interp (ys, A) xs"; case_tac "foldl interp (ys, B) xs")
+    apply clarsimp
+  apply clarsimp
+  apply (case_tac "foldl interp (ys, A) xs"; case_tac "foldl interp (ys, B) xs")
+  apply clarsimp
+    done
+    
+    
+lemma diff_tomb_Remove: "fst (interp_list (remove1 (a, Remove x) xs)) = fst (interp_list xs)"
+  apply (induct xs)
+   apply (clarsimp simp add: interp_list_def)
+  apply safe
+  apply (case_tac b)
+   apply clarsimp
+   apply (clarsimp simp add: interp_list_def)
+sorry
     
 lemma
   assumes "list_spec A" and "list_spec B"
@@ -516,9 +540,11 @@ lemma
      apply clarsimp
     apply force
     apply force
-    
-    
-    
+    apply (rule_tac x=xs in exI)
+  apply (rule_tac x=ys in exI)
+    apply (rule_tac x=zs in exI)
+    apply (subgoal_tac "fst (interp_list (remove1 (a, Remove x2) xa)) = fst (interp_list xa)")
+     apply force    
   sorry
     
   (*apply(subgoal_tac "list_spec.ins_list op_list = list_spec.ins_list rest", force)
