@@ -394,6 +394,45 @@ lemma app_length_lt_exists:
   apply(metis append_Cons append_eq_append_conv_if append_take_drop_id length_Cons)
   done
     
+lemma diff_tomb: "fst (foldl interp (ys, A) xs) = fst (foldl interp (ys, B) xs)"
+  apply (induct xs rule: rev_induct)
+   apply force
+  apply (case_tac x)
+  apply clarsimp
+  apply (case_tac ba)
+   apply clarsimp
+   apply (case_tac "foldl interp (ys, A) xs"; case_tac "foldl interp (ys, B) xs")
+    apply clarsimp
+  apply clarsimp
+  apply (case_tac "foldl interp (ys, A) xs"; case_tac "foldl interp (ys, B) xs")
+  apply clarsimp
+    done
+    
+    
+lemma "fst (interp_list (remove1 (a, Remove x) xs)) = fst (interp_list xs)"
+  apply (induct xs)
+   apply (clarsimp simp add: interp_list_def)
+  apply safe
+  apply (case_tac b)
+   apply clarsimp
+   apply (clarsimp simp add: interp_list_def)
+    
+    
+  apply (rule conjI)
+    apply clarsimp
+   apply (clarsimp simp add: interp_list_def)
+   apply (subgoal_tac "fst (foldl interp ([], {}) xs) = fst (foldl interp ([], {x}) xs)")
+    prefer 2
+    apply (case_tac "foldl interp ([], {}) xs")
+    apply (case_tac "foldl interp ([], {x}) xs")
+    apply (case_tac "foldl interp ([], {}) (remove1 (a, Remove x) xs)")
+    apply clarsimp
+
+
+
+
+
+    
 lemma
   assumes "list_spec A" and "list_spec B"
     and "set A \<subseteq> set B"
@@ -462,6 +501,14 @@ lemma
      prefer 2
      apply(simp add: list_spec.ins_list_def)
     apply clarsimp
+    defer
+    defer
+    apply (rule_tac x=xs in exI)
+  apply (rule_tac x=ys in exI)
+    apply (rule_tac x=zs in exI)
+    apply (subgoal_tac "fst (interp_list (remove1 (a, Remove x2) xa)) = fst (interp_list xa)")
+     apply force
+
   sorry
     
   (*apply(subgoal_tac "list_spec.ins_list op_list = list_spec.ins_list rest", force)
