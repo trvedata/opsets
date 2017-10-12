@@ -12,6 +12,11 @@ fun insert_after :: "'oid \<Rightarrow> 'oid option \<Rightarrow> 'oid list \<Ri
   "insert_after oid (Some ref) (x#xs) = (
      if x = ref then x # oid # xs
                 else x # (insert_after oid (Some ref) xs))"
+  
+fun make_insert :: "'oid list \<Rightarrow> 'oid \<Rightarrow> nat \<Rightarrow> ('oid \<times> 'oid list_op)" where
+  "make_insert xs oid 0       = (oid, InsertAfter None)" |
+  "make_insert [] oid m       = (oid, InsertAfter None)" |
+  "make_insert xs oid (Suc m) = (oid, InsertAfter (Some (xs ! min (length xs - 1) m)))"
 
 fun interp :: "'oid list \<times> 'oid set \<Rightarrow> ('oid \<times> 'oid list_op) \<Rightarrow> 'oid list \<times> 'oid set" where
   "interp (list, tomb) (oid, InsertAfter ref) = (insert_after oid ref list, tomb)" |
@@ -404,7 +409,8 @@ lemma app_length_lt_exists':
   shows "\<exists>zs. xsa@zs = xs"
   using assms app_length_lt_exists by blast
 
-lemma diff_tomb: "fst (foldl interp (ys, A) xs) = fst (foldl interp (ys, B) xs)"
+lemma diff_tomb:
+  shows "fst (foldl interp (ys, A) xs) = fst (foldl interp (ys, B) xs)"
   apply (induct xs rule: rev_induct)
    apply force
   apply (case_tac x)
@@ -535,5 +541,96 @@ lemma
    apply force
     apply(rule diff_tomb_Remove) 
   done
+    
+lemma insert_after_nth_oid:
+  assumes "distinct ys"
+       and "n < length ys"
+     shows "insert_after oid (Some (ys ! n)) ys ! Suc n = oid"
+  using assms
+  apply(induction ys arbitrary: n)
+   apply clarsimp
+  apply clarsimp
+  apply safe
+   apply(subgoal_tac "n = 0")
+    prefer 2
+    apply(metis distinct.simps(2) length_Cons nth_Cons_0 nth_eq_iff_index_eq zero_less_Suc)
+   apply clarsimp
+  apply(subgoal_tac "\<exists>m. n = Suc m")
+   prefer 2
+   apply(metis not0_implies_Suc nth_Cons')
+  apply clarsimp
+  done
+    
+lemma ins_list_correct_position_insert:
+  assumes "list_spec (xs@[make_insert ys oid m])"
+    and "list_spec.ins_list xs = ys"
+  shows "list_spec.ins_list (xs@[make_insert ys oid m]) ! min (length ys) m = oid"
+  using assms
+  apply -
+  apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
+  apply(case_tac "(interp (foldl interp ([], {}) xs) (make_insert (list_spec.ins_list xs) oid m))"; clarsimp)
+  apply(case_tac "m"; clarsimp)
+   apply(case_tac "foldl interp ([], {}) xs"; clarsimp)
+  apply(case_tac "foldl interp ([], {}) xs"; clarsimp)
+  apply(case_tac "min (length (list_spec.ins_list xs)) (Suc nat) = Suc nat")
+    apply clarsimp
+   apply(subgoal_tac "min (length (list_spec.ins_list xs) - Suc 0) nat = nat")
+    prefer 2
+    apply linarith
+    apply(case_tac "(list_spec.ins_list xs)")
+    apply clarsimp
+    apply clarsimp
+   apply(subgoal_tac "aa = ys")
+    prefer 2
+    apply(subgoal_tac "list_spec xs")
+     prefer 2
+    using list_spec_rm_last apply blast
+      apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
+     apply clarsimp
+     prefer 2
+     apply(subgoal_tac "min (length (list_spec.ins_list xs)) (Suc nat) = length (list_spec.ins_list xs)")
+    prefer 2
+      apply force
+     apply(subgoal_tac "min (length (list_spec.ins_list xs) - Suc 0) nat = length (list_spec.ins_list xs) - Suc 0")
+      prefer 2
+      apply force
+     apply clarsimp
+   apply(subgoal_tac "aa = ys")
+    prefer 2
+    apply(subgoal_tac "list_spec xs")
+     prefer 2
+    using list_spec_rm_last apply blast
+      apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
+     apply clarsimp
+     prefer 2
+     apply safe
+      prefer 2
+      apply(subgoal_tac "\<exists>m. nat = Suc m")
+       prefer 2
+       apply(metis Suc_pred not_gr_zero nth_Cons')
+      apply clarsimp
+     apply(rule insert_after_nth_oid)
+    apply(metis distinct.simps(1) distinct_length_2_or_more list.exhaust list_distinct list_spec_rm_last)
+      apply force
+     apply(subgoal_tac "nat = 0")
+      apply clarsimp
+     prefer 2
+      apply(case_tac "(list_spec.ins_list xs)")
+      apply clarsimp
+     apply clarsimp
+     apply safe
+      apply(subgoal_tac "length list = 0")
+       apply clarsimp
+      apply(metis distinct.simps(2) list_distinct list_spec_rm_last nth_equal_first_eq order_refl)
+     apply(subgoal_tac "\<exists>m. length list = Suc m")
+      apply clarsimp
+     apply(rule insert_after_nth_oid)
+    using list_distinct list_spec_rm_last apply fastforce
+      apply force
+     apply(metis Suc_diff_1 not_gr_zero nth_Cons')
+    apply(subgoal_tac "distinct (ab#list)")
+     apply (metis distinct_conv_nth length_Cons length_greater_0_conv lessI list.simps(3) min_Suc_Suc min_less_iff_conj nth_Cons_0)
+    apply(metis list_distinct list_spec_rm_last)
+    done
 
 end
