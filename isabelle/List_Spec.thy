@@ -261,23 +261,48 @@ lemma insert_preserves_order:
                     list_spec.ins_list op_list = xs @ ys @ zs"
   using assms
   apply(induction after arbitrary: rest op_list rule: rev_induct)
-  (*apply(case_tac "ref \<in> set (list_spec.ins_list before)")
-  apply(subgoal_tac "\<exists>xs zs. list_spec.ins_list rest = xs@zs \<and>
-                             list_spec.ins_list op_list = xs@[oid]@zs", blast)
-  apply(simp add: list_spec.ins_list_def interp_list_def insert_somewhere)
-  apply(subgoal_tac "list_spec.ins_list op_list = list_spec.ins_list rest", force)
-  apply(simp add: list_spec.ins_list_def interp_list_def insert_after_nonex)
+   apply clarsimp
+   apply(case_tac "ref")
+    apply clarsimp
+    apply(rule_tac x="[]" in exI, rule_tac x="[oid]" in exI, rule_tac x="list_spec.ins_list before" in exI)
+    apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
+    apply(metis eq_fst_iff insert_after.simps(1) interp.simps(1))
+    apply(case_tac "a \<in> set (list_spec.ins_list before)")
+     apply(simp add: list_spec.ins_list_def interp_list_def)
+     apply(frule_tac oid="oid" in insert_somewhere[OF disjI2, OF conjI], assumption)
+     apply(erule exE)+
+     apply(rule_tac x="xs" in exI, rule_tac x="[oid]" in exI, rule_tac x="ys" in exI)
+     apply(metis append_Cons append_Nil fst_conv interp.simps(1) old.prod.exhaust)
+    apply clarsimp
+    apply(frule_tac oid="oid" in insert_after_nonex)
+    apply(rule_tac x="list_spec.ins_list before" in exI, rule_tac x="[]" in exI, rule_tac x="[]" in exI)
+    apply clarsimp
+  apply(clarsimp simp add: list_spec.ins_list_def)
+    apply(rule arg_cong[where f="fst"])
+    apply(clarsimp simp add: interp_list_def)
+    apply(subgoal_tac "\<exists>e. foldl interp ([], {}) before = (insert_after oid (Some a) (fst (foldl interp ([], {}) before)), e)")
+     apply clarsimp
+     apply(metis interp.simps(1))
+   apply(simp add: eq_fst_iff)
+  apply clarsimp
   apply(erule_tac x="before @ xs" in meta_allE)
   apply(erule_tac x="before @ (oid, InsertAfter ref) # xs" in meta_allE)
-  apply(subgoal_tac "list_spec (before @ xs)") prefer 2
-  apply(metis append_assoc list_spec_rm_last)
-  apply(subgoal_tac "list_spec (before @ (oid, InsertAfter ref) # xs)") prefer 2
-  apply(metis append_butlast_last_id append_is_Nil_conv butlast.simps(2) butlast_append
-    butlast_snoc list.distinct(1) list_spec_rm_last)
   apply clarsimp
-  apply(case_tac b, simp add: insert_twice)
-  apply clarsimp*)
-  sorry
+  apply(subgoal_tac "list_spec (before @ (oid, InsertAfter ref) # xs)")
+   apply clarsimp
+  apply(subgoal_tac "list_spec (before @ xs)")
+    apply clarsimp
+    apply(case_tac b; clarsimp simp add: insert_twice)
+    apply(rule_tac x="xsa" in exI, rule_tac x="ys" in exI, rule_tac x="zs" in exI)
+    apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
+    apply(rule conjI)
+     apply(metis eq_fst_iff interp.simps)
+    apply(subgoal_tac "\<exists>e. foldl interp (interp (foldl interp ([], {}) before) (oid, InsertAfter ref)) xs = (xsa @ ys @ zs, e)")
+     apply clarsimp
+    apply(metis eq_fst_iff)
+   apply(metis append.assoc list_spec_rm_last)
+  apply(metis append_Cons append_assoc list_spec_rm_last)
+  done
 
 lemma list_order_appI [intro!]:
   assumes "list_spec.list_order xs x y"
@@ -387,12 +412,18 @@ lemma list_spec_remove1:
 lemma app_length_lt_exists:
   assumes "xsa @ zsa = xs @ ys"
     and "length xsa \<le> length xs"
-  shows "\<exists>zs. xsa@zs = xs"
+  shows "xsa@(drop (length xsa) xs) = xs"
   using assms
   apply(induction xsa arbitrary: xs zsa ys, clarsimp)
   apply clarsimp
   apply(metis append_Cons append_eq_append_conv_if append_take_drop_id length_Cons)
   done
+    
+lemma app_length_lt_exists':
+  assumes "xsa @ zsa = xs @ ys"
+    and "length xsa \<le> length xs"
+  shows "\<exists>zs. xsa@zs = xs"
+  using assms app_length_lt_exists by blast
     
 lemma
   assumes "list_spec A" and "list_spec B"
@@ -454,7 +485,7 @@ lemma
    apply(case_tac "length xsa \<le> length (xs@x#ys)")
     apply(subgoal_tac "\<exists>us. xsa@us = xs@x#ys")
      prefer 2
-     apply(simp add: app_length_lt_exists)
+     apply(simp add: app_length_lt_exists')
     apply clarsimp
     apply(rule_tac x="xs" in exI, rule_tac x="(drop (Suc (length xs)) xsa)@ysa@us" in exI, rule_tac x="zs" in exI)
     apply clarsimp
@@ -462,6 +493,32 @@ lemma
      prefer 2
      apply(simp add: list_spec.ins_list_def)
     apply clarsimp
+    apply(subgoal_tac "xs @ x # drop (Suc (length xs)) xsa = xsa")
+     prefer 2
+     apply(metis append_eq_append_conv_if id_take_nth_drop linorder_not_less nth_append nth_append_length)
+    apply(subgoal_tac "us @ y # zs = zsa")
+     apply force
+    apply(metis append_Cons append_assoc suffix_eq_distinct_list)
+   apply(rule_tac x="xs" in exI, rule_tac x="ys" in exI, rule_tac x="(drop (Suc (Suc (length xs + length ys))) xsa)@ysa@zsa" in exI)
+   apply clarsimp
+   apply(subgoal_tac "fst (interp_list (ps @ (a, InsertAfter x1) # ss)) = xsa @ ysa @ zsa")
+     prefer 2
+    apply(simp add: list_spec.ins_list_def)
+   apply(subgoal_tac "xs @ x # ys @ y # drop (Suc (Suc (length xs + length ys))) xsa = xsa")
+    prefer 2
+    apply(insert app_length_lt_exists)[1]
+    apply(erule_tac x="xs @ x # ys @ [y]" in meta_allE)
+    apply(erule_tac x="zs" in meta_allE)
+    apply(erule_tac x="xsa" in meta_allE)
+    apply(erule_tac x="zsa" in meta_allE)
+    apply(subgoal_tac "length (xs @ x # ys @ [y]) \<le> length xsa")
+     prefer 2
+     apply clarsimp
+    apply force
+    apply force
+    
+    
+    
   sorry
     
   (*apply(subgoal_tac "list_spec.ins_list op_list = list_spec.ins_list rest", force)
