@@ -303,27 +303,6 @@ lemma insert_preserves_order:
    apply(metis append.assoc list_spec_rm_last)
   apply(metis append_Cons append_assoc list_spec_rm_last)
   done
-
-lemma list_order_appI [intro!]:
-  assumes "list_spec.list_order xs x y"
-    and "list_spec (xs @ [(a, InsertAfter x1)])"
-  shows "list_spec.list_order (xs @ [(a, InsertAfter x1)]) x y"
-(*  using assms
-  apply -
-    apply(subgoal_tac "list_spec xs")
-   apply(clarsimp simp add: list_spec.list_order_def)
-   prefer 2
-  using list_spec_rm_last apply blast
-  apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
-  apply(subgoal_tac "\<exists>e. (foldl interp ([], {}) xs) = (xsa @ x # ys @ y # zs, e)")
-   apply clarsimp
-   apply(case_tac "x1 \<in> set xsa")
-    apply(meson insert_first_part)
-   apply(case_tac "x1 \<in> set ys")
-    apply(rule_tac x=xsa in exI, rule_tac x="insert_after a x1 ys" in exI, rule_tac x="zs" in exI)
-    apply(drule_tac oid=a in insert_second_part, assumption)
-*)
-  oops
   
 lemma distinct_fst:
   assumes "distinct (map fst A)"
@@ -440,14 +419,23 @@ lemma diff_tomb: "fst (foldl interp (ys, A) xs) = fst (foldl interp (ys, B) xs)"
     done
     
     
-lemma diff_tomb_Remove: "fst (interp_list (remove1 (a, Remove x) xs)) = fst (interp_list xs)"
-  apply (induct xs)
+lemma diff_tomb_Remove:
+  shows "fst (interp_list (remove1 (a, Remove x) xs)) = fst (interp_list xs)"
+  apply (induct xs rule: rev_induct)
    apply (clarsimp simp add: interp_list_def)
   apply safe
   apply (case_tac b)
    apply clarsimp
    apply (clarsimp simp add: interp_list_def)
-sorry
+   apply(case_tac "foldl interp ([], {}) (remove1 (a, Remove x) xs)"; clarsimp)
+   apply(case_tac "foldl interp ([], {}) xs"; clarsimp)
+   apply(case_tac "foldl interp ([], {}) (remove1 (a, Remove x) (xs @ [(aa, InsertAfter x1)]))"; clarsimp)
+   apply(case_tac "(a, Remove x) \<in> set xs")
+    apply(simp add: remove1_append)+
+    apply (clarsimp simp add: interp_list_def)
+   apply(case_tac "foldl interp ([], {}) (remove1 (a, Remove x) xs)"; clarsimp)
+  apply(case_tac "foldl interp ([], {}) xs"; clarsimp)
+  done
     
 lemma
   assumes "list_spec A" and "list_spec B"
@@ -544,20 +532,8 @@ lemma
   apply (rule_tac x=ys in exI)
     apply (rule_tac x=zs in exI)
     apply (subgoal_tac "fst (interp_list (remove1 (a, Remove x2) xa)) = fst (interp_list xa)")
-     apply force    
-  sorry
-    
-  (*apply(subgoal_tac "list_spec.ins_list op_list = list_spec.ins_list rest", force)
-  apply(simp add: list_spec.ins_list_def interp_list_def insert_after_nonex)
-  apply(erule_tac x="before @ xs" in meta_allE)
-  apply(erule_tac x="before @ (oid, InsertAfter ref) # xs" in meta_allE)
-  apply(subgoal_tac "list_spec (before @ xs)") prefer 2
-  apply(metis append_assoc list_spec_rm_last)
-  apply(subgoal_tac "list_spec (before @ (oid, InsertAfter ref) # xs)") prefer 2
-  apply(metis append_butlast_last_id append_is_Nil_conv butlast.simps(2) butlast_append
-    butlast_snoc list.distinct(1) list_spec_rm_last)
-  apply clarsimp
-  apply(case_tac b, simp add: insert_twice)
-  apply clarsimp*)
+   apply force
+    apply(rule diff_tomb_Remove) 
+  done
 
 end
