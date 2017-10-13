@@ -239,17 +239,41 @@ qed
 
 lemma last_op_greatest:
   assumes "list_spec (op_list @ [(oid, oper)])"
-  shows "\<forall>x \<in> set (map fst op_list). x < oid"
-  using assms apply(induct op_list, simp)
-  apply(subgoal_tac "sorted (map fst (op_list @ [(oid, oper)]))") prefer 2
-  using list_spec.sorted_oids sorted_Cons apply fastforce
-  apply(subgoal_tac "list_spec (op_list @ [(oid, oper)])") prefer 2
-  apply(simp add: list_spec_def, clarsimp)
-  apply(subgoal_tac "\<forall>x \<in> set (map fst op_list @ [oid]). a < x", simp)
-  apply(metis (no_types, lifting) distinct.simps(2) dual_order.strict_iff_order
-    list.map(1) list.simps(9) list_spec.distinct_oids list_spec.sorted_oids map_append
-    prod.sel(1) sorted_Cons)
-  done
+    and "x \<in> set (map fst op_list)"
+    shows "x < oid"
+using assms proof(induction op_list)
+  assume "x \<in> set (map fst [])"
+  thus "x < oid"
+    by auto
+next
+  fix a op_list
+  assume IH: "list_spec (op_list @ [(oid, oper)]) \<Longrightarrow> x \<in> set (map fst op_list) \<Longrightarrow> x < oid"
+    and 2: "list_spec ((a#op_list) @ [(oid, oper)])"
+    and 3: "x \<in> set (map fst (a#op_list))"
+  hence L: "list_spec (op_list @ [(oid, oper)])"
+    by(simp add: list_spec_def sorted_Cons)
+  hence S: "sorted (map fst (op_list @ [(oid, oper)]))"
+    by(auto simp add: list_spec_def)
+  {
+    fix x
+    assume A: "x \<in> set (map fst op_list @ [oid])"
+    hence "fst a < x"
+      using S 2 by(cases a, clarsimp simp add: list_spec_def) (metis A le_neq_trans sorted_Cons)
+  }
+  note T = this
+  have "x = fst a \<or> x \<in> set (map fst op_list)"
+    using 3 by auto
+  thus "x < oid"
+  proof
+    assume "x = fst a"
+    thus "x < oid"
+      using T by auto
+  next
+    assume "x \<in> set (map fst op_list)"
+    thus "x < oid"
+      using IH L by auto
+  qed
+qed
 
 lemma list_distinct:
   assumes "list_spec op_list"
