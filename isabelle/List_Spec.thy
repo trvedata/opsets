@@ -382,22 +382,54 @@ qed
 lemma insert_first_part:
   assumes "ref = None \<or> (ref = Some r \<and> r \<in> set xs)"
   shows "insert_after oid ref (xs @ ys) = (insert_after oid ref xs) @ ys"
-  using assms
-  apply(induction ys rule: rev_induct, simp, simp)
-  apply(induction xs, simp)
-  apply(case_tac ref, force)
-  apply(case_tac "a=aa", simp_all)
-  done
+using assms proof(induction ys rule: rev_induct)
+  assume "ref = None \<or> ref = Some r \<and> r \<in> set xs"
+  thus "insert_after oid ref (xs @ []) = insert_after oid ref xs @ []"
+    by auto
+next
+  fix x xsa
+  assume IH: "ref = None \<or> ref = Some r \<and> r \<in> set xs \<Longrightarrow> insert_after oid ref (xs @ xsa) = insert_after oid ref xs @ xsa"
+    and "ref = None \<or> ref = Some r \<and> r \<in> set xs"
+  thus "insert_after oid ref (xs @ xsa @ [x]) = insert_after oid ref xs @ xsa @ [x]"
+  proof(induction xs)
+    assume "ref = None \<or> ref = Some r \<and> r \<in> set []"
+    thus "insert_after oid ref ([] @ xsa @ [x]) = insert_after oid ref [] @ xsa @ [x]"
+      by auto
+  next
+    fix a xs
+    assume 1: "ref = None \<or> ref = Some r \<and> r \<in> set (a # xs)"
+      and 2: "((ref = None \<or> ref = Some r \<and> r \<in> set xs \<Longrightarrow> insert_after oid ref (xs @ xsa) = insert_after oid ref xs @ xsa) \<Longrightarrow>
+             ref = None \<or> ref = Some r \<and> r \<in> set xs \<Longrightarrow> insert_after oid ref (xs @ xsa @ [x]) = insert_after oid ref xs @ xsa @ [x])"
+      and 3: "(ref = None \<or> ref = Some r \<and> r \<in> set (a # xs) \<Longrightarrow> insert_after oid ref ((a # xs) @ xsa) = insert_after oid ref (a # xs) @ xsa)"
+    show "insert_after oid ref ((a # xs) @ xsa @ [x]) = insert_after oid ref (a # xs) @ xsa @ [x]"
+    proof(rule disjE[OF 1])
+      assume "ref = None"
+      thus "insert_after oid ref ((a # xs) @ xsa @ [x]) = insert_after oid ref (a # xs) @ xsa @ [x]"
+        by auto
+    next
+      assume "ref = Some r \<and> r \<in> set (a # xs)"
+      thus "insert_after oid ref ((a # xs) @ xsa @ [x]) = insert_after oid ref (a # xs) @ xsa @ [x]"
+        using 2 3 by auto
+    qed
+  qed
+qed
 
 lemma insert_second_part:
   assumes "ref = Some r"
     and "r \<notin> set xs"
     and "r \<in> set ys"
   shows "insert_after oid ref (xs @ ys) = xs @ (insert_after oid ref ys)"
-  using assms
-  apply(induction xs, simp)
-  apply(subgoal_tac "a \<noteq> r", simp, force)
-  done
+using assms proof(induction xs)
+  assume "ref = Some r"
+  thus "insert_after oid ref ([] @ ys) = [] @ insert_after oid ref ys"
+    by auto
+next
+  fix a xs
+  assume "ref = Some r" and "r \<notin> set (a # xs)" and "r \<in> set ys"
+    and "ref = Some r \<Longrightarrow> r \<notin> set xs \<Longrightarrow> r \<in> set ys \<Longrightarrow> insert_after oid ref (xs @ ys) = xs @ insert_after oid ref ys"
+  thus "insert_after oid ref ((a # xs) @ ys) = (a # xs) @ insert_after oid ref ys"
+    by auto
+qed
 
 lemma insert_twice:
   assumes "list_spec (before @ (x1, InsertAfter r1) # after @ [(x2, InsertAfter r2)])"
