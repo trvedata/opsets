@@ -338,15 +338,46 @@ qed
 
 lemma insert_somewhere:
   assumes "ref = None \<or> (ref = Some r \<and> r \<in> set list)"
-  shows "\<exists>xs ys. list = xs@ys \<and> insert_after oid ref list = xs @ oid # ys"
-  using assms apply(induction list, simp)
-  apply(case_tac ref, force)
-  apply(case_tac "a=aa")
-  apply(rule_tac x="[aa]" in exI, rule_tac x=list in exI, simp)
-  apply(subgoal_tac "aa \<in> set list", simp) prefer 2 apply simp
-  apply(erule exE)+
-  apply(rule_tac x="a#xs" in exI, rule_tac x=ys in exI, force)
-  done
+  shows "\<exists>xs ys. list = xs@ys \<and> insert_after oid ref list = xs@oid#ys"
+using assms proof(induction list)
+  assume "ref = None \<or> ref = Some r \<and> r \<in> set []"
+  thus "\<exists>xs ys. [] = xs @ ys \<and> insert_after oid ref [] = xs @ oid # ys"
+  proof
+    assume "ref = None"
+    thus "\<exists>xs ys. [] = xs@ys \<and> insert_after oid ref [] = xs@oid#ys"
+      by auto
+  next
+    assume "ref = Some r \<and> r \<in> set []"
+    thus "\<exists>xs ys. [] = xs@ys \<and> insert_after oid ref [] = xs@oid#ys"
+      by auto
+  qed
+next
+  fix a list
+  assume 1: "ref = None \<or> ref = Some r \<and> r \<in> set (a#list)"
+    and IH: "ref = None \<or> ref = Some r \<and> r \<in> set list \<Longrightarrow> \<exists>xs ys. list = xs@ys \<and> insert_after oid ref list = xs@oid#ys"
+  show "\<exists>xs ys. a#list = xs@ys \<and> insert_after oid ref (a#list) = xs@oid#ys"
+  proof(rule disjE[OF 1])
+    assume "ref = None"
+    thus "\<exists>xs ys. a # list = xs @ ys \<and> insert_after oid ref (a # list) = xs @ oid # ys"
+      by force
+  next
+    assume "ref = Some r \<and> r \<in> set (a # list)"
+    hence 2: "r = a \<or> r \<in> set list" and 3: "ref = Some r"
+      by auto
+    show "\<exists>xs ys. a # list = xs @ ys \<and> insert_after oid ref (a # list) = xs @ oid # ys"
+    proof(rule disjE[OF 2])
+      assume "r = a"
+      thus "\<exists>xs ys. a # list = xs @ ys \<and> insert_after oid ref (a # list) = xs @ oid # ys"
+        using 3 by(metis append_Cons append_Nil insert_after.simps(3))
+    next
+      assume "r \<in> set list"
+      from this obtain xs ys where "list = xs@ys \<and> insert_after oid ref list = xs@oid#ys"
+        using IH 3 by auto
+      thus "\<exists>xs ys. a # list = xs @ ys \<and> insert_after oid ref (a # list) = xs @ oid # ys"
+        using 3 by clarsimp (metis append_Cons append_Nil)
+    qed
+  qed
+qed
 
 lemma insert_first_part:
   assumes "ref = None \<or> (ref = Some r \<and> r \<in> set xs)"
