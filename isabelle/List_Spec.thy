@@ -522,20 +522,30 @@ lemma insert_preserves_order:
 lemma distinct_fst:
   assumes "distinct (map fst A)"
   shows "distinct A"
-  using assms by(induction A, auto)
+using assms by(induction A) auto
     
 lemma sorted_fst:
-  assumes "sorted (map fst A)"
-    and "distinct (map fst A)"
-  shows "sorted A"
-  using assms
-  apply(induction A)
-   apply force
-  apply(case_tac "a"; clarsimp)
-  apply(subgoal_tac "sorted (map fst A)")
-    apply(rule sorted.intros; clarsimp)
-   apply(metis fst_conv image_set le_neq_trans rev_image_eqI sorted_Cons)
-  using sorted_Cons by auto
+  assumes "sorted (map fst xs)"
+    and "distinct (map fst xs)"
+  shows "sorted xs"
+using assms proof(induction xs)
+  show "sorted []"
+    by auto
+next
+  fix a and xs :: "('a \<times> 'b) list"
+  assume 1: "sorted (map fst (a # xs))" and 2: "distinct (map fst (a # xs))"
+    and IH: "sorted (map fst xs) \<Longrightarrow> distinct (map fst xs) \<Longrightarrow> sorted xs"
+  from this obtain x y where 3: "a = (x, y)"
+    by force
+  have "sorted (map fst xs)" and "distinct (map fst xs)"
+    using 1 2 by(auto simp add: sorted_Cons)
+  hence "sorted xs"
+    using IH by auto
+  also have "\<forall>y\<in>set xs. a \<le> y"
+    using 1 2 3 by clarsimp (metis antisym_conv1 fst_conv rev_image_eqI set_map sorted_Cons)
+  ultimately show "sorted (a # xs)"
+    using sorted_Cons by auto
+qed
     
 lemma subset_distinct_le:
   assumes "set A \<subseteq> set B" and "distinct A" and "distinct B"
