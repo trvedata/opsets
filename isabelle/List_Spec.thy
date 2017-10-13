@@ -303,9 +303,18 @@ lemma distinct_list_split:
     and "xs = xa @ x # ya"
     and "xs = xb @ x # yb"
   shows "xa = xb \<and> ya = yb"
-  using assms apply(induction xs arbitrary: xa xb x, simp)
-  apply(case_tac xa; case_tac xb; clarsimp)
-  done
+using assms proof(induction xs arbitrary: xa xb x)
+  fix xa xb x
+  assume "[] = xa @ x # ya"
+  thus "xa = xb \<and> ya = yb"
+    by auto
+next
+  fix a xs xa xb x
+  assume IH: "\<And>xa xb x. distinct xs \<Longrightarrow> xs = xa @ x # ya \<Longrightarrow> xs = xb @ x # yb \<Longrightarrow> xa = xb \<and> ya = yb"
+    and "distinct (a # xs)" and "a # xs = xa @ x # ya" and "a # xs = xb @ x # yb"
+  thus "xa = xb \<and> ya = yb"
+    by(case_tac xa; case_tac xb) auto
+qed
 
 lemma list_order_trans:
   assumes "list_spec op_list"
