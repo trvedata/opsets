@@ -321,18 +321,20 @@ lemma list_order_trans:
     and "list_spec.list_order op_list x y"
     and "list_spec.list_order op_list y z"
   shows "list_spec.list_order op_list x z"
-  using assms apply -
-  apply(subgoal_tac "\<exists>ws xs ys zs. list_spec.ins_list op_list = ws@[x]@xs@[y]@ys@[z]@zs")
-   apply(metis append.assoc list_spec.list_orderI)
-  apply(clarsimp simp add: list_spec.list_order_def)
-  apply(subgoal_tac "distinct (list_spec.ins_list op_list)") prefer 2
-  using assms(1) list_distinct apply blast    
-  apply(subgoal_tac "zs = ysa @ z # zsa") prefer 2
-  apply(frule_tac xa="xs @ x # ys" and xb=xsa and x=y and ya=zs
-    and yb="ysa @ z # zsa" in distinct_list_split, simp, simp, simp)
-  apply(rule_tac x=xs in exI, rule_tac x=ys in exI)
-  apply(rule_tac x=ysa in exI, rule_tac x=zsa in exI, simp)
-  done
+proof -
+  obtain xxs xys xzs where 1: "list_spec.ins_list op_list = (xxs@[x]@xys)@(y#xzs)"
+    using assms by(auto simp add: list_spec.list_order_def[OF assms(1)])
+  obtain yxs yys yzs where 2: "list_spec.ins_list op_list = yxs@y#(yys@[z]@yzs)"
+    using assms by(auto simp add: list_spec.list_order_def[OF assms(1)])
+  have 3: "distinct (list_spec.ins_list op_list)"
+    using assms list_distinct by blast
+  hence "xzs = yys@[z]@yzs"
+    using distinct_list_split[OF 3, OF 2, OF 1] by auto
+  hence "list_spec.ins_list op_list = xxs@[x]@xys@[y]@yys@[z]@yzs"
+    using 1 2 3 by clarsimp
+  thus  "list_spec.list_order op_list x z"
+    using assms by(metis append.assoc list_spec.list_orderI)
+qed
 
 lemma insert_somewhere:
   assumes "ref = None \<or> (ref = Some r \<and> r \<in> set list)"
