@@ -58,4 +58,20 @@ lemma permut_rem_any:
   apply(metis assms distinct_set_remove_mid permut_def)+
   done
 
+lemma permut_append:
+  assumes "permut xs (ys @ zs)"
+    and "distinct (xs @ [x])"
+  shows "permut (xs @ [x]) (ys @ [x] @ zs)"
+  using assms by(simp add: permut_def)
+
+lemma permut_pair_fst:
+  assumes "permut xs ys"
+  shows "set (map fst xs) = set (map fst ys)"
+  using assms by(simp add: permut_def)
+
+lemma permut_pair_snd:
+  assumes "permut xs ys"
+  shows "set (map snd xs) = set (map snd ys)"
+  using assms by(simp add: permut_def)
+
 end

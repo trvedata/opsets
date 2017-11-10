@@ -89,6 +89,61 @@ lemma spec_ops_rem_any:
   using spec_ops_ref_less apply(blast, simp)
   done
 
+lemma spec_ops_add_any:
+  assumes "valid_spec_ops (xs @ ys)"
+    and "\<forall>a \<in> set (map fst xs). a < oid"
+    and "\<forall>a \<in> set (map fst ys). oid < a"
+    and "\<And>r. ref = Some r \<Longrightarrow> r < oid"
+  shows "valid_spec_ops (xs @ [(oid, ref)] @ ys)"
+  using assms apply(induction ys rule: rev_induct)
+  apply(case_tac ref)
+  apply(simp add: valid_spec_ops.intros(2))
+  apply(simp add: valid_spec_ops.intros(3))
+  apply(subgoal_tac "valid_spec_ops (xs @ xsa)") prefer 2
+  apply(metis append_assoc spec_ops_rem_last, simp)
+  apply(case_tac x, simp)
+  apply(subgoal_tac "valid_spec_ops ((xs @ (oid, ref) # xsa) @ [(a, b)])", force)
+  apply(subgoal_tac "\<forall>y \<in> set (map fst (xs @ (oid, ref) # xsa)). y < a")
+  apply(case_tac b)
+  using valid_spec_ops.intros(2) apply blast
+  apply(metis append_assoc spec_ops_ref_less valid_spec_ops.intros(3))
+  apply(subgoal_tac "\<forall>y\<in>set (map fst xs). y < a") prefer 2
+  apply force
+  apply(subgoal_tac "\<forall>y\<in>set (map fst xsa). y < a") prefer 2
+  apply(metis append.assoc in_set_conv_decomp map_append spec_ops_id_inc)
+  apply force
+  done
+
+lemma spec_ops_split:
+  assumes "valid_spec_ops ys"
+    and "oid \<notin> set (map fst ys)"
+  shows "\<exists>pre suf. ys = pre @ suf \<and>
+            (\<forall>a\<in>set (map fst pre). a < oid) \<and>
+            (\<forall>a\<in>set (map fst suf). oid < a)"
+  using assms apply(induction ys rule: rev_induct)
+  apply force
+  apply(subgoal_tac "valid_spec_ops xs") prefer 2
+  using spec_ops_rem_last apply blast
+  apply(subgoal_tac "oid \<notin> set (map fst xs)") prefer 2
+  apply simp
+  apply clarsimp
+  apply(case_tac "a < oid")
+  apply(subgoal_tac "suf=[]") prefer 2
+  apply(subgoal_tac "\<forall>x \<in> set (map fst (pre @ suf)). x < a") prefer 2
+  apply(metis append.assoc spec_ops_id_inc)
+  apply(subgoal_tac "\<forall>x \<in> set suf. fst x < a") prefer 2
+  apply simp
+  apply(subgoal_tac "\<forall>x \<in> set suf. fst x < oid") prefer 2
+  apply fastforce
+  using dual_order.asym last_in_set apply blast
+  apply(rule_tac x="pre @ [(a, b)]" in exI, rule_tac x="[]" in exI)
+  apply force
+  apply(subgoal_tac "oid < a") prefer 2
+  apply force
+  apply(rule_tac x="pre" in exI, rule_tac x="suf @ [(a, b)]" in exI)
+  apply force
+  done
+
 lemma rga_ops_distinct:
   assumes "valid_rga_ops xs"
   shows "distinct xs"
@@ -98,6 +153,16 @@ lemma rga_ops_rem_last:
   assumes "valid_rga_ops (xs@[x])"
   shows "valid_rga_ops xs"
   using assms valid_rga_ops.cases by fastforce
+
+lemma rga_ops_ref_less:
+  assumes "valid_rga_ops (xs @ [(oid, Some ref)])"
+  shows "ref < oid"
+  using assms valid_rga_ops.cases by force
+
+lemma rga_ops_oid_unique:
+  assumes "valid_rga_ops (xs @ [(oid, ref)])"
+  shows "oid \<notin> set (map fst xs)"
+  using assms valid_rga_ops.cases by blast
 
 lemma list_spec_monotonic:
   assumes "valid_spec_ops (xs@[(oid, ref)])"
@@ -140,7 +205,7 @@ lemma append_rga_op:
   apply(simp add: final_insert)
   sorry
 
-theorem rga_meets_spec:
+lemma rga_spec_equal:
   assumes "permut xs ys"
     and "valid_rga_ops xs"
     and "valid_spec_ops ys"
@@ -156,5 +221,33 @@ theorem rga_meets_spec:
   apply(meson permut_rem_last rga_ops_rem_last spec_ops_rem_any)
   using append_rga_op apply force
   done
+
+lemma spec_ops_exist:
+  assumes "valid_rga_ops xs"
+  shows "\<exists>ys. permut xs ys \<and> valid_spec_ops ys"
+  using assms apply(induction xs rule: rev_induct)
+  apply(simp add: permut_def valid_spec_ops.intros(1))
+  apply(subgoal_tac "\<exists>ys. permut xs ys \<and> valid_spec_ops ys") prefer 2
+  using rga_ops_rem_last apply blast
+  apply(simp, erule exE, erule conjE)
+  apply(subgoal_tac "\<exists>oid ref. x = (oid, ref)", (erule exE)+, simp) prefer 2
+  apply simp
+  apply(subgoal_tac "\<exists>pre suf. ys = pre@suf \<and>
+                       (\<forall>a \<in> set (map fst pre). a < oid) \<and>
+                       (\<forall>a \<in> set (map fst suf). oid < a)")
+  apply((erule exE)+, (erule conjE)+)
+  apply(rule_tac x="pre @ [(oid, ref)] @ suf" in exI)
+  apply(rule conjI)
+  apply(meson permut_append rga_ops_distinct)
+  apply(metis rga_ops_ref_less spec_ops_add_any)
+  apply(subgoal_tac "oid \<notin> set (map fst ys)") prefer 2
+  using permut_pair_fst rga_ops_oid_unique apply blast
+  using spec_ops_split apply blast
+  done
+
+theorem rga_meets_spec:
+  assumes "valid_rga_ops xs"
+  shows "\<exists>ys. permut xs ys \<and> valid_spec_ops ys \<and> list_rga xs = list_spec ys"
+  using assms rga_spec_equal spec_ops_exist by blast
 
 end
