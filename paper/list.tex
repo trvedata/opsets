@@ -1,87 +1,89 @@
 \section{Specifying a Collaborative List}\label{sec:list}
 
-An ordered list datatype (also known as \emph{sequence}) is the foundation of many collaborative applications.
-For example, a text document can be expressed as an ordered list of characters, and an XML document is a tree in which the contents of each node is an ordered list of child nodes.
+%An ordered list datatype (also known as \emph{sequence}) is the foundation of many collaborative applications.
+%For example, a text document can be expressed as an ordered list of characters, and an XML document is a tree in which the contents of each node is an ordered list of child nodes.
 
-The basic operations on a list are the insertion and the deletion of individual list elements.
-When several users concurrently modify a shared list object, an algorithm is required to merge these changes while ensuring that certain consistency properties are satisfied.
-Algorithms to achieve this goal have been the topic of active research for approximately 30 years, under the headings of operational transformation \cite{Ellis:1989ue,Li:2004er,Nichols:1995fd,Oster:2006tr,Ressel:1996wx,Suleiman:1998eu,Sun:1998vf,Sun:1998un} and CRDTs \cite{Nedelec:2013ky,Nedelec:2016eo,Oster:2006wj,Preguica:2009fz,Roh:2011dw,Weiss:2010hx}.
+%The basic operations on a list are the insertion and the deletion of individual list elements.
+%When several users concurrently modify a shared list object, an algorithm is required to merge these changes while ensuring that certain consistency properties are satisfied.
 
-However, throughout this time, the exact consistency properties provided by the algorithms have been somewhat unclear.
-For example, Sun et al.~\cite{Sun:1998un} identified three desirable properties that they articulated informally: \emph{convergence}, \emph{causality preservation}, and \emph{intention preservation}.
-While the definition of the first two properties is fairly unambiguous, the definition of ``intention preservation'' leaves much more room for interpretation.
-Sun et al.\ define it as follows \cite{Sun:1998un}:
-\begin{displayquote}
-For any operation $O$, the effects of executing $O$ at all sites are the same as the intention of $O$, and the effect of executing $O$ does not change the effects of independent operations.
-\end{displayquote}
-where the term \emph{intention} is in turn defined as:
-\begin{displayquote}
-The intention of an operation $O$ is the execution effect which can be achieved by applying $O$ on the document state from which $O$ was generated.
-\end{displayquote}
-We now show how to define consistency properties for a list in a way that is simple and unambiguous, using the OpSets approach.
+\begin{align*}
+    &\llparenthesis \;\mathit{map}.\mathrm{set}(\mathit{key}, \mathit{val});\; \rrparenthesis_{F,L} \;=\;
+    \big\{ (\mathit{id}_1, \mathit{op}_1) \mid \mathit{op}_1 \neq \bot \big\} \;\cup\;
+    \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\} \\
+    &\qquad\text{where}\quad (\mathit{id}_1, \mathit{op}_1) = \mathrm{valueID}(\mathit{val}) \;\wedge\;
+    \mathit{id}_2 = \mathrm{newID()} \;\wedge\; \mathit{id}_1 < \mathit{id}_2 \\
+    &\qquad\qquad\qquad\wedge\; \mathit{obj} = \mathrm{objID}(\mathit{map}) \;\wedge\;
+    \mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \} \\[10pt]
+    %%%%%%%%%%%%%%
+    &\llparenthesis \;\mathit{map}.\mathrm{remove}(\mathit{key});\; \rrparenthesis_{F,L} \;=\;
+    \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev})) \big\} \\
+    &\qquad\text{where}\quad \mathit{id}_1 = \mathrm{newID()} \;\wedge\;
+    \mathit{obj} = \mathrm{objID}(\mathit{map}) \;\wedge\;
+    \mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \} \\[10pt]
+    %%%%%%%%%%%%%%
+    &\llparenthesis \;\mathit{list}.\mathrm{set}(\mathit{idx}, \mathit{val});\; \rrparenthesis_{F,L} \;=\;
+    \big\{ (\mathit{id}_1, \mathit{op}_1) \mid \mathit{op}_1 \neq \bot \big\} \;\cup\;
+    \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\} \\
+    &\qquad\text{where}\quad (\mathit{id}_1, \mathit{op}_1) = \mathrm{valueID}(\mathit{val}) \;\wedge\;
+    \mathit{id}_2 = \mathrm{newID()} \;\wedge\; \mathit{id}_1 < \mathit{id}_2 \;\wedge\;
+    \mathit{obj} = \mathrm{objID}(\mathit{list}) \\
+    &\qquad\qquad\qquad\wedge\;
+    \mathit{key} = \mathrm{idxKey}_{F,L}(\mathit{obj}, \mathit{obj}, \mathit{idx}) \;\wedge\;
+    \mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \} \\[10pt]
+    %%%%%%%%%%%%%%
+    &\llparenthesis \;\mathit{list}.\mathrm{insert}(\mathit{idx}, \mathit{val});\; \rrparenthesis_{F,L} \;=\;
+    \big\{ (\mathit{id}_1, \mathit{op}_1) \mid \mathit{op}_1 \neq \bot \big\} \;\cup\;
+    \big\{ (\mathit{id}_2,\, \mathsf{InsertAfter}(\mathit{ref})),\;
+    (\mathit{id}_3,\, \mathsf{Assign}(\mathit{obj}, \mathit{id}_2, \mathit{id}_1, \emptyset)) \big\} \\
+    &\qquad\text{where}\quad (\mathit{id}_1, \mathit{op}_1) = \mathrm{valueID}(\mathit{val}) \;\wedge\;
+    \mathit{id}_2 = \mathrm{newID()} \;\wedge\; \mathit{id}_3 = \mathrm{newID()} \;\wedge\;
+    \mathit{id}_1 < \mathit{id}_2 < \mathit{id}_3 \\
+    &\qquad\qquad\qquad\wedge\; \mathit{obj} = \mathrm{objID}(\mathit{list}) \;\wedge\;
+    \mathit{ref} = (\textbf{if }\, \mathit{idx}=0 \,\textbf{ then }\, \mathit{obj} \,\textbf{ else }\,
+    \mathrm{idxKey}_{F,L}(\mathit{obj}, \mathit{obj}, \mathit{idx} - 1)) \\[10pt]
+    %%%%%%%%%%%%%%
+    &\llparenthesis \;\mathit{list}.\mathrm{remove}(\mathit{idx});\; \rrparenthesis_{F,L} \;=\;
+    \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev})) \big\} \\
+    &\qquad\text{where}\quad \mathit{id}_1 = \mathrm{newID()} \;\wedge\;
+    \mathit{obj} = \mathrm{objID}(\mathit{list}) \;\wedge\;
+    \mathit{key} = \mathrm{idxKey}_{F,L}(\mathit{obj}, \mathit{obj}, \mathit{idx}) \\
+    &\qquad\qquad\qquad\wedge\;
+    \mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \} \\[10pt]
+\end{align*}
 
-\subsection{Sequential Single-Element Insertion and Removal}
+\[ \mathrm{valueID}(\mathit{val}) \;=\; \begin{cases}
+    (\mathrm{newID()},\, \mathsf{MakeVal}(\mathit{val})) &
+    \text{ if } \mathit{val} \text{ is a primitive type} \\
+    (\mathrm{newID()},\, \mathsf{MakeList}) &
+    \text{ if } \mathit{val} = \verb|[]| \\
+    (\mathrm{newID()},\, \mathsf{MakeMap}) &
+    \text{ if } \mathit{val} = \verb|{}| \\
+    (\mathrm{objID}(\mathit{val}),\, \bot) &
+    \text{ if } \mathit{val} \text{ is an existing object} \\
+   \end{cases} \]
 
-We specify the semantics of list element insertion and removal using the language of Isabelle/HOL, which is an ML-style functional programming language.
-The definition is given in Figure~\ref{fig:isabelle-list-spec}.
+\[ \mathrm{idxKey}_{F,L}(\mathit{obj}, \mathit{key}, i) \;=\; \left\{
+   \arraycolsep=2pt \def\arraystretch{1.3}
+   \begin{array}{llllll}
+       \mathrm{idxKey}_{F,L}(\mathit{obj}, n, i-1) &
+       \quad\text{if }\; i > 0 & \wedge & (\mathit{key}, n) \in L & \wedge &
+       \exists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \\
+       \mathrm{idxKey}_{F,L}(\mathit{obj}, n, i) &
+       \quad\text{if }\; && (\mathit{key}, n) \in L & \wedge &
+       \nexists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \\
+       \mathit{key} &
+       \quad\text{if }\; i = 0 & \wedge &&&
+       \exists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \\
+   \end{array} \right. \]
 
-\begin{figure}
-\begin{isabelle}
-\begin{tabbing}
-~~~~{\isacharequal}\ \=InsertAfter\ \=\kill
-\isacommand{datatype}\isamarkupfalse%
-\ {\isacharprime}oid\ list{\isacharunderscore}op\\
-~~~~{\isacharequal}\ \>InsertAfter\ \>{\isachardoublequoteopen}{\isacharprime}oid\ option{\isachardoublequoteclose}\\
-~~~~~{\isacharbar}\ \>Remove\ \>{\isacharprime}oid
-\end{tabbing}
-\begin{tabbing}
-~~~~{\isachardoublequoteopen}insert{\isacharunderscore}after\ oid\ {\isacharparenleft}\=Some\ ref{\isacharparenright}\ {\isacharparenleft}\=x{\isacharhash}xs{\isacharparenright}\ \={\isacharequal}\ oid\ {\isacharhash}\ list{\isachardoublequoteclose}\ \=\kill
-\isacommand{fun}\isamarkupfalse%
-\ insert{\isacharunderscore}after\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ {\isasymRightarrow}\ {\isacharprime}oid\ option\ {\isasymRightarrow}\ {\isacharprime}oid\ list\ {\isasymRightarrow}\ {\isacharprime}oid\ list{\isachardoublequoteclose}\ \isakeyword{where}\\
-~~~~{\isachardoublequoteopen}insert{\isacharunderscore}after\ oid\>None\>list\>{\isacharequal}\ oid\ {\isacharhash}\ list{\isachardoublequoteclose}\>{\isacharbar}\\
-~~~~{\isachardoublequoteopen}insert{\isacharunderscore}after\ oid\>{\isacharunderscore}\>{\isacharbrackleft}\ {\isacharbrackright}\>{\isacharequal}\ {\isacharbrackleft}\ {\isacharbrackright}{\isachardoublequoteclose}\>{\isacharbar}\\
-~~~~{\isachardoublequoteopen}insert{\isacharunderscore}after\ oid\ {\isacharparenleft}\>Some\ ref{\isacharparenright}\ {\isacharparenleft}\>x{\isacharhash}xs{\isacharparenright}\ \>{\isacharequal}\ {\isacharparenleft}\\
-~~~~~~~~~~~~~~if\ x\ {\isacharequal}\ ref\>then\ x\ {\isacharhash}\ oid\ {\isacharhash}\ xs\\
-\>else\ x\ {\isacharhash}\ {\isacharparenleft}insert{\isacharunderscore}after\ oid\ {\isacharparenleft}Some\ ref{\isacharparenright}\ xs{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}
-\end{tabbing}
-\begin{tabbing}
-~~~~{\isachardoublequoteopen}interp\ {\isacharparenleft}list{\isacharcomma}\ tomb{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ InsertAfter\ \=ref{\isacharparenright}\ {\isacharequal}\ {\isacharparenleft}insert{\isacharunderscore}after\ oid\ ref\ list{\isacharcomma}\ \=tomb\ {\isasymunion}\ {\isacharbraceleft}ref{\isacharbraceright}\=\kill
-\isacommand{fun}\isamarkupfalse%
-\ interp\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ list\ {\isasymtimes}\ {\isacharprime}oid\ set\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ list{\isacharunderscore}op{\isacharparenright}\ {\isasymRightarrow}\ {\isacharprime}oid\ list\ {\isasymtimes}\ {\isacharprime}oid\ set{\isachardoublequoteclose}\ \isakeyword{where}\\
-~~~~{\isachardoublequoteopen}interp\ {\isacharparenleft}list{\isacharcomma}\ tomb{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ InsertAfter\ \>ref{\isacharparenright}\ {\isacharequal}\ {\isacharparenleft}insert{\isacharunderscore}after\ oid\ ref\ list{\isacharcomma}\ \>tomb\>{\isacharparenright}{\isachardoublequoteclose}\ {\isacharbar}\\
-~~~~{\isachardoublequoteopen}interp\ {\isacharparenleft}list{\isacharcomma}\ tomb{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Remove\ \>ref{\isacharparenright}\ {\isacharequal}\ {\isacharparenleft}list{\isacharcomma}\>tomb\ {\isasymunion}\ {\isacharbraceleft}ref{\isacharbraceright}\>{\isacharparenright}{\isachardoublequoteclose}
-\end{tabbing}
-\begin{tabbing}
-\isacommand{definition}\isamarkupfalse%
-\ interp{\isacharunderscore}list\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ list{\isacharunderscore}op{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharprime}oid\ list\ {\isasymtimes}\ {\isacharprime}oid\ set{\isachardoublequoteclose}\ \isakeyword{where}\\
-~~~~{\isachardoublequoteopen}interp{\isacharunderscore}list\ ops\ {\isasymequiv}\ foldl\ interp\ {\isacharparenleft}{\isacharbrackleft}\ {\isacharbrackright}{\isacharcomma}\ {\isacharbraceleft}{\isacharbraceright}{\isacharparenright}\ ops{\isachardoublequoteclose}
-\end{tabbing}
-\end{isabelle}
-\caption{Sequential specification of insertion and removal of list elements.}\label{fig:isabelle-list-spec}
-\end{figure}
-
-The definitions are polymorphic, using a type variable $\isa{{\isacharprime}oid}$ to denote the type of operation IDs.
-As discussed in Section~\ref{sec:approach}, we assume that every operation has a unique operation ID (oid), which also serves to identify list elements: when a list element is inserted, the oid of the insertion operation is thereafter used to identify the list element inserted by that operation.
-
-Each operation is a pair of $\isa{{\isacharprime}oid} \mathbin{\isasymtimes} \isa{{\isacharprime}oid\ list{\isacharunderscore}op}$, where the first part is the oid of the operation, and the second part is a tagged union type that can be either $\isa{InsertAfter}$ or $\isa{Remove}$.
-$\isa{InsertAfter}$ takes an optional oid parameter: if provided, the new element is inserted after the existing list element with the given oid; if omitted ($\isa{None}$), the new element is inserted at the head of the list.
-The $\isa{Remove}$ operation requires an oid parameter, which is the oid of the list element to remove.
-
-TODO: discuss how to associate a value with each list element
-
-The $\isa{interp}$ function shows how these operations are interpreted.
-The interpretation is a pair of $\isa{{\isacharprime}oid\ list} \mathbin{\isasymtimes} \isa{{\isacharprime}oid\ set}$, where the first part is the list order obtained by interpreting all of the insertions, and the second part is the set of oids that have been removed (tombstones).
-Insertion only adds to the list, and removal only adds to the tombstone set.
-
-The $\isa{interp{\isacharunderscore}list}$ function takes a list of operations~-- which must be in order of ascending oid, as discussed in Section~\ref{sec:op-serial}~-- and applies $\isa{interp}$ in sequential order, starting with the initial state $\isa{{\isacharparenleft}{\isacharbrackleft}\ {\isacharbrackright}{\isacharcomma}\ {\isacharbraceleft}{\isacharbraceright}{\isacharparenright}}$.
-
-The actual insertion is performed by the $\isa{insert{\isacharunderscore}after}$ function.
-Its definition is perhaps the simplest possible: if $\isa{ref}$ is $\isa{None}$, then $\isa{oid}$ is placed at the head of the list; otherwise the function iterates over the list, searching for the reference element, and places the new element $\isa{oid}$ immediately after that element.
-If the reference element does not appear in the list, the list is left unchanged.
+\[ \big\llbracket (\mathit{id}, \mathsf{InsertAfter}(\mathit{ref})) \big\rrbracket_L \;=\;
+   \big\{ (p,n) \in L \mid p \neq \mathit{ref} \big\} \;\cup\;
+   \big\{ (\mathit{ref}, \mathit{id}) \big\} \;\cup\;
+   \big\{ (\mathit{id}, n) \mid (\mathit{ref}, n) \in L \big\} \]
 
 \subsection{Specification versus Implementation}
 
-The definition in Figure~\ref{fig:isabelle-list-spec} is almost trivially simple.
+The definition is almost trivially simple.
 And yet, as we shall argue in the following sections, it is the most precise specification that has been given for a collaboratively editable list, and it subsumes prior specifications given in the literature.
 
 Note that $\isa{interp{\isacharunderscore}list}$ is defined only for a list of operations that is sorted in order of ascending oid.
@@ -93,16 +95,16 @@ When a node receives an operation with a lower oid than an operation already app
 Instead, $\isa{interp{\isacharunderscore}list}$ must replay all operations in ascending order, incorporating the new operation at the appropriate point in the sorted list.
 (Alternatively, a node could keep checkpoints of the interpreted state at selected older oids, jump back to the most recent checkpoint that precedes the oid of the incoming operation, and replay operations from that point onward.)
 
-Viewed in this way, the specification of Figure~\ref{fig:isabelle-list-spec} is not an efficient implementation of a replicated datatype.
+Viewed in this way, the specification is not an efficient implementation of a replicated datatype.
 However, it is a simple, unambiguous, and executable specification of the operation semantics.
 We can now produce more efficient implementations that allow operations to be processed out of order, and prove that their output is consistent with the specification.
 
 \subsection{Preventing Interleaving}
 
-An important property of the specification in Figure~\ref{fig:isabelle-list-spec} is that the interleaving anomaly of Figure~\ref{fig:bad-merge} is not allowed.
+An important property of the specification is that the interleaving anomaly of Figure~\ref{fig:bad-merge} is not allowed.
 It is not immediately obvious why this is the case, but we prove this fact in Isabelle/HOL.
 
-For an informal, intuitive argument why interleaving is ruled out, see Figure~\ref{fig:op-permutations}, which shows an editing scenario similar to Figure~\ref{fig:isabelle-list-spec}, but with the insertions of ``~Alice'' and ``~Charlie'' shortened to ``Al'' and ``Ch'' respectively.
+For an informal, intuitive argument why interleaving is ruled out, see Figure~\ref{fig:op-permutations}, which shows an editing scenario similar to Figure~\ref{fig:bad-merge}, but with the insertions of ``~Alice'' and ``~Charlie'' shortened to ``Al'' and ``Ch'' respectively.
 The example contains four insertion operations (``A'', ``l'', ``C'', and ``h''), which can be ordered in six possible ways.
 However, among the six possible operation orderings there are only two possible results: \texttt{ChAl} or \texttt{AlCh}.
 Interleavings such as \texttt{CAhl} or \texttt{AChl} never occur.

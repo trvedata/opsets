@@ -1,3 +1,18 @@
 \section{Related Work}\label{sec:relwork}
 
 
+Algorithms to achieve this goal have been the topic of active research for approximately 30 years, under the headings of operational transformation \cite{Ellis:1989ue,Li:2004er,Nichols:1995fd,Oster:2006tr,Ressel:1996wx,Suleiman:1998eu,Sun:1998vf,Sun:1998un} and CRDTs \cite{Nedelec:2013ky,Nedelec:2016eo,Oster:2006wj,Preguica:2009fz,Roh:2011dw,Weiss:2010hx}.
+
+However, throughout this time, the exact consistency properties provided by the algorithms have been somewhat unclear.
+For example, Sun et al.~\cite{Sun:1998un} identified three desirable properties that they articulated informally: \emph{convergence}, \emph{causality preservation}, and \emph{intention preservation}.
+While the definition of the first two properties is fairly unambiguous, the definition of ``intention preservation'' leaves much more room for interpretation.
+Sun et al.\ define it as follows \cite{Sun:1998un}:
+\begin{displayquote}
+For any operation $O$, the effects of executing $O$ at all sites are the same as the intention of $O$, and the effect of executing $O$ does not change the effects of independent operations.
+\end{displayquote}
+where the term \emph{intention} is in turn defined as:
+\begin{displayquote}
+The intention of an operation $O$ is the execution effect which can be achieved by applying $O$ on the document state from which $O$ was generated.
+\end{displayquote}
+We now show how to define consistency properties for a list in a way that is simple and unambiguous, using the OpSets approach.
+

@@ -2,7 +2,7 @@
 
 The OpSets approach is a simple abstraction that allows us to be more precise about the consistency properties of a replicated data system.
 We assume that the system consists of a set of \emph{nodes} connected by a network.
-These nodes concurrently access some \emph{shared data structure}, which may be a relational database (consisting of rows in tables), a text document (a sequence of characters), a vector-graphics document (a tree of records describing graphical objects), or any other kind of data structure.
+These nodes concurrently access some \emph{shared data structure}, which may be a relational database (consisting of rows in tables), a text document (a sequence of characters), a vector-graphics document (a tree of records describing graphical objects), a filesystem (a tree of directories and files), or any other kind of data structure.
 
 We assume that each node has a local copy of the shared data structure, which it can read and modify without locking or any other coordination with other nodes.
 Whenever a node makes a modification to that structure, it records the change as an \emph{operation}.
@@ -17,7 +17,7 @@ Any operations that are lost in the network are retransmitted as necessary.
 Operations remain immutable throughout this process.
 
 Thus, the OpSet at each node is a monotonically growing set of operations, and every operation is eventually contained in the OpSet of every node from which it is not permanently partitioned.
-(To deal with unbounded growth, we discuss garbage collection later in this paper.)
+%(To deal with unbounded growth, we discuss garbage collection later in this paper.)
 Any two communicating nodes can merge their OpSets using the standard set union operator, which is commutative, associative, and idempotent, ensuring that communicating nodes converge towards the same OpSet contents.
 
 \subsection{Data Structures as Queries}\label{sec:queries}
