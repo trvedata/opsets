@@ -6,61 +6,75 @@
 %The basic operations on a list are the insertion and the deletion of individual list elements.
 %When several users concurrently modify a shared list object, an algorithm is required to merge these changes while ensuring that certain consistency properties are satisfied.
 
-\begin{align*}
-    &\llparenthesis \;\mathit{map}.\mathrm{set}(\mathit{key}, \mathit{val});\; \rrparenthesis_{F,L} \;=\;
-    \big\{ (\mathit{id}_1, \mathit{op}_1) \mid \mathit{op}_1 \neq \bot \big\} \;\cup\;
-    \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\} \\
-    &\qquad\text{where}\quad (\mathit{id}_1, \mathit{op}_1) = \mathrm{valueID}(\mathit{val}) \;\wedge\;
-    \mathit{id}_2 = \mathrm{newID()} \;\wedge\; \mathit{id}_1 < \mathit{id}_2 \\
-    &\qquad\qquad\qquad\wedge\; \mathit{obj} = \mathrm{objID}(\mathit{map}) \;\wedge\;
-    \mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \} \\[10pt]
-    %%%%%%%%%%%%%%
-    &\llparenthesis \;\mathit{map}.\mathrm{remove}(\mathit{key});\; \rrparenthesis_{F,L} \;=\;
-    \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev})) \big\} \\
-    &\qquad\text{where}\quad \mathit{id}_1 = \mathrm{newID()} \;\wedge\;
-    \mathit{obj} = \mathrm{objID}(\mathit{map}) \;\wedge\;
-    \mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \} \\[10pt]
-    %%%%%%%%%%%%%%
-    &\llparenthesis \;\mathit{list}.\mathrm{set}(\mathit{idx}, \mathit{val});\; \rrparenthesis_{F,L} \;=\;
-    \big\{ (\mathit{id}_1, \mathit{op}_1) \mid \mathit{op}_1 \neq \bot \big\} \;\cup\;
-    \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\} \\
-    &\qquad\text{where}\quad (\mathit{id}_1, \mathit{op}_1) = \mathrm{valueID}(\mathit{val}) \;\wedge\;
-    \mathit{id}_2 = \mathrm{newID()} \;\wedge\; \mathit{id}_1 < \mathit{id}_2 \;\wedge\;
-    \mathit{obj} = \mathrm{objID}(\mathit{list}) \\
-    &\qquad\qquad\qquad\wedge\;
-    \mathit{key} = \mathrm{idxKey}_{F,L}(\mathit{obj}, \mathit{obj}, \mathit{idx}) \;\wedge\;
-    \mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \} \\[10pt]
-    %%%%%%%%%%%%%%
-    &\llparenthesis \;\mathit{list}.\mathrm{insert}(\mathit{idx}, \mathit{val});\; \rrparenthesis_{F,L} \;=\;
-    \big\{ (\mathit{id}_1, \mathit{op}_1) \mid \mathit{op}_1 \neq \bot \big\} \;\cup\;
-    \big\{ (\mathit{id}_2,\, \mathsf{InsertAfter}(\mathit{ref})),\;
-    (\mathit{id}_3,\, \mathsf{Assign}(\mathit{obj}, \mathit{id}_2, \mathit{id}_1, \emptyset)) \big\} \\
-    &\qquad\text{where}\quad (\mathit{id}_1, \mathit{op}_1) = \mathrm{valueID}(\mathit{val}) \;\wedge\;
-    \mathit{id}_2 = \mathrm{newID()} \;\wedge\; \mathit{id}_3 = \mathrm{newID()} \;\wedge\;
-    \mathit{id}_1 < \mathit{id}_2 < \mathit{id}_3 \\
-    &\qquad\qquad\qquad\wedge\; \mathit{obj} = \mathrm{objID}(\mathit{list}) \;\wedge\;
-    \mathit{ref} = (\textbf{if }\, \mathit{idx}=0 \,\textbf{ then }\, \mathit{obj} \,\textbf{ else }\,
-    \mathrm{idxKey}_{F,L}(\mathit{obj}, \mathit{obj}, \mathit{idx} - 1)) \\[10pt]
-    %%%%%%%%%%%%%%
-    &\llparenthesis \;\mathit{list}.\mathrm{remove}(\mathit{idx});\; \rrparenthesis_{F,L} \;=\;
-    \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev})) \big\} \\
-    &\qquad\text{where}\quad \mathit{id}_1 = \mathrm{newID()} \;\wedge\;
-    \mathit{obj} = \mathrm{objID}(\mathit{list}) \;\wedge\;
-    \mathit{key} = \mathrm{idxKey}_{F,L}(\mathit{obj}, \mathit{obj}, \mathit{idx}) \\
-    &\qquad\qquad\qquad\wedge\;
-    \mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \} \\[10pt]
-\end{align*}
+\noindent
+\renewcommand\algorithmicindent{10pt}
+\begin{minipage}[t]{0.5\textwidth}
+\begin{algorithmic}
+    \Function{setMapKey}{$O, \mathit{map}, \mathit{key}, \mathit{val}$}
+    \State $(F,L) = \llbracket O \rrbracket$
+    \State $(\mathit{id}_1, \mathit{op}_1) = \Call{valueID}{O, \mathit{val}}$
+    \State $O' = (\textbf{if } \mathit{op}_1 = \bot \textbf{ then } O \textbf{ else } 
+        O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
+    \State $\mathit{id}_2 = \mathrm{newID}(O')$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{map}, \mathit{key}, \mathit{val}) \in F \}$
+    \State \Return $O' \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{map}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\}$
+    \EndFunction\Statex
 
-\[ \mathrm{valueID}(\mathit{val}) \;=\; \begin{cases}
-    (\mathrm{newID()},\, \mathsf{MakeVal}(\mathit{val})) &
-    \text{ if } \mathit{val} \text{ is a primitive type} \\
-    (\mathrm{newID()},\, \mathsf{MakeList}) &
-    \text{ if } \mathit{val} = \verb|[]| \\
-    (\mathrm{newID()},\, \mathsf{MakeMap}) &
-    \text{ if } \mathit{val} = \verb|{}| \\
-    (\mathrm{objID}(\mathit{val}),\, \bot) &
-    \text{ if } \mathit{val} \text{ is an existing object} \\
-   \end{cases} \]
+    \Function{removeMapKey}{$O, \mathit{map}, \mathit{key}$}
+    \State $(F,L) = \llbracket O \rrbracket$
+    \State $\mathit{id}_1 = \mathrm{newID}(O)$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{map}, \mathit{key}, \mathit{val}) \in F \}$
+    \State \Return $O \;\cup\; \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{map}, \mathit{key}, \mathit{prev})) \big\}$
+    \EndFunction\Statex
+
+    \Function{valueID}{$O, \mathit{val}$}
+    \If{$\mathit{val}$ is a primitive type}
+    \State \Return $(\mathrm{newID}(O),\, \mathsf{MakeVal}(\mathit{val}))$
+    \ElsIf{$\mathit{val} = \texttt{[]}$}
+    \State \Return $(\mathrm{newID}(O),\, \mathsf{MakeList})$
+    \ElsIf{$\mathit{val} = \texttt{{\char '173}{\char '175}}$}
+    \State \Return $(\mathrm{newID}(O),\, \mathsf{MakeMap})$
+    \Else ~// $\mathit{val}$ is an existing object
+    \State \Return $(\mathrm{objID}(\mathit{val}),\, \bot)$
+    \EndIf
+    \EndFunction
+\end{algorithmic}
+\end{minipage}%
+\begin{minipage}[t]{0.5\textwidth}
+\begin{algorithmic}
+    \Function{setListIndex}{$O, \mathit{list}, \mathit{index}, \mathit{val}$}
+    \State $(F,L) = \llbracket O \rrbracket$
+    \State $(\mathit{id}_1, \mathit{op}_1) = \Call{valueID}{O, \mathit{val}}$
+    \State $O' = (\textbf{if } \mathit{op}_1 = \bot \textbf{ then } O \textbf{ else } 
+        O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
+    \State $\mathit{id}_2 = \mathrm{newID}(O')$
+    \State $\mathit{key} = \mathrm{idxKey}_{F,L}(\mathit{list}, \mathit{list}, \mathit{index})$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{list}, \mathit{key}, \mathit{val}) \in F \}$
+    \State \Return $O' \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{list}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\}$
+    \EndFunction\Statex
+
+    \Function{insertListIndex}{$O, \mathit{list}, \mathit{index}, \mathit{val}$}
+    \State $(F,L) = \llbracket O \rrbracket$
+    \State $(\mathit{id}_1, \mathit{op}_1) = \Call{valueID}{O, \mathit{val}}$
+    \State $O' = (\textbf{if } \mathit{op}_1 = \bot \textbf{ then } O \textbf{ else } 
+        O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
+    \State $\mathit{id}_2 = \mathrm{newID}(O')$
+    \State $\mathit{ref} = (\textbf{if } \mathit{index}=0 \textbf{ then } \mathit{list}$
+    \State $\hphantom{\mathit{ref} = (}\textbf{else } \mathrm{idxKey}_{F,L}(\mathit{list}, \mathit{list}, \mathit{index} - 1))$
+    \State $O'' = O' \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{InsertAfter}(\mathit{ref})) \big\}$
+    \State $\mathit{id}_3 = \mathrm{newID}(O'')$
+    \State \Return $O'' \;\cup\; \big\{ (\mathit{id}_3,\, \mathsf{Assign}(\mathit{list}, \mathit{id}_2, \mathit{id}_1, \emptyset)) \big\}$
+    \EndFunction\Statex
+
+    \Function{removeListIndex}{$O, \mathit{list}, \mathit{index}$}
+    \State $(F,L) = \llbracket O \rrbracket$
+    \State $\mathit{id}_1 = \mathrm{newID}(O)$
+    \State $\mathit{key} = \mathrm{idxKey}_{F,L}(\mathit{list}, \mathit{list}, \mathit{index})$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{list}, \mathit{key}, \mathit{val}) \in F \}$
+    \State \Return $O \;\cup\; \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{list}, \mathit{key}, \mathit{prev})) \big\}$
+    \EndFunction
+\end{algorithmic}
+\end{minipage}
 
 \[ \mathrm{idxKey}_{F,L}(\mathit{obj}, \mathit{key}, i) \;=\; \left\{
    \arraycolsep=2pt \def\arraystretch{1.3}
@@ -76,10 +90,32 @@
        \exists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \\
    \end{array} \right. \]
 
-\[ \big\llbracket (\mathit{id}, \mathsf{InsertAfter}(\mathit{ref})) \big\rrbracket_L \;=\;
-   \big\{ (p,n) \in L \mid p \neq \mathit{ref} \big\} \;\cup\;
-   \big\{ (\mathit{ref}, \mathit{id}) \big\} \;\cup\;
-   \big\{ (\mathit{id}, n) \mid (\mathit{ref}, n) \in L \big\} \]
+\begin{align*}
+    \llbracket O \rrbracket &= \llbracket O \rrbracket_{\emptyset, \emptyset} \\
+    \llbracket \emptyset \rrbracket_{F,L} &= (F,L) \\
+    \llbracket O \rrbracket_{F,L} &= \llbracket O - \{\mathit{op}\} \rrbracket_{F',L'} &&
+    \text{where } O \neq \emptyset \;\wedge\; \mathit{op} = \mathrm{minOp}(O) \;\wedge\;
+    (F',L') = \llbracket \mathit{op} \rrbracket_{F,L} \\
+    \mathrm{minOp}(O) &= (\mathit{id}, \mathit{op}) &&
+    \text{where } (\mathit{id}, \mathit{op}) \in O \;\wedge\;
+    \nexists\,(\mathit{id}', \mathit{op}') \in O.\; \mathit{id}' < \mathit{id}
+\end{align*}
+
+\begin{align*}
+    \big\llbracket (\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big\rrbracket_{F,L} \;=\; \Big( &
+    \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in F \mid
+    \mathit{id}' \notin \mathit{prev} \big\} \;\cup\;
+    \big\{ (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \big\},\; L \Big) \\[5pt]
+    %%%%%%%%%%
+    \big\llbracket (\mathit{id},\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev})) \big\rrbracket_{F,L} \;=\; \Big( &
+    \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in F \mid
+    \mathit{id}' \notin \mathit{prev} \big\},\; L \Big) \\[5pt]
+    %%%%%%%%%%
+    \big\llbracket (\mathit{id},\, \mathsf{InsertAfter}(\mathit{ref})) \big\rrbracket_{F,L} \;=\; \Big( & F,\;
+    \big\{ (p,n) \in L \mid p \neq \mathit{ref} \big\} \;\cup\;
+    \big\{ (\mathit{ref}, \mathit{id}) \big\} \;\cup\;
+    \big\{ (\mathit{id}, n) \mid (\mathit{ref}, n) \in L \big\} \Big)
+\end{align*}
 
 \subsection{Specification versus Implementation}
 
