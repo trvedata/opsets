@@ -1,14 +1,21 @@
 \section{The OpSets Approach}\label{sec:approach}
 
-The OpSets approach is a simple abstraction that allows us to be more precise about the consistency properties of a replicated data system.
+The OpSets approach is a simple abstraction for describing the consistency properties of a replicated data system.
+We outline the general approach in this section, before describing concrete data structures and specifications in Sections~\ref{sec:list} and~\ref{sec:assign}.
+
+\subsection{System Model}\label{sec:system-model}
+
 We assume that the system consists of a set of \emph{nodes} connected by a network.
 These nodes concurrently access some \emph{shared data structure}, which may be a relational database (consisting of rows in tables), a text document (a sequence of characters), a vector-graphics document (a tree of records describing graphical objects), a filesystem (a tree of directories and files), or any other kind of data structure.
 
 We assume that each node has a local copy of the shared data structure, which it can read and modify without locking or any other coordination with other nodes.
 Whenever a node makes a modification to that structure, it records the change as an \emph{operation}.
-For example, an operation may describe a particular insertion at a particular position in a document.
-We assume that each operation has a unique identifier that is different from any other operation generated anywhere in the system.
-For example, the identifier may consist of a unique node identifier and a sequence number.
+For example, an operation may describe a particular insertion at a particular position in a text document.
+
+We assume that each operation has a unique identifier, and that we have a total ordering on operation identifiers.
+This total order is a linear extension of the partial order that captures their causal dependencies (the \emph{happens-before} relation).
+That is, whenever a node changes the shared data and generates a new operation, the identifier of the new operation must be greater than that of any existing operation in the OpSet of the node generating the new operation.
+This requirement can easily be met by using Lamport timestamps \cite{Lamport:1978jq} as identifiers, and is therefore reasonable.
 
 Each node locally maintains a set of operations, the \emph{OpSet}.
 Whenever a node makes a change, it adds the corresponding operation to its OpSet, and also broadcasts the operation to other nodes.
@@ -18,47 +25,60 @@ Operations remain immutable throughout this process.
 
 Thus, the OpSet at each node is a monotonically growing set of operations, and every operation is eventually contained in the OpSet of every node from which it is not permanently partitioned.
 %(To deal with unbounded growth, we discuss garbage collection later in this paper.)
-Any two communicating nodes can merge their OpSets using the standard set union operator, which is commutative, associative, and idempotent, ensuring that communicating nodes converge towards the same OpSet contents.
+Any two communicating nodes can merge their OpSets using the standard set union operator $\cup$, which is commutative, associative, and idempotent, ensuring that communicating nodes converge towards the same OpSet contents.
 
 \subsection{Data Structures as Queries}\label{sec:queries}
 
-Existing algorithms for maintaining replicated state, such as CRDTs, describe how a node's local state may be manipulated as a result of operations.
+Most formulations of operation-based CRDTs describe how a node's local state is manipulated as a result of operations \cite{Shapiro:2011wy,Shapiro:2011un}.
 We now depart from this convention and present an alternative formulation of replicated data structures.
 
 In the OpSets approach, we require that the shared data structure is never manipulated directly.
-Instead, we assume the existence of a pure function that takes an OpSet as input, and returns the current state of the shared data structure according to the OpSet.
-The transformation from OpSet to data structure is deterministic and depends only on the contents of the OpSet -- regardless of whether that data structure is a relational database, a text document, a tree, a graph, or anything else.
-All nodes in the system employ the same transformation function.
-Consequently, whenever any two nodes have the same OpSet, their view of the shared data structure must also be equal.
+Instead, we use an \emph{interpretation function} $\llbracket O \rrbracket$ that takes an OpSet $O$ and returns the current state of the shared data structure described by the OpSet.
+The interpretation function is \emph{pure}, i.e.\ deterministic, side-effect free, and its result depends only on $O$.
+All nodes in the system employ the same interpretation function.
 
-One can regard the OpSet of being a \emph{database of facts}, containing all of the changes ever made to the shared data.
-The function that deterministically transforms this database into some derived data structure is a \emph{query}.
-The resulting data structure is, in database terminology, a \emph{materialized view} onto the underlying set of operations.
+Consequently, whenever any two nodes have the same OpSet $O$, their view of the shared data structure $\llbracket O \rrbracket$ must also be equal.
+This construction trivially ensures eventual consistency: as two nodes converge towards the same OpSet contents, any data structure that is deterministically derived from the OpSet must also converge.
 
-We show in the following sections how many practical data structures can be expressed as queries.
-For now we note that this construction trivially ensures eventual consistency: as two nodes converge towards the same OpSet contents, any data structure that is deterministically derived from the OpSet must also converge.
-By using a deterministic query language to derive the data structure from the OpSet, we can~-- by construction~-- rule out any violations of this convergence property.
+One can regard the OpSet as a \emph{database of facts}, containing all changes ever made to the shared data.
+Then the interpretation function is effectively a \emph{query} over this database, and the resulting data structure is known as a \emph{materialized view} in database terminology.
+When new operations are added to an OpSet $O$, computing the corresponding change to $\llbracket O \rrbracket$ is a \emph{materialized view maintenance} problem, which has been studied extensively in the database literature \cite{Gupta:1999uz}.
+We have found that thinking about replicated datatypes as materialized views onto an OpSet can provide a useful perspective for understanding and improving replication algorithms.
 
-Moreover, we can take advantage of a rich body of existing research on query languages and materialized view maintenance.
-When a new operation is added to the OpSet, a query execution engine can determine the change to the derived data structure that results from the addition of the new operation.
-Determining this change to the query result is known as \emph{incremental view maintenance}, and we build upon extensive prior research in this area.
+\subsection{Sequential Interpetation of Operations}\label{sec:op-serial}
 
-\subsection{Operation Serializability}\label{sec:op-serial}
+In principle, any deterministic function can serve as interpretation function $\llbracket O \rrbracket$ of the OpSet $O$.
+However, in defining the semantics of CRDTs (see Sections~\ref{sec:list} and~\ref{sec:assign}), we have found it useful to specialise $\llbracket O \rrbracket$ such that we can interpret one operation at a time.
 
-Like in the definition of eventual consistency in Section~\ref{sec:eventual-consistency}, deriving a data structure from an OpSet ensures convergence, but it does not define how an operation should take effect.
-To refine our correctness properties, we must define the expected semantics of operations.
-
-Normally, reasoning about the semantics of concurrently modified data structures is difficult and error-prone.
-However, the OpSets model enables us to reason about operation semantics in a sequential way, and directly extend the sequential semantics to arbitrary concurrent executions.
-
-We previously required that every operation has a unique identifier.
-We now assume that we also have a total ordering on operation identifiers, and that this total order is a linear extension of the partial order that captures their causal dependencies (the \emph{happens-before} relation).
-That is, whenever a node changes the shared data and generates a new operation, the identifier of the new operation must be greater than that of any existing operation in the OpSet of the node generating the new operation.
-This requirement can easily be met by using Lamport timestamps \cite{Lamport:1978jq} as identifiers.
-
-Now observe that for any OpSet there exists a unique sequence of operations, containing all operations of the OpSet in ascending order of their identifier.
+Let the OpSet $O$ be a set of pairs $(\mathit{id},\, \mathit{op})$, where $\mathit{id}$ is a unique operation identifier and $\mathit{op}$ is an arbitrary description of the change that occurred.
+Assume that we have a total ordering $<$ on identifiers, as explained in Section~\ref{sec:system-model}.
+Then observe that for any OpSet there exists a unique sequence of operations, containing all operations of the OpSet in ascending order of their identifier.
 We can specify the semantics of each operation~-- that is, the effect of the operation on the query result~-- when applied in this sequential order.
-Since we know that the query result is determined entirely by the OpSet, we know that even if the operations arrive at a node in any arbitrary order, the final query result must be the same as if they had been applied sequentially in order of ascending identifier.
 
-In other words, we have \emph{operation serializability}: the data structure derived from an OpSet is equal to the outcome of applying the operations in their serial order.
-It is therefore sufficient for us to define the semantics of each operation under serial execution (in order of ascending operation ID), and we know that this definition will also define its semantics in arbitrary concurrent executions: any state in a concurrent execution corresponds to some OpSet, and the operations in that OpSet are serializable.
+Formally, we can define the interpretation $\llbracket O \rrbracket$ of the OpSet $O$ as follows:
+\begin{align*}
+    \big\llbracket \emptyset \big\rrbracket &= \mathit{InitialState} \\
+    \big\llbracket O \;\cup\; \{(\mathit{id},\, \mathit{op})\} \big\rrbracket &=
+    \big\llbracket (\mathit{id},\, \mathit{op}) \big\rrbracket_{\llbracket O \rrbracket}
+    \qquad\text{ provided that } \forall\,(\mathit{id}',\, \mathit{op}') \in O.\; \mathit{id}' < \mathit{id}
+\end{align*}
+where $\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_S$ is the interpretation of the operation $(\mathit{id},\, \mathit{op})$ in the state $S$.
+In other words, if $S$ is the result of interpreting all operations with identifiers less than $\mathit{id}$, then
+$\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_S$ is the interpretation of the OpSet to which $(\mathit{id},\, \mathit{op})$ has been added.
+Provided that the operation interpretation $\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_S$ is deterministic, $\llbracket O \rrbracket$ is also deterministic, due to the fact that the operation order in $O$ is unique.
+
+Note that, unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for $\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_S$ to commute with respect to other operations: any pure function can be used.
+This fact makes it much simpler to specify the interpretation of operations, as we shall see in Sections~\ref{sec:list} and~\ref{sec:assign}.
+
+In real systems it is likely that operations arrive at nodes in an order that does not match their $\mathit{id}$ order.
+If a new operation $(\mathit{id},\, \mathit{op})$ is added to a node's OpSet $O$, and $\exists\,(\mathit{id}',\, \mathit{op}') \in O.\; \mathit{id}' > \mathit{id}$,
+then the operation interpretation $\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_{\llbracket O \rrbracket}$ cannot be used directly to compute the updated OpSet interpretation
+$\llbracket O \;\cup\; \{(\mathit{id},\, \mathit{op})\} \rrbracket$.
+Instead, the node would have to first compute the interpretation of all operations with lower IDs,
+$\llbracket \{(\mathit{id}',\, \mathit{op}') \in O \mid \mathit{id}' < \mathit{id}\} \rrbracket$,
+then apply the new operation $(\mathit{id},\, \mathit{op})$, and finally re-apply all operations with greater IDs.
+
+This algorithm may have poor performance, since it must potentially re-apply the same subset of operations repeatedly.
+But the interpretation functions discussed in this paper are not intended to be efficient implementations of replicated datatypes; rather, they are \emph{executable specifications} that define the expected result of interpreting a set of operations.
+We can then develop more efficient (and, most likely, more complex) algorithms for CRDTs, and show that they satisfy the (simpler) specification, as we do in in Section~\ref{sec:list}.
+The specification can then be optimised for ease of understanding, rather than execution performance.

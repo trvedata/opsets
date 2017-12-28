@@ -1,3 +1,13 @@
+\section{Discussion}
+
+This sequential interpretation of operations, in order of $\mathit{id}$, is reminiscent of the concept of \emph{serializability} in databases: the data structure obtained by interpreting an OpSet is equal to the outcome of applying the operations in their serial order, even if the execution that produced the OpSet was in fact concurrent.
+Reducing concurrent executions to a serial order makes them much easier to understand.
+
+%Since we know that the query result is determined entirely by the OpSet, we know that even if the operations arrive at a node in any arbitrary order, the final query result must be the same as if they had been applied sequentially in order of ascending identifier.
+
+%In other words, we have \emph{operation serializability}: 
+%It is therefore sufficient for us to define the semantics of each operation under serial execution (in order of ascending operation ID), and we know that this definition will also define its semantics in arbitrary concurrent executions: any state in a concurrent execution corresponds to some OpSet, and the operations in that OpSet are serializable.
+
 \section{Related Work}\label{sec:relwork}
 
 
