@@ -7,7 +7,7 @@ $\mathrm{insertAfter}(\mathit{Oid}, \mathit{Previous})$ inserts a new list eleme
 The $\mathit{Oid}$ parameter of each constructor is the unique identifier of the operation.
 The second parameter of insertAfter determines the insertion position: to insert at the head of a list, $\mathit{Previous}$ should equal the $\mathit{Oid}$ of the prior makeList operation that created the list; otherwise, $\mathit{Previous}$ is the $\mathit{Oid}$ of a prior insertAfter operation, and the new list element is placed after that existing list element.
 
-In Section~\ref{sec:assign} we will show how to associate a value with every list element; for now, we will consider the list to be merely a sequence of operation IDs (oids).
+In Section~\ref{sec:datatypes} we will show how to associate a value with every list element; for now, we will consider the list to be merely a sequence of operation IDs (oids).
 An oid thus has a dual purpose: to identify an operation, but also to identify the list or list element created by that operation.
 
 \subsection{Constructing a List from an OpSet}

@@ -1,7 +1,7 @@
 \section{The OpSets Approach}\label{sec:approach}
 
 The OpSets approach is a simple abstraction for describing the consistency properties of a replicated data system.
-We outline the general approach in this section, before describing concrete data structures and specifications in Sections~\ref{sec:list} and~\ref{sec:assign}.
+We outline the general approach in this section, before describing concrete data structures and specifications in Sections~\ref{sec:datatypes} and~\ref{sec:tree}.
 
 \subsection{System Model}\label{sec:system-model}
 
@@ -48,7 +48,7 @@ We have found that thinking about replicated datatypes as materialized views ont
 \subsection{Sequential Interpetation of Operations}\label{sec:op-serial}
 
 In principle, any deterministic function can serve as interpretation function $\llbracket O \rrbracket$ of the OpSet $O$.
-However, in defining the semantics of CRDTs (see Sections~\ref{sec:list} and~\ref{sec:assign}), we have found it useful to specialise $\llbracket O \rrbracket$ such that we can interpret one operation at a time.
+However, in defining the semantics of CRDTs (see Sections~\ref{sec:datatypes} and~\ref{sec:tree}), we have found it useful to specialise $\llbracket O \rrbracket$ such that we can interpret one operation at a time.
 
 Let the OpSet $O$ be a set of pairs $(\mathit{id},\, \mathit{op})$, where $\mathit{id}$ is a unique operation identifier and $\mathit{op}$ is an arbitrary description of the change that occurred.
 Assume that we have a total ordering $<$ on identifiers, as explained in Section~\ref{sec:system-model}.
@@ -68,7 +68,7 @@ $\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_S$ is the interpretation of 
 Provided that the operation interpretation $\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_S$ is deterministic, $\llbracket O \rrbracket$ is also deterministic, due to the fact that the operation order in $O$ is unique.
 
 Note that, unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for $\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_S$ to commute with respect to other operations: any pure function can be used.
-This fact makes it much simpler to specify the interpretation of operations, as we shall see in Sections~\ref{sec:list} and~\ref{sec:assign}.
+This fact makes it much simpler to specify the interpretation of operations, as we shall see in Sections~\ref{sec:datatypes} and~\ref{sec:tree}.
 
 In real systems it is likely that operations arrive at nodes in an order that does not match their $\mathit{id}$ order.
 If a new operation $(\mathit{id},\, \mathit{op})$ is added to a node's OpSet $O$, and $\exists\,(\mathit{id}',\, \mathit{op}') \in O.\; \mathit{id}' > \mathit{id}$,
@@ -80,5 +80,5 @@ then apply the new operation $(\mathit{id},\, \mathit{op})$, and finally re-appl
 
 This algorithm may have poor performance, since it must potentially re-apply the same subset of operations repeatedly.
 But the interpretation functions discussed in this paper are not intended to be efficient implementations of replicated datatypes; rather, they are \emph{executable specifications} that define the expected result of interpreting a set of operations.
-We can then develop more efficient (and, most likely, more complex) algorithms for CRDTs, and show that they satisfy the (simpler) specification, as we do in in Section~\ref{sec:list}.
+We can then develop more efficient (and, most likely, more complex) algorithms for CRDTs, and show that they satisfy the (simpler) specification, as we do in in Section~\ref{sec:datatypes}.
 The specification can then be optimised for ease of understanding, rather than execution performance.
