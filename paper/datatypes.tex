@@ -35,7 +35,9 @@ An OpSet for these datatypes may contain six types of operation:
         $\mathit{prev}$ is the set of IDs of prior $\mathsf{Assign}$ operations to the same key in the same object, which are removed by the present operation.
 \end{description}
 
-\begin{figure}
+\floatname{algorithm}{Listing}
+\begin{algorithm}[t]
+\caption{Generating new operations for modifying maps and lists.}\label{fig:pseudocode}
 \noindent
 \renewcommand\algorithmicindent{10pt}
 \begin{minipage}[t]{0.5\textwidth}
@@ -105,13 +107,10 @@ An OpSet for these datatypes may contain six types of operation:
     \EndFunction
 \end{algorithmic}
 \end{minipage}
-\caption{Pseudocode for functions that generate new operations for modifying maps (setting a key to a value,
-removing a key-value pair) and lists (setting the value at a given list index, inserting a new list element,
-and deleting a list element).}\label{fig:pseudocode}
-\end{figure}
+\end{algorithm}
 
 \noindent
-Figure~\ref{fig:pseudocode} gives pseudocode for functions that generate these operations.
+Listing~\ref{fig:pseudocode} gives pseudocode for functions that generate these operations.
 The first parameter $O$ of each function is the OpSet that defines the current state of the node, and the functions return an updated OpSet containing new operations.
 The interpretation $\llbracket O \rrbracket$ returns a pair $(F,\, L)$ as defined in Section~\ref{sec:datatypes-interp}.
 The function $\mathrm{newID}(O)$ returns a unique ID (e.g.\ a Lamport timestamp) that is greater than any existing ID in the OpSet $O$.
@@ -203,10 +202,10 @@ Thus, the new list element $\mathit{id}$ is inserted between $\mathit{ref}$ and 
 \end{figure}
 
 Note that $L$ never shrinks, it only ever grows through interpreting $\mathsf{InsertAfter}$ operations.
-When a list element is removed by the function \textsc{removeListIndex} of Figure~\ref{fig:pseudocode}, the effect is that all values are removed from the list element in the field relation $F$, but the list element remains in $L$ as a \emph{tombstone}, so that any concurrent $\mathsf{InsertAfter}$ operations can still locate the referenced list position.
+When a list element is removed by the function \textsc{removeListIndex} of Listing~\ref{fig:pseudocode}, the effect is that all values are removed from the list element in the field relation $F$, but the list element remains in $L$ as a \emph{tombstone}, so that any concurrent $\mathsf{InsertAfter}$ operations can still locate the referenced list position.
 
 Thus, from a user's point of view a list element only exists if it has at least one associated value in the $F$ relation; any list elements without associated value should be ignored.
-On this basis we can now define the $\mathrm{idxKey}()$ function that is used in Figure~\ref{fig:pseudocode} to translate a list index into a list element ID.
+On this basis we can now define the $\mathrm{idxKey}()$ function that is used in Listing~\ref{fig:pseudocode} to translate a list index into a list element ID.
 The function counts only list elements that have an associated value:
 \[ \mathrm{idxKey}_{F,\, L}(\mathit{obj}, \mathit{key}, i) \;=\; \left\{
    \arraycolsep=2pt \def\arraystretch{1.3}
