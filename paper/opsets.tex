@@ -8,6 +8,7 @@
 \usepackage[numbers,sort]{natbib}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{stmaryrd} % \llbracket etc.
 \usepackage{algorithm}
 \usepackage{algpseudocode} % layout for algorithmicx package, provides "algorithmic" environment for pseudocode
@@ -18,8 +19,7 @@
 \hyphenation{da-ta-cen-ter da-ta-cen-ters time-stamp time-stamps time-stamped Grish-chen-ko}
 \frenchspacing
 
-\usepackage{isabelle,isabellesym}
-\isabellestyle{it}
+\newtheorem{proposition}{Proposition}
 
 \begin{document}
 \sloppy
@@ -84,6 +84,7 @@ By using mechanised proofs we eliminate the ambiguity of previous informal appro
 \input{background}
 \input{approach}
 \input{datatypes}
+\input{textedit}
 \input{tree}
 \input{relwork}
 
