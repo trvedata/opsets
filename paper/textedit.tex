@@ -144,3 +144,11 @@ The expression $\mathit{do}(\mathit{op}, w)$ denotes an operation that is perfor
 While our specification is based on operations being replicated into other nodes' OpSets, Attiya et al.'s specification instead uses a visibility relation $\le_\textsf{vis}$.
 We formalised the above specification in Isabelle/HOL, and prove formally that our specification is strictly stronger.
 \end{proof}
+
+\begin{proposition}
+    The RGA algorithm \cite{Roh:2011dw} satisfies the OpSet list specification introduced in this paper, while Treedoc \cite{Preguica:2009fz}, WOOT \cite{Oster:2006wj}, Logoot \cite{Weiss:2010hx}, and LSEQ \cite{Nedelec:2013ky,Nedelec:2016eo} do not.
+\end{proposition}
+\begin{proof}
+    We use Isabelle/HOL to prove that RGA satisfies our specification.
+    The fact that the other algorithms do not satisfy our specification follows directly from Propositions~\ref{prop:attiya-allows-interleaving} and~\ref{prop:no-interleaving}.
+\end{proof}
