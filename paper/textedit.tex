@@ -35,7 +35,7 @@ In these cases, interleaving the users' insertions would most likely result in a
 Even though the merge in Figure~\ref{fig:bad-merge} is so obviously undesirable, there is to our knowledge no formal specification of collaborative text editing that rules out such an interleaving of insertions.
 
 \begin{proposition}\label{prop:attiya-allows-interleaving}
-    The specification of collaborative text editing by Attiya et al. \cite{Attiya:2016kh} allows the outcome in Figure~\ref{fig:bad-merge}.
+    The $\mathcal{A}_\textsf{strong}$ specification of collaborative text editing by Attiya et al. \cite{Attiya:2016kh} allows the outcome in Figure~\ref{fig:bad-merge}.
     Moreover, the text editing CRDT algorithms Treedoc \cite{Preguica:2009fz}, WOOT \cite{Oster:2006wj}, Logoot \cite{Weiss:2010hx}, and LSEQ \cite{Nedelec:2013ky,Nedelec:2016eo} also allow the outcome in Figure~\ref{fig:bad-merge}.
 \end{proposition}
 \begin{proof}
@@ -68,7 +68,7 @@ The remaining characters follow their initial character without interleaving.
 
 Note that there are only six possible orderings of the four operations, and not $4! = 24$, because (as discussed in Section~\ref{sec:system-model}) we require that the ordering on identifiers is a linear extension of the causal order.
 In this example we assume that text is typed from left to right (that is, ``A'' is always inserted before ``l'', and ``C'' is inserted before ``h'').
-This implies that the ID of the operation inserting ``l'' must be greater than that of the insertion of ``A'', and likewise with ``h'' and ``C''.
+This implies that the ID of the operation inserting ``l'' must be greater than that of the insertion of ``A'', and likewise the ``h'' insertion must be greater than the ``C'' insertion.
 
 \begin{figure}
 % ``A'', ``l'', ``C'', ``h''
@@ -121,28 +121,6 @@ The IDs are arbitrary; we only require $id_0 < id_1 < id_2 < id_3 < id_4$.}\labe
 \begin{proof}
     We use the Isabelle/HOL proof assistant to show that every datatype implementation that satisfies our list specification also satisfies the specification of Attiya et al.
     The fact that our specification is \emph{strictly} stronger follows from Propositions~\ref{prop:attiya-allows-interleaving} and~\ref{prop:no-interleaving}.
-
-Attiya et al.'s specification is as follows~\cite{Attiya:2016kh}:
-\begin{displayquote}
-An abstract execution $A = (H, \textsf{vis})$ belongs to the \emph{strong list specification} $\mathcal{A}_\textsf{strong}$ if and only if there is a relation $\textsf{lo} \subseteq \textsf{elems}(A) \times \textsf{elems}(A)$, called the \emph{list order}, such that:
-\begin{enumerate}
-\item Each event $e = \mathit{do}(\mathit{op}, w) \in H$ returns a sequence of elements $w=a_0 \dots a_{n-1}$, where $a_i \in \textsf{elems}(A)$, such that
-\begin{enumerate}
-\item $w$ contains exactly the elements visible to $e$ that have been inserted, but not deleted:
-\[ \forall a.\; a \in w \quad\Longleftrightarrow\quad (\mathit{do}(\textsf{ins}(a, \_), \_) \le_\textsf{vis} e)
-\;\wedge\; \neg(\mathit{do}(\textsf{del}(a), \_) \le_\textsf{vis} e). \]
-\item The order of the elements is consistent with the list order:
-\[ \forall i, j.\; (i < j) \;\Longrightarrow\; (a_i, a_j) \in \textsf{lo}. \]
-\item Elements are inserted at the specified position:
-if $\mathit{op} = \textsf{ins}(a, k)$, then $a = a_{\mathrm{min} \{k,\; n-1\}}$.
-\end{enumerate}
-\item The list order $\textsf{lo}$ is transitive, irreflexive and total, and thus determines the order of all insert operations in the execution.
-\end{enumerate}
-\end{displayquote}
-
-The expression $\mathit{do}(\mathit{op}, w)$ denotes an operation that is performed by a user on one of the replicas.
-While our specification is based on operations being replicated into other nodes' OpSets, Attiya et al.'s specification instead uses a visibility relation $\le_\textsf{vis}$.
-We formalised the above specification in Isabelle/HOL, and prove formally that our specification is strictly stronger.
 \end{proof}
 
 \begin{proposition}
