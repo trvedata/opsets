@@ -1,23 +1,6 @@
-\section{Discussion}
-
-% Bieniusa et al.'s principle of permutation equivalence \cite{Bieniusa:2012gt}
-
-% Uniform representation; easier to add new operation types
-
-% Constrain operation: not allowed to have a return value. For example, CAS
-
-This sequential interpretation of operations, in order of $\mathit{id}$, is reminiscent of the concept of \emph{serializability} in databases: the data structure obtained by interpreting an OpSet is equal to the outcome of applying the operations in their serial order, even if the execution that produced the OpSet was in fact concurrent.
-Reducing concurrent executions to a serial order makes them much easier to understand.
-
-%Since we know that the query result is determined entirely by the OpSet, we know that even if the operations arrive at a node in any arbitrary order, the final query result must be the same as if they had been applied sequentially in order of ascending identifier.
-
-%In other words, we have \emph{operation serializability}: 
-%It is therefore sufficient for us to define the semantics of each operation under serial execution (in order of ascending operation ID), and we know that this definition will also define its semantics in arbitrary concurrent executions: any state in a concurrent execution corresponds to some OpSet, and the operations in that OpSet are serializable.
-
 \section{Related Work}\label{sec:relwork}
 
-
-Algorithms to achieve this goal have been the topic of active research for approximately 30 years, under the headings of operational transformation \cite{Ellis:1989ue,Li:2004er,Nichols:1995fd,Oster:2006tr,Ressel:1996wx,Suleiman:1998eu,Sun:1998vf,Sun:1998un} and CRDTs \cite{Nedelec:2013ky,Nedelec:2016eo,Oster:2006wj,Preguica:2009fz,Roh:2011dw,Weiss:2010hx}.
+Algorithms for collaboratively editing a shared data structure have been the topic of active research for approximately 30 years, under the headings of Operational Transformation \cite{Ellis:1989ue,Nichols:1995fd,Ressel:1996wx,Sun:1998un,Sun:1998vf,Suleiman:1997gl,Suleiman:1998eu,Vidot:2000ch,Imine:2003ks,Li:2004er,Li:2008hw,Oster:2006tr} and CRDTs \cite{Shapiro:2011wy,Shapiro:2011un,Roh:2011dw,Preguica:2009fz,Oster:2006wj,Weiss:2010hx,Nedelec:2013ky,Nedelec:2016eo,Grishchenko:2014eh,Kleppmann:2016ve}.
 
 However, throughout this time, the exact consistency properties provided by the algorithms have been somewhat unclear.
 For example, Sun et al.~\cite{Sun:1998un} identified three desirable properties that they articulated informally: \emph{convergence}, \emph{causality preservation}, and \emph{intention preservation}.
@@ -30,5 +13,43 @@ where the term \emph{intention} is in turn defined as:
 \begin{displayquote}
 The intention of an operation $O$ is the execution effect which can be achieved by applying $O$ on the document state from which $O$ was generated.
 \end{displayquote}
-We now show how to define consistency properties for a list in a way that is simple and unambiguous, using the OpSets approach.
+Efforts to formally specify and verify the semantics of replicated datatypes have replaced informal statements of this type with more precise definitions of consistency properties.
 
+\subsection{Specification and Verification}
+
+Bieniusa et al.~\cite{Bieniusa:2012gt} articulate a \emph{principle of permutation equivalence} that partially specifies the expected semantics of replicated datatypes, but which leaves some combinations of operations unspecified.
+Burckhardt et al.~\cite{Burckhardt:2014ft} give a complete specification of CRDT counters, registers, and sets, and show how to verify that algorithms satisfy these specifications in hand-written proofs.
+Zeller et al.~\cite{Zeller:2014fl} formalise the same datatypes using Isabelle/HOL and provide mechanised proofs of their correctness.
+These papers do not consider lists, maps, or tree datatypes.
+
+Gomes et al.~\cite{Gomes:2017gy} establish a formal verification framework for CRDTs in Isabelle/HOL, and verify the strong eventual consistency properties (in particular, convergence) of a list, set, and counter datatype.
+However, the work does not specify the datatype semantics beyond the convergence property.
+
+Attiya et al.~\cite{Attiya:2016kh} give two specifications of collaborative text editing ($\mathcal{A}_\textsf{strong}$ and $\mathcal{A}_\textsf{weak}$), prove that the RGA CRDT \cite{Roh:2011dw} satisfies $\mathcal{A}_\textsf{strong}$, and conjecture that the Operational Transformation algorithm Jupiter \cite{Nichols:1995fd} satisfies $\mathcal{A}_\textsf{weak}$.
+Wei et al.~\cite{Wei:2017tg} complete the proof that Jupiter satisfies $\mathcal{A}_\textsf{weak}$.
+
+\subsection{Collaborative Tree Datatypes}
+
+For collaborative editing of tree data structures, several CRDTs \cite{Martin:2010ih,Kleppmann:2016ve} and Operational Transformation algorithms \cite{Jungnickel:2016cb,Ignat:2003jy,Davis:2002iv} have been proposed.
+However, most of them only consider insertion and deletion of tree nodes, but do not support a move operation.
+
+As explained in Section~\ref{sec:tree}, supporting an operation that can move a subtree to a new location within a tree raises the possibility of some particular conflicts that need to be handled.
+Ahmed-Nacer et al.~\cite{AhmedNacer:2012us} survey approaches to handling these conflicts without providing concrete algorithms.
+Tao et al.~\cite{Tao:2015gd} propose handling conflicting move operations by allowing the same object to appear in more than one location; thus, their datatype is strictly a DAG, not a tree.
+
+Najafzadeh~\cite{Najafzadeh:2017vk} asserts that concurrent move operations on a tree cannot safely be implemented in a CRDT, since the precondition of a move operation is not stable.
+The proposed solution in this work is to use locks to globally synchronise move operations, thus preventing a scenario such as that in Figure~\ref{fig:concurrent-move} from ever occurring.
+However, the resulting datatype is not strictly a CRDT, since some operations require strongly consistent synchronisation.
+
+To our knowledge, our move semantics specified in Section~\ref{sec:tree} is the first definition of such an operation on a fully asynchronous tree CRDT.
+We avoid the apparent contradiction with Najafzadeh's assertion by evaluating the precondition $(\mathit{val},\, \mathit{obj}) \notin \mathrm{ancestor}(F)$ at the same time as applying the operation, rather than at the time when the operation is generated, and by applying all operations in the OpSet in a deterministic order.
+
+\subsection{Ordered Sets of Operations}
+
+Baquero et al.~\cite{Baquero:2014ed} and Grishchenko~\cite{Grishchenko:2014eh} have previously proposed representing CRDTs in terms of a partially-ordered log of operations (where the partial order captures the causal relationships between operations).
+Our OpSet is a straightforward variant of this idea, in which we define the total order on identifiers to be a linear extension of the partial order that captures causality.
+This linear extension is well-known and goes back to Lamport~\cite{Lamport:1978jq}.
+
+Our approach of sequentially interpreting operations, in order of $\mathit{id}$, is reminiscent of the concept of \emph{serializability} in databases: the data structure obtained by interpreting an OpSet is equal to the outcome of applying the operations in their serial order, even if the execution that produced the OpSet was in fact concurrent.
+However, conventional transaction serializability requires synchronous coordination between replicas \cite{Davidson:1985hv}.
+We circumvent this limitation, and hence allow nodes to make progress while offline, by allowing the interpretation of an operation to change if another operation with a lower ID is delivered.

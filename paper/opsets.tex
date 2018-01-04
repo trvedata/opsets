@@ -49,7 +49,7 @@ An unavoidable downside of these models is that they require waiting for synchro
 Thus, in a system with strong consistency, a node cannot make progress while it is offline or partitioned from other nodes.
 
 On the other hand, \emph{eventual consistency} \cite{Bailis:2013jc,Burckhardt:2014hy,Terry:1994fp,Vogels:2009ca} allows each participant to modify a local copy (\emph{replica}) of a shared data structure while offline, but its definition is very weak: \emph{``if no new updates are made to the shared state, all nodes will eventually have the same data.''}
-The premise, \emph{if no new updates are made}, may never be true (if the shared state is continually modified because the system is never quiescent).
+The premise \emph{if no new updates are made} may never be true, for example if the shared state is continually modified because the system is never quiescent.
 Moreover, the final state that is eventually reached is unconstrained: nothing in the definition of eventual consistency specifies which states are legal.
 
 Conflict-free Replicated Data Types, or CRDTs \cite{Shapiro:2011wy,Shapiro:2011un}, are abstractions for replicated state that have received significant attention in recent years (see Section~\ref{sec:relwork}).
@@ -75,7 +75,7 @@ The OpSets approach enables a simple definition of this operation that had previ
 
 \item Using the Isabelle/HOL proof assistant we formalise the OpSets approach, producing mechanised proofs of correctness of the main claims in this paper.
 In particular, we prove that our list specification is strictly stronger than the recent specification of collaborative text editing by Attiya et al. \cite{Attiya:2016kh}, and we prove that our tree specification satisfies the required invariants.
-By using mechanised proofs we eliminate the ambiguity of previous informal approaches, and we can rule out reasoning errors that could occur in handwritten proofs.
+By using mechanised proofs we eliminate the ambiguity of previous informal approaches, and rule out reasoning errors that could occur in handwritten proofs.
 \end{itemize}
 
 \input{approach}
@@ -84,30 +84,9 @@ By using mechanised proofs we eliminate the ambiguity of previous informal appro
 \input{tree}
 \input{relwork}
 
-\appendix
-\section{Spare Material (delete if it doesn't fit)}
+\section{Conclusion}
 
-Attiya et al.'s specification is as follows~\cite{Attiya:2016kh}:
-\begin{displayquote}
-An abstract execution $A = (H, \textsf{vis})$ belongs to the \emph{strong list specification} $\mathcal{A}_\textsf{strong}$ if and only if there is a relation $\textsf{lo} \subseteq \textsf{elems}(A) \times \textsf{elems}(A)$, called the \emph{list order}, such that:
-\begin{enumerate}
-\item Each event $e = \mathit{do}(\mathit{op}, w) \in H$ returns a sequence of elements $w=a_0 \dots a_{n-1}$, where $a_i \in \textsf{elems}(A)$, such that
-\begin{enumerate}
-\item $w$ contains exactly the elements visible to $e$ that have been inserted, but not deleted:
-\[ \forall a.\; a \in w \quad\Longleftrightarrow\quad (\mathit{do}(\textsf{ins}(a, \_), \_) \le_\textsf{vis} e)
-\;\wedge\; \neg(\mathit{do}(\textsf{del}(a), \_) \le_\textsf{vis} e). \]
-\item The order of the elements is consistent with the list order:
-\[ \forall i, j.\; (i < j) \;\Longrightarrow\; (a_i, a_j) \in \textsf{lo}. \]
-\item Elements are inserted at the specified position:
-if $\mathit{op} = \textsf{ins}(a, k)$, then $a = a_{\mathrm{min} \{k,\; n-1\}}$.
-\end{enumerate}
-\item The list order $\textsf{lo}$ is transitive, irreflexive and total, and thus determines the order of all insert operations in the execution.
-\end{enumerate}
-\end{displayquote}
-
-The expression $\mathit{do}(\mathit{op}, w)$ denotes an operation that is performed by a user on one of the replicas.
-While our specification is based on operations being replicated into other nodes' OpSets, Attiya et al.'s specification instead uses a visibility relation $\le_\textsf{vis}$.
-We formalised the above specification in Isabelle/HOL, and prove formally that our specification is strictly stronger.
+TODO
 
 \bibliographystyle{plainnat}
 \bibliography{references}{}

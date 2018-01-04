@@ -32,12 +32,12 @@ In fact, it is sufficient to redefine the interpretation of $\mathsf{Assign}$, a
     \arraycolsep=0pt \def\arraystretch{1.5}
     \begin{array}{llllll}
         \multicolumn{2}{l}{(F,\, L)}
-        & \text{if } (\mathit{val}, \mathit{obj}) \in \mathrm{ancestor}(F) \\[8pt]
+        & \text{if } (\mathit{val},\, \mathit{obj}) \in \mathrm{ancestor}(F) \\[8pt]
         \Big( & \multicolumn{2}{l}{
         \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in F \mid
         \mathit{id}' \notin \mathit{prev} \;\wedge\; \mathit{val}' \neq \mathit{val} \big\} \;\cup\;} \\
         & \big\{ (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \big\},\; L \Big) \qquad
-        & \text{if } (\mathit{val}, \mathit{obj}) \notin \mathrm{ancestor}(F)
+        & \text{if } (\mathit{val},\, \mathit{obj}) \notin \mathrm{ancestor}(F)
     \end{array} \right.
 \]
 
