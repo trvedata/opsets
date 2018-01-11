@@ -1,5 +1,5 @@
 theory List_Spec
-  imports Main "~~/src/HOL/Library/Product_Lexorder"
+  imports Main Util "~~/src/HOL/Library/Product_Lexorder"
 begin
 
 section\<open>List operations, their interpretation, and implementation\<close>
@@ -852,5 +852,59 @@ lemma ins_list_correct_position_insert:
      apply (metis distinct_conv_nth length_Cons length_greater_0_conv lessI list.simps(3) min_Suc_Suc min_less_iff_conj nth_Cons_0)
     apply(metis list_distinct list_spec_rm_last)
     done
-
+      
+lemma pre_suf_eq_distinct_list:
+  assumes "distinct xs"
+      and "ys \<noteq> []"
+      and "pre1@ys@suf1 = xs"
+      and "pre2@ys@suf2 = xs"
+    shows "pre1 = pre2 \<and> suf1 = suf2"
+using assms
+  apply(induction xs arbitrary: pre1 pre2 ys, simp)
+  apply(case_tac "pre1"; case_tac "pre2"; clarify)
+  apply(metis suffix_eq_distinct_list append_Nil)
+  apply(metis Un_iff append_eq_Cons_conv distinct.simps(2) list.set_intros(1) set_append suffix_eq_distinct_list)
+  apply(metis Un_iff append_eq_Cons_conv distinct.simps(2) list.set_intros(1) set_append suffix_eq_distinct_list)
+  apply(metis distinct.simps(2) hd_append2 list.sel(1) list.sel(3) list.simps(3) tl_append2)
+  done
+    
+lemma pre_suf_eq_distinct_list_var:
+  assumes "distinct (pre2@ys@suf2)"
+      and "ys \<noteq> []"
+      and "pre1@ys@suf1 = pre2@ys@suf2"
+    shows "pre1 = pre2 \<and> suf1 = suf2"
+using assms pre_suf_eq_distinct_list by metis
+      
+lemma list_order_transp:
+  assumes 1: "list_spec op_list"
+  shows "transp (list_spec.list_order op_list)"
+  apply(clarsimp simp add: transp_def list_spec.list_order_def[OF 1])
+  apply(rule_tac x=xs in exI, clarsimp)
+  apply(subgoal_tac "xsa = xs@[x]@ys \<and> ysa@[z]@zsa = zs")
+   apply clarsimp
+   apply(rule_tac x="ys @ y # ysa" in exI, clarsimp)
+  apply(rule_tac ys="[y]" in pre_suf_eq_distinct_list_var)
+    using 1 and list_distinct apply fastforce
+    apply force
+    apply clarsimp
+    done
+      
+lemma
+  assumes 1: "list_spec op_list"
+    and 2: "x \<in> set (list_spec.ins_list op_list)"
+    and 3: "y \<in> set (list_spec.ins_list op_list)"
+    and 4: "x \<noteq> y"
+  shows "list_spec.list_order op_list x y \<or> list_spec.list_order op_list y x"
+  using assms
+  apply -
+  apply(unfold list_spec.list_order_def[OF 1])
+    apply(subgoal_tac "distinct (list_spec.ins_list op_list)")
+   apply(frule distinct_Ex1[where x=x], assumption)
+   apply(drule distinct_Ex1[where x=y], assumption)
+   apply(erule ex1E)+
+   apply clarsimp
+   apply(case_tac "i < ia")
+    sledgehammer
+    
+    
 end
