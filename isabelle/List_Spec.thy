@@ -1007,6 +1007,102 @@ lemma distinct_remove1:
   shows "set (remove1 x xs) = set ys"
     sorry
 
+lemma interp_list_fail:
+  assumes "set ops = {(xid, InsertAfter (Some a)), (yid, InsertAfter (Some xid)), (zid, InsertAfter (Some a))}"
+    and "list_spec ops"
+    and "xid \<noteq> zid"
+    and "yid \<noteq> zid"
+  shows "set (fst (interp_list ops)) = {}"
+  using assms
+  apply(clarsimp simp add: interp_list_def)
+  apply(subgoal_tac "\<exists>x y z. ops = [x, y, z]")
+   apply clarsimp
+   apply(subgoal_tac "aa = xid \<or> aa = yid \<or> aa = zid")
+    apply(subgoal_tac "aaa = xid \<or> aaa = yid \<or> aaa = zid")
+     apply(subgoal_tac "ab = xid \<or> ab = yid \<or> ab = zid")
+      apply(erule disjE)+
+         apply clarsimp
+  using list_spec.distinct_oids apply fastforce
+        apply(erule disjE)+
+         apply clarsimp
+  using list_spec.distinct_oids apply fastforce
+  using list_spec.distinct_oids apply fastforce
+       apply(erule disjE)+
+  using list_spec.distinct_oids apply fastforce
+  using list_spec.distinct_oids apply fastforce
+       apply(erule disjE)+
+  using list_spec.distinct_oids apply fastforce
+        apply clarsimp
+        apply(subgoal_tac "(xid, b) = (xid, InsertAfter (Some a)) \<and> (yid, ba) = (yid, InsertAfter (Some xid)) \<and> (zid, bb) = (zid, InsertAfter (Some a))")
+         apply clarsimp
+        apply(metis empty_set insert_subset list.simps(15) list_spec.distinct_oids map_of_is_SomeI option.inject subsetI)
+       apply(erule disjE)+
+        apply clarsimp
+        apply(subgoal_tac "(xid, b) = (xid, InsertAfter (Some a)) \<and> (zid, ba) = (zid, InsertAfter (Some a)) \<and> (yid, bb) = (yid, InsertAfter (Some xid))")
+             apply clarsimp
+        apply(metis assms(1) insertI1 insert_iff list_spec.distinct_oids map_of_is_SomeI option.inject)
+    using list_spec.distinct_oids apply fastforce
+        apply(erule disjE)+
+    using list_spec.distinct_oids apply fastforce
+    using list_spec.distinct_oids apply fastforce
+         apply(erule disjE)+
+    using list_spec.distinct_oids apply fastforce
+      apply clarsimp
+                apply(subgoal_tac "(yid, b) = (yid, InsertAfter (Some xid)) \<and> (zid, bb) = (zid, InsertAfter (Some a)) \<and> (xid, ba) = (xid, InsertAfter (Some a))")
+             apply clarsimp
+          apply(metis assms(1) insertI1 insert_iff list_spec.distinct_oids map_of_is_SomeI option.inject)
+         apply(erule disjE)
+          apply clarsimp
+          apply(subgoal_tac "(yid, bb) = (yid, InsertAfter (Some xid)) \<and> (zid, b) = (zid, InsertAfter (Some a)) \<and> (xid, ba) = (xid, InsertAfter (Some a))")
+           apply clarsimp
+          apply(metis assms(1) insertI1 insert_iff list_spec.distinct_oids map_of_is_SomeI option.inject)
+    using list_spec.distinct_oids apply fastforce
+        apply(erule disjE)+
+    using list_spec.distinct_oids apply fastforce
+          apply clarsimp
+          apply(subgoal_tac "(yid, b) = (yid, InsertAfter (Some xid)) \<and> (zid, ba) = (zid, InsertAfter (Some a)) \<and> (xid, bb) = (xid, InsertAfter (Some a))")
+                 apply clarsimp
+          apply(metis assms(1) insertI1 insert_iff list_spec.distinct_oids map_of_is_SomeI option.inject)
+         apply(erule disjE)+
+          apply clarsimp
+          apply(subgoal_tac "(yid, ba) = (yid, InsertAfter (Some xid)) \<and> (zid, b) = (zid, InsertAfter (Some a)) \<and> (xid, bb) = (xid, InsertAfter (Some a))")
+                       apply clarsimp
+          apply(metis assms(1) insertI1 insert_iff list_spec.distinct_oids map_of_is_SomeI option.inject)
+    using list_spec.distinct_oids apply fastforce
+        apply(erule disjE)+
+    using list_spec.distinct_oids apply fastforce
+    using list_spec.distinct_oids apply fastforce
+         apply(erule disjE)+
+    using list_spec.distinct_oids apply fastforce
+    using list_spec.distinct_oids apply fastforce
+        apply(erule disjE)+
+    using list_spec.distinct_oids apply fastforce
+    using list_spec.distinct_oids apply fastforce
+    using list_spec.distinct_oids apply fastforce
+       apply blast
+      sledgehammer
+        apply (smt doubleton_eq_iff insertI1 insert_absorb insert_iff old.prod.inject)
+       apply (metis Pair_inject doubleton_eq_iff insertE insertI1 insert_absorb)
+                sorry
+    
+lemma ins_list_remove1_distinct_False:
+  assumes "list_spec ops_after"
+    and "yid \<in> set (list_spec.ins_list ops_after)"
+    and "yid \<notin> set (list_spec.ins_list (remove1 (a, b) ops_after))"
+    and "yid \<noteq> a"
+  shows "False"
+using assms
+  apply(induction ops_after arbitrary:a b)
+  apply clarsimp
+  apply(clarsimp split!: if_split_asm)
+  defer
+  apply(subgoal_tac "list_spec ops_after")
+  prefer 2
+  apply (metis list_spec_remove1 remove1.simps(2))
+  apply clarsimp
+  apply(subgoal_tac "yid \<in> set (list_spec.ins_list ops_after)")
+sorry
+                  
 lemma
   assumes "list_spec ops_before" and "list_spec ops_after"
     and "set ops_after = set ops_before \<union> {x,y,z}"
@@ -1017,79 +1113,90 @@ lemma
     and "xid \<notin> set (map fst ops_before)"
     and "yid \<notin> set (map fst ops_before)"
     and "zid \<notin> set (map fst ops_before)"
-    and "ref = None \<or> (\<exists>i. ref = Some i \<and> i \<in> set (list_spec.ins_list ops_before))"
-  shows "(list_spec.list_order ops_after xid yid \<and> list_spec.list_order ops_after yid zid) \<or>
-        (list_spec.list_order ops_after zid xid \<and> list_spec.list_order ops_after xid yid)"
+  shows "((list_spec.list_order ops_after xid yid \<and> list_spec.list_order ops_after yid zid) \<or>
+        (list_spec.list_order ops_after zid xid \<and> list_spec.list_order ops_after xid yid)) \<or>
+        (xid \<notin> set (list_spec.ins_list ops_after) \<and> yid \<notin> set (list_spec.ins_list ops_after) \<and>
+          zid \<notin> set (list_spec.ins_list ops_after))"
 using assms
   apply(induction ops_before arbitrary: ops_after)
-  apply(erule disjE)
+  apply(cases ref)
+  apply(rule disjI1)
   apply(rule foo, simp+)
-  apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
+  apply(rule disjI2, rule disjI2)
+  apply(clarsimp simp add: list_spec.ins_list_def)
+  apply(rule conjI)
+  apply(subst interp_list_fail, force, force, force, force, force)
+  apply(rule conjI)
+  apply(subst interp_list_fail, force, force, force, force, force)
+  apply(subst interp_list_fail, force, force, force, force, force)
+  apply clarsimp
+  apply(erule_tac x="remove1 (a, b) ops_after" in meta_allE)
   apply(subgoal_tac "list_spec ops_before")
   prefer 2
-  apply(metis distinct.simps(2) distinct_fst list.simps(9) list_spec.distinct_oids list_spec.sorted_oids list_spec_downward_closed set_subset_Cons sorted_Cons)
-  apply(clarsimp)
-  apply(erule_tac x="remove1 (a, b) ops_after" in meta_allE)
+  apply (metis list_spec_remove1 remove1.simps(2))
+  apply clarsimp
   apply(subgoal_tac "list_spec (remove1 (a, b) ops_after)")
   prefer 2
   apply(simp add: list_spec_remove1)
-  apply(erule disjE)
   apply clarsimp
-  apply(subgoal_tac "set (remove1 (a, b) ops_after) = insert (xid, InsertAfter None) (insert (yid, InsertAfter (Some xid)) (insert (zid, InsertAfter None) (set ops_before)))")
+  apply(subgoal_tac "set (remove1 (a, b) ops_after) = insert (xid, InsertAfter ref) (insert (yid, InsertAfter (Some xid)) (insert (zid, InsertAfter ref) (set ops_before)))")
   prefer 2
-   apply(rule_tac s="set ([(xid, InsertAfter None), (yid, InsertAfter (Some xid)), (zid, InsertAfter None)] @ ops_before)" in trans)
-   apply(rule distinct_remove1)
-     apply force
-  apply clarsimp
-    apply(metis distinct_fst distinct_set_notin fst_conv image_iff list_spec.distinct_oids)
-   apply(simp add: distinct_fst list_spec.distinct_oids)
-  apply force
-  apply clarsimp
-  apply(erule disjE)
-  apply(rule conjI)
-   apply(rule_tac A="remove1 (a, b) ops_after" in list_order_monotonic, blast, blast, force, force)
-  apply(rule_tac A="remove1 (a, b) ops_after" in list_order_monotonic, blast, blast, force, force)
-  apply(rule conjI)
-  apply(rule_tac A="remove1 (a, b) ops_after" in list_order_monotonic, blast, blast, force, force)
-  apply(rule_tac A="remove1 (a, b) ops_after" in list_order_monotonic, blast, blast, force)
-  apply(erule impE)
-  apply(meson list_order_monotonic set_remove1_subset)
-  apply(subgoal_tac "list_spec.list_order ops_after xid yid")
-  apply force
-  apply(meson list_order_monotonic set_remove1_subset)
-  apply clarsimp
-  apply(subgoal_tac "set (remove1 (a, b) ops_after) = insert (xid, InsertAfter (Some i)) (insert (yid, InsertAfter (Some xid)) (insert (zid, InsertAfter (Some i)) (set ops_before)))")
-  prefer 2
-     apply(rule_tac s="set ([(xid, InsertAfter (Some i)), (yid, InsertAfter (Some xid)), (zid, InsertAfter (Some i))] @ ops_before)" in trans)
+     apply(rule_tac s="set ([(xid, InsertAfter ref), (yid, InsertAfter (Some xid)), (zid, InsertAfter ref)] @ ops_before)" in trans)
   apply(rule distinct_remove1)
     apply force
-   apply clarsimp
+    apply clarsimp
     apply(metis distinct_fst distinct_set_notin fst_conv image_iff list_spec.distinct_oids)
    apply(simp add: distinct_fst list_spec.distinct_oids)
   apply force
   apply clarsimp
-  apply(subgoal_tac "i \<in> set (list_spec.ins_list ops_before)")
+  apply(subgoal_tac "xid \<in> set (list_spec.ins_list ops_after) \<or> yid \<in> set (list_spec.ins_list ops_after) \<or> zid \<in> set (list_spec.ins_list ops_after)")
   apply clarsimp
-  apply(erule disjE)
-  apply(rule conjI)
-   apply(rule_tac A="remove1 (a, b) ops_after" in list_order_monotonic, blast, blast, force, force)
-  apply(rule_tac A="remove1 (a, b) ops_after" in list_order_monotonic, blast, blast, force, force)
-  apply(rule conjI)
-  apply(rule_tac A="remove1 (a, b) ops_after" in list_order_monotonic, blast, blast, force, force)
-  apply(rule_tac A="remove1 (a, b) ops_after" in list_order_monotonic, blast, blast, force)
-  apply(erule impE)
-  apply(meson list_order_monotonic set_remove1_subset)
-  apply(subgoal_tac "list_spec.list_order ops_after xid yid")
+  apply(erule disjE)+
+   apply clarsimp
+   apply(rule conjI)
+    apply(erule impE)
+    apply(meson list_order_monotonic set_remove1_subset)
+  apply(subgoal_tac "list_spec.list_order ops_after yid zid")
   apply force
+    apply(meson list_order_monotonic set_remove1_subset)
+   apply(meson list_order_monotonic set_remove1_subset)
+  apply(erule disjE)+
+   apply(rule conjI)
+      apply(erule impE)
+    apply(meson list_order_monotonic set_remove1_subset)
+  apply(subgoal_tac "list_spec.list_order ops_after yid zid")
+  apply force
+    apply(meson list_order_monotonic set_remove1_subset)
+   apply(meson list_order_monotonic set_remove1_subset)
+  apply clarsimp
+  apply(rule conjI)
+        apply(erule impE)
+    apply(meson list_order_monotonic set_remove1_subset)
+  apply(subgoal_tac "list_spec.list_order ops_after yid zid")
+  apply force
+    apply(meson list_order_monotonic set_remove1_subset)
   apply(meson list_order_monotonic set_remove1_subset)
-  
-  
-     
-  
-  
-  
-  
-  
+  apply(erule disjE)+
+   apply clarsimp
+   apply(rule conjI)
+    apply(meson list_order_monotonic set_remove1_subset)
+   apply(meson list_order_monotonic set_remove1_subset)
+  apply clarsimp
+  using ins_list_remove1_distinct_False apply metis
+  apply(erule disjE)+
+    apply(rule conjI)
+     apply(meson list_order_monotonic set_remove1_subset)
+    apply(meson list_order_monotonic set_remove1_subset)
+   apply(rule conjI)
+    apply(meson list_order_monotonic set_remove1_subset)
+   apply(meson list_order_monotonic set_remove1_subset)
+  apply(erule disjE)+
+    apply clarsimp
+  using ins_list_remove1_distinct_False apply metis
+   apply clarsimp
+  using ins_list_remove1_distinct_False apply metis
+  apply clarsimp
+  done
 
 lemma
   assumes 1: "list_spec op_list"
