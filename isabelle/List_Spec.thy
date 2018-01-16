@@ -1060,7 +1060,8 @@ lemma distinct_remove1:
   assumes "set xs = set ys \<union> {x}"
     and "distinct (x#ys)" and "distinct xs"
   shows "set (remove1 x xs) = set ys"
-    sorry
+  using assms apply (induct xs arbitrary: x ys; clarsimp simp: insert_ident)
+  by (metis Diff_insert_absorb insert_Diff_if singletonD)
 
 lemma interp_list_fail:
   assumes "set ops = {(xid, InsertAfter (Some a)), (yid, InsertAfter (Some xid)), (zid, InsertAfter (Some a))}"
@@ -1135,10 +1136,16 @@ lemma interp_list_fail:
     using list_spec.distinct_oids apply fastforce
     using list_spec.distinct_oids apply fastforce
        apply blast
-      sledgehammer
-        apply (smt doubleton_eq_iff insertI1 insert_absorb insert_iff old.prod.inject)
-       apply (metis Pair_inject doubleton_eq_iff insertE insertI1 insert_absorb)
-                sorry
+      apply (smt insert_absorb insert_iff insert_not_empty prod.inject)
+     apply (smt doubleton_eq_iff insertI1 insert_absorb insert_iff old.prod.inject)
+    apply (rule_tac x="(xid, InsertAfter (Some a))" and y="(yid, InsertAfter (Some xid))" and z="(zid, InsertAfter (Some a))" in distinct_set_length3)
+        defer
+        apply clarsimp
+    using list_spec.distinct_oids apply (simp add: list_spec.ref_older neq_iff)
+    using list_spec.distinct_oids apply (simp add: list_spec.ref_older neq_iff)
+    using list_spec.distinct_oids apply (simp add: list_spec.ref_older neq_iff)
+     apply clarsimp
+    using list_spec.distinct_oids distinct_fst by auto
     
 lemma ins_list_remove1_distinct_False:
   assumes "list_spec ops_after"
