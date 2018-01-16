@@ -899,12 +899,57 @@ lemma list_order_irrefl:
   using 1 and list_distinct apply fastforce
   done
 
+lemma distinct_set_length3:
+  assumes "distinct xs" "set xs = {x, y, z}" "x \<noteq> y" "y \<noteq> z" "z \<noteq> x" 
+  shows   "\<exists>a b c. xs = [a, b, c]"
+proof (cases xs)
+  assume "xs = []" thus ?thesis using assms by auto 
+next
+  fix a bs assume 1: "xs = a#bs" thus ?thesis
+  proof (cases bs)
+    assume "bs = []" thus ?thesis using assms 1 by auto
+  next
+    fix b cs assume 2: "bs = b#cs" thus ?thesis
+    proof (cases cs)
+      assume "cs = []" thus ?thesis
+        using assms 1 2 by clarsimp (metis all_not_in_conv insertE insert_subset subset_insertI)
+    next
+      fix c ds assume 3: "cs = c#ds"
+      then show ?thesis
+      proof (cases ds)
+        assume "ds = []" thus ?thesis
+          using 1 2 3 by fastforce
+      next
+        fix d zs assume "ds = d#zs"
+        thus ?thesis 
+          using 1 2 3 assms by clarsimp (metis all_not_in_conv insertE insert_subset subset_insertI)
+      qed
+    qed
+  qed
+qed
+
+lemma set3_injection: "set xs = {x, y, z} \<Longrightarrow> distinct xs \<Longrightarrow> xs = [a, b, c] \<Longrightarrow> distinct [x, y, z] \<Longrightarrow>
+  (a = x \<and> b = y \<and> c = z) \<or>
+  (a = x \<and> b = z \<and> c = y) \<or>
+  (a = y \<and> b = x \<and> c = z) \<or>
+  (a = y \<and> b = z \<and> c = x) \<or>
+  (a = z \<and> b = x \<and> c = y) \<or>
+  (a = z \<and> b = y \<and> c = x)"
+  by (metis distinct.simps(2) distinct_length_2_or_more empty_set list.simps(15))
+
+lemma distinct_sorted_set_3_helper:
+  assumes "distinct [a, b, c]" and "sorted (map fst [a, b, c])"
+    and "set [a, b, c] = {x, y, z}"
+    and "fst x < fst y" and "fst y < fst z"
+  shows "a = x \<and> b = y \<and> c = z"
+  using assms by clarsimp (metis (no_types, lifting) assms(1) distinct.simps(2) empty_set insert_iff less_imp_not_less less_le_trans list.simps(15))
+
 lemma distinct_sorted_set_3:
   assumes "distinct xs" and "sorted (map fst xs)"
     and "set xs = {x, y, z}"
     and "fst x < fst y" and "fst y < fst z"
   shows "xs = [x, y, z]"
-sorry
+  by (metis assms distinct_set_length3 distinct_sorted_set_3_helper leD less_imp_le)
       
 lemma foo:
   assumes 1: "list_spec op_list"
@@ -991,7 +1036,17 @@ lemma list_spec_downward_closed:
     and "set B \<subseteq> set A"
     and "sorted (map fst B)" and "distinct B"
   shows "list_spec B"
-  sorry
+  using assms
+  apply (induct rule: length_induct)
+  apply (case_tac xs)
+   apply clarsimp
+  apply (erule_tac x=list in allE)
+  apply clarsimp
+  apply (subgoal_tac "sorted (map fst list)")
+   apply clarsimp
+   apply (clarsimp simp: list_spec_def)
+   apply (metis map_of_SomeD map_of_is_SomeI subsetCE)
+  using sorted_Cons by blast
 
 lemma
   assumes "list_spec ops_before" and "list_spec ops_after"
