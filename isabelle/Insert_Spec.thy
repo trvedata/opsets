@@ -192,71 +192,21 @@ next
           assume "a \<in> set f"
           show "e = id"
             using 2 3 4 IH F by(metis \<open>a \<in> set f\<close> \<open>ref = Some a\<close> contra_subsetD image_set
-                insert_after.simps(1) insert_after_none insert_after_set interp_list_def
+                insert_after.simps insert_after_none insert_after_set interp_list_def
                 list_spec.ins_list_def list_spec_rm_last set_ConsD)
         next
           assume "a \<notin> set f"
           show "e = id"
-            using 2 3 4 IH F by(metis \<open>a \<notin> set f\<close> \<open>ref = Some a\<close> contra_subsetD image_set
+            using 2 3 4 IH F by(metis \<open>a \<notin> set f\<close> \<open>ref = Some a\<close> contra_subsetD fst_conv image_set
                 insert_after_nonex interp_list_def list_spec.ins_list_def list_spec_rm_last)
         qed
       qed 
     }
     thus "set (list_spec.ins_list (xs@[x])) \<subseteq> set (map fst (xs@[x]))"
       by(clarsimp simp add: P)
+  qed
 qed
 
-(*
-lemma list_oid_subset [simp]:
-  assumes "list_spec op_list"
-  shows "set (list_spec.ins_list op_list) \<subseteq> set (map fst op_list)"
-using assms proof(induction op_list rule: List.rev_induct)
-  show "set (list_spec.ins_list []) \<subseteq> set (map fst [])"
-    by(auto simp add: list_spec.ins_list_def[OF list_spec_NilI] interp_list_def)
-next
-  fix x and xs :: "('a \<times> 'a option) list"
-  assume "list_spec xs \<Longrightarrow> set (list_spec.ins_list xs) \<subseteq> set (map fst xs)"
-    and S: "list_spec (xs@[x])"
-  hence IH: "set (list_spec.ins_list xs) \<subseteq> set (map fst xs)"
-    by blast
-  obtain id ref where P: "x = (id, ref)"
-    by fastforce
-  fix e
-  assume 1: "e \<in> set (list_spec.ins_list (xs @ [(id, ref)]))"
-    and 2: "e \<notin> fst ` set xs"
-  have 3: "list_spec (xs @ [(id, ref)])"
-    using S P by auto
-  obtain f where F: "foldl insert_after [] xs = f"
-    by fastforce
-  hence 4: "e \<in> set (insert_after f (id, ref))"
-    using 1 2 3 by(clarsimp simp add: list_spec.ins_list_def interp_list_def)
-  have "e = id"
-  proof(cases ref)
-    assume "ref = None"
-    thus "e = id"
-      using 2 4 F IH S by(metis contra_subsetD fst_conv image_set insert_after.simps
-          interp_list_def list_spec.ins_list_def list_spec_rm_last set_ConsD)
-  next
-    fix a
-    assume "ref = Some a"
-    show "e = id"
-    proof(cases "a \<in> set f")
-      assume "a \<in> set f"
-      show "e = id"
-        using 2 3 4 IH F by(metis \<open>a \<in> set f\<close> \<open>ref = Some a\<close> contra_subsetD fst_conv image_set
-              insert_after.simps insert_after_none insert_after_set interp_list_def
-              list_spec.ins_list_def list_spec_rm_last set_ConsD)
-    next
-      assume "a \<notin> set f"
-      show "e = id"
-        using 2 3 4 IH F by(metis \<open>a \<notin> set f\<close> \<open>ref = Some a\<close> contra_subsetD fst_conv image_set
-              insert_after_nonex interp_list_def list_spec.ins_list_def list_spec_rm_last)
-    qed
-  qed
-  from this and IH S 1 2 P have "set (list_spec.ins_list (xs@[x])) \<subseteq> set (map fst (xs@[x]))"
-    by(clarsimp simp add: P)
-  qed
-qed*)
 
 lemma last_op_greatest:
   assumes "list_spec (op_list @ [(oid, oper)])"
@@ -762,35 +712,22 @@ lemma ins_list_correct_position_insert:
       prefer 2
       apply force
      apply clarsimp
-     prefer 2
-      apply(subgoal_tac "\<exists>m. nat = Suc m")
-    prefer 2
-(*       apply(metis Suc_pred not_gr_zero nth_Cons')
-      apply clarsimp
-     apply(rule insert_after_nth_oid)
-    apply(metis distinct.simps(1) distinct_length_2_or_more list.exhaust list_distinct list_spec_rm_last)
-      apply force
-     apply(subgoal_tac "nat = 0")
-      apply clarsimp
-     prefer 2
-      apply(case_tac "(list_spec.ins_list xs)")
-      apply clarsimp
-     apply clarsimp
-     apply safe
-      apply(subgoal_tac "length list = 0")
-       apply clarsimp
-      apply(metis distinct.simps(2) list_distinct list_spec_rm_last nth_equal_first_eq order_refl)
-     apply(subgoal_tac "\<exists>m. length list = Suc m")
-      apply clarsimp
-     apply(rule insert_after_nth_oid)
-    using list_distinct list_spec_rm_last apply fastforce
-      apply force
-     apply(metis Suc_diff_1 not_gr_zero nth_Cons')
-    apply(subgoal_tac "distinct (ab#list)")
-     apply (metis distinct_conv_nth length_Cons length_greater_0_conv lessI list.simps(3) min_Suc_Suc min_less_iff_conj nth_Cons_0)
-    apply(metis list_distinct list_spec_rm_last)
-    done*)
-  sorry
+   prefer 2
+   apply (case_tac "(foldl insert_after [] xs)")
+    apply clarsimp
+    apply (metis interp_list_def list.simps(3) list_spec.ins_list_def list_spec_rm_last)
+   apply clarsimp
+   apply (rule conjI; clarsimp)
+  apply (metis distinct_conv_nth interp_list_def length_Cons lessI list_distinct list_spec.ins_list_def list_spec_rm_last min_Suc_Suc min_less_iff_conj nth_Cons' zero_less_Suc)
+   apply (metis (no_types, lifting) insert_after.simps(3) insert_after_nth_oid interp_list_def length_Cons lessI list_distinct list_spec.ins_list_def list_spec_rm_last min_Suc_Suc min_less_iff_conj nth_Cons_Suc)
+  apply (case_tac "(list_spec.ins_list xs)")
+   apply clarsimp
+  apply clarsimp
+  apply (case_tac "(foldl insert_after [] xs)"; clarsimp)
+   apply (metis interp_list_def list.discI list_spec.ins_list_def list_spec_rm_last)
+  apply (rule conjI; clarsimp)
+   apply (metis distinct_conv_nth interp_list_def length_Cons lessI list_distinct list_spec.ins_list_def list_spec_rm_last nth_Cons_0 zero_less_Suc)
+  by (metis (no_types, lifting) insert_after.simps(3) insert_after_nth_oid interp_list_def length_Cons lessI list_distinct list_spec.ins_list_def list_spec_rm_last nth_Cons_Suc)
 
 lemma pre_suf_eq_distinct_list_var:
   assumes "distinct (pre2@ys@suf2)"
@@ -1050,17 +987,9 @@ lemma ins_list_remove1_distinct_False:
     and "yid \<notin> set (list_spec.ins_list (remove1 (a, b) ops_after))"
     and "yid \<noteq> a"
   shows "False"
-using assms
-  apply(induction ops_after arbitrary:a b)
-  apply clarsimp
-  apply(clarsimp split!: if_split_asm)
-  defer
-  apply(subgoal_tac "list_spec ops_after")
-  prefer 2
-  apply (metis list_spec_remove1 remove1.simps(2))
-  apply clarsimp
-  apply(subgoal_tac "yid \<in> set (list_spec.ins_list ops_after)")
-sorry
+(* NOT TRUE *)
+  oops
+
                   
 lemma no_interleaving:
   assumes "list_spec ops_before" and "list_spec ops_after"
