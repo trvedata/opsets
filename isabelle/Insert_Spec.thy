@@ -155,7 +155,56 @@ qed
 lemma list_oid_subset [simp]:
   assumes "list_spec op_list"
   shows "set (list_spec.ins_list op_list) \<subseteq> set (map fst op_list)"
-  sorry
+using assms proof(induction op_list rule: List.rev_induct)
+  show "set (list_spec.ins_list []) \<subseteq> set (map fst [])"
+    by(auto simp add: list_spec.ins_list_def[OF list_spec_NilI] interp_list_def)
+next
+  fix x and xs :: "('a \<times> 'a option) list"
+  assume "list_spec xs \<Longrightarrow> set (list_spec.ins_list xs) \<subseteq> set (map fst xs)"
+    and S: "list_spec (xs@[x])"
+  hence IH: "set (list_spec.ins_list xs) \<subseteq> set (map fst xs)"
+    by blast
+  obtain id ref where P: "x = (id, ref)"
+    by fastforce
+  show "set (list_spec.ins_list (xs@[x])) \<subseteq> set (map fst (xs@[x]))"
+  proof -
+    {
+      fix e
+      assume 1: "e \<in> set (list_spec.ins_list (xs @ [(id, ref)]))"
+        and 2: "e \<notin> fst ` set xs"
+      have 3: "list_spec (xs @ [(id, ref)])"
+        using S P by auto
+      obtain f where F: "foldl insert_after [] xs = f"
+        by fastforce
+      hence 4: "e \<in> set (insert_after f (id, ref))"
+        using 1 2 3 by(clarsimp simp add: list_spec.ins_list_def interp_list_def)
+      have "e = id"
+      proof(cases ref)
+        assume "ref = None"
+        thus "e = id"
+          using 2 4 F IH S by(metis contra_subsetD  image_set insert_after.simps(1)
+              interp_list_def list_spec.ins_list_def list_spec_rm_last set_ConsD)
+      next
+        fix a
+        assume "ref = Some a"
+        show "e = id"
+        proof(cases "a \<in> set f")
+          assume "a \<in> set f"
+          show "e = id"
+            using 2 3 4 IH F by(metis \<open>a \<in> set f\<close> \<open>ref = Some a\<close> contra_subsetD image_set
+                insert_after.simps(1) insert_after_none insert_after_set interp_list_def
+                list_spec.ins_list_def list_spec_rm_last set_ConsD)
+        next
+          assume "a \<notin> set f"
+          show "e = id"
+            using 2 3 4 IH F by(metis \<open>a \<notin> set f\<close> \<open>ref = Some a\<close> contra_subsetD image_set
+                insert_after_nonex interp_list_def list_spec.ins_list_def list_spec_rm_last)
+        qed
+      qed 
+    }
+    thus "set (list_spec.ins_list (xs@[x])) \<subseteq> set (map fst (xs@[x]))"
+      by(clarsimp simp add: P)
+qed
 
 (*
 lemma list_oid_subset [simp]:
