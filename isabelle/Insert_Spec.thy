@@ -2,14 +2,12 @@ theory Insert_Spec
   imports Main Util "~~/src/HOL/Library/Product_Lexorder"
 begin
 
-fun insert_after :: "'oid list \<Rightarrow> ('oid \<times> 'oid option) \<Rightarrow> 'oid list" where
-  "insert_after xs     (oid, None)     = oid#xs" |
-  "insert_after []     (oid, _)        = []" |
-  "insert_after (x#xs) (oid, Some ref) =
-     (if x = ref then
-        x#oid#xs
-      else
-        x#(insert_after xs (oid, Some ref)))"
+fun insert_spec :: "'oid list \<Rightarrow> ('oid \<times> 'oid option) \<Rightarrow> 'oid list" where
+  "insert_spec xs     (oid, None)     = oid#xs" |
+  "insert_spec []     (oid, _)        = []" |
+  "insert_spec (x#xs) (oid, Some ref) =
+     (if x = ref then x # oid # xs
+                 else x # (insert_spec xs (oid, Some ref)))"
 
 fun make_insert :: "'oid list \<Rightarrow> 'oid \<Rightarrow> nat \<Rightarrow> ('oid \<times> 'oid option)" where
   "make_insert xs oid 0       = (oid, None)" |
@@ -17,7 +15,7 @@ fun make_insert :: "'oid list \<Rightarrow> 'oid \<Rightarrow> nat \<Rightarrow>
   "make_insert xs oid (Suc m) = (oid, Some (xs ! min (length xs - 1) m))"
 
 definition interp_list :: "('oid \<times> 'oid option) list \<Rightarrow> 'oid list" where
-  "interp_list ops \<equiv> foldl insert_after [] ops"
+  "interp_list ops \<equiv> foldl insert_spec [] ops"
 
 section\<open>The list specification locale\<close>
 
@@ -59,36 +57,36 @@ lemma list_spec_rm_last [dest]:
   shows "list_spec xs"
 using assms by(clarsimp simp: list_spec_def) (metis sorted_append)
 
-lemma insert_after_none [simp]:
-  shows "set (insert_after xs (oid, None)) = set xs \<union> {oid}"
+lemma insert_spec_none [simp]:
+  shows "set (insert_spec xs (oid, None)) = set xs \<union> {oid}"
 by(induction xs, auto simp add: insert_commute sup_commute)
 
-lemma insert_after_set [simp]:
+lemma insert_spec_set [simp]:
   assumes "ref \<in> set xs"
-  shows "set (insert_after xs (oid, Some ref)) = set xs \<union> {oid}"
+  shows "set (insert_spec xs (oid, Some ref)) = set xs \<union> {oid}"
 using assms proof(induction xs)
   assume "ref \<in> set []"
-  thus "set (insert_after [] (oid, Some ref)) = set [] \<union> {oid}"
+  thus "set (insert_spec [] (oid, Some ref)) = set [] \<union> {oid}"
     by auto
 next
   fix a xs
-  assume "ref \<in> set xs \<Longrightarrow> set (insert_after xs (oid, Some ref)) = set xs \<union> {oid}"
+  assume "ref \<in> set xs \<Longrightarrow> set (insert_spec xs (oid, Some ref)) = set xs \<union> {oid}"
     and "ref \<in> set (a#xs)"
-  thus "set (insert_after (a#xs) (oid, Some ref)) = set (a#xs) \<union> {oid}"
+  thus "set (insert_spec (a#xs) (oid, Some ref)) = set (a#xs) \<union> {oid}"
     by(cases "a = ref", auto simp add: insert_commute sup_commute)
 qed
 
-lemma insert_after_nonex [simp]:
+lemma insert_spec_nonex [simp]:
   assumes "ref \<notin> set xs"
-  shows "insert_after xs (oid, Some ref) = xs"
+  shows "insert_spec xs (oid, Some ref) = xs"
 using assms proof(induction xs)
-  show "insert_after [] (oid, Some ref) = []"
+  show "insert_spec [] (oid, Some ref) = []"
     by simp
 next
   fix a xs
-  assume "ref \<notin> set xs \<Longrightarrow> insert_after xs (oid, Some ref) = xs"
+  assume "ref \<notin> set xs \<Longrightarrow> insert_spec xs (oid, Some ref) = xs"
     and "ref \<notin> set (a#xs)"
-  thus "insert_after (a#xs) (oid, Some ref) = a#xs"
+  thus "insert_spec (a#xs) (oid, Some ref) = a#xs"
     by(cases "a = ref", auto simp add: insert_commute sup_commute)
 qed
 
@@ -99,24 +97,24 @@ lemma list_greater_non_memb:
   shows "False"
 using assms by blast  
 
-lemma insert_after_distinct [intro]:
+lemma insert_spec_distinct [intro]:
   fixes oid :: "'oid::{linorder}"
   assumes 1: "distinct xs"
     and 2: "\<And>x. x \<in> set xs \<Longrightarrow> x < oid"
     and 3: "ref = Some r \<longrightarrow> r < oid"
-  shows "distinct (insert_after xs (oid, ref))"
+  shows "distinct (insert_spec xs (oid, ref))"
 using 1 2 proof(induction xs)
-  show "distinct (insert_after [] (oid, ref))"
+  show "distinct (insert_spec [] (oid, ref))"
     by(cases ref, auto)
 next
   fix a xs
-  assume IH: "distinct xs \<Longrightarrow> (\<And>x. x \<in> set xs \<Longrightarrow> x < oid) \<Longrightarrow> distinct (insert_after xs (oid, ref))"
+  assume IH: "distinct xs \<Longrightarrow> (\<And>x. x \<in> set xs \<Longrightarrow> x < oid) \<Longrightarrow> distinct (insert_spec xs (oid, ref))"
     and D: "distinct (a#xs)"
     and L: "\<And>x. x \<in> set (a#xs) \<Longrightarrow> x < oid"
-  show "distinct (insert_after (a#xs) (oid, ref))"
+  show "distinct (insert_spec (a#xs) (oid, ref))"
   proof(cases "ref")
     assume "ref = None"
-    thus "distinct (insert_after (a#xs) (oid, ref))"
+    thus "distinct (insert_spec (a#xs) (oid, ref))"
       using D L by auto
   next
     fix id
@@ -135,19 +133,19 @@ next
     note T = this
     {
       assume NEQ: "a \<noteq> id"
-      have 0: "a \<notin> set (insert_after xs (oid, Some id))"
-        using D L by(metis distinct.simps(2) insert_after.simps(1) insert_after_none insert_after_nonex
-            insert_after_set insert_iff list.set(2) not_less_iff_gr_or_eq)
+      have 0: "a \<notin> set (insert_spec xs (oid, Some id))"
+        using D L by(metis distinct.simps(2) insert_spec.simps(1) insert_spec_none insert_spec_nonex
+            insert_spec_set insert_iff list.set(2) not_less_iff_gr_or_eq)
       have 1: "distinct xs"
         using D by auto
       have "\<And>x. x \<in> set xs \<Longrightarrow> x < oid"
         using L by auto
-      hence "distinct (insert_after xs (oid, Some id))"
+      hence "distinct (insert_spec xs (oid, Some id))"
         using S IH[OF 1] by blast
-      hence "a \<notin> set (insert_after xs (oid, Some id)) \<and> distinct (insert_after xs (oid, Some id))"
+      hence "a \<notin> set (insert_spec xs (oid, Some id)) \<and> distinct (insert_spec xs (oid, Some id))"
         using 0 by auto
     }
-    from this S T show "distinct (insert_after (a # xs) (oid, ref))"
+    from this S T show "distinct (insert_spec (a # xs) (oid, ref))"
       by clarsimp
   qed
 qed
@@ -174,15 +172,15 @@ next
         and 2: "e \<notin> fst ` set xs"
       have 3: "list_spec (xs @ [(id, ref)])"
         using S P by auto
-      obtain f where F: "foldl insert_after [] xs = f"
+      obtain f where F: "foldl insert_spec [] xs = f"
         by fastforce
-      hence 4: "e \<in> set (insert_after f (id, ref))"
+      hence 4: "e \<in> set (insert_spec f (id, ref))"
         using 1 2 3 by(clarsimp simp add: list_spec.ins_list_def interp_list_def)
       have "e = id"
       proof(cases ref)
         assume "ref = None"
         thus "e = id"
-          using 2 4 F IH S by(metis contra_subsetD  image_set insert_after.simps(1)
+          using 2 4 F IH S by(metis contra_subsetD  image_set insert_spec.simps(1)
               interp_list_def list_spec.ins_list_def list_spec_rm_last set_ConsD)
       next
         fix a
@@ -192,13 +190,13 @@ next
           assume "a \<in> set f"
           show "e = id"
             using 2 3 4 IH F by(metis \<open>a \<in> set f\<close> \<open>ref = Some a\<close> contra_subsetD image_set
-                insert_after.simps insert_after_none insert_after_set interp_list_def
+                insert_spec.simps(1) insert_spec_none insert_spec_set interp_list_def
                 list_spec.ins_list_def list_spec_rm_last set_ConsD)
         next
           assume "a \<notin> set f"
           show "e = id"
-            using 2 3 4 IH F by(metis \<open>a \<notin> set f\<close> \<open>ref = Some a\<close> contra_subsetD fst_conv image_set
-                insert_after_nonex interp_list_def list_spec.ins_list_def list_spec_rm_last)
+            using 2 3 4 IH F by(metis \<open>a \<notin> set f\<close> \<open>ref = Some a\<close> contra_subsetD image_set
+                insert_spec_nonex interp_list_def list_spec.ins_list_def list_spec_rm_last)
         qed
       qed 
     }
@@ -254,8 +252,8 @@ lemma list_distinct:
   apply(frule list_spec_rm_last, clarsimp)
   apply(subgoal_tac "\<forall>x\<in>set (list_spec.ins_list xs). x < a") prefer 2
   using last_op_greatest list_oid_subset apply blast
-  apply(subgoal_tac "distinct (insert_after (list_spec.ins_list xs) (a, b))") prefer 2
-  apply(metis insert_after.simps(2) insert_after_distinct last_in_set)
+  apply(subgoal_tac "distinct (insert_spec (list_spec.ins_list xs) (a, b))") prefer 2
+  apply(metis insert_spec.simps(2) insert_spec_distinct last_in_set)
   apply(simp add: list_spec.ins_list_def interp_list_def)
   done
 
@@ -305,42 +303,42 @@ qed
 
 lemma insert_somewhere:
   assumes "ref = None \<or> (ref = Some r \<and> r \<in> set list)"
-  shows "\<exists>xs ys. list = xs@ys \<and> insert_after list (oid, ref) = xs@oid#ys"
+  shows "\<exists>xs ys. list = xs@ys \<and> insert_spec list (oid, ref) = xs@oid#ys"
 using assms proof(induction list)
   assume "ref = None \<or> ref = Some r \<and> r \<in> set []"
-  thus "\<exists>xs ys. [] = xs @ ys \<and> insert_after [] (oid, ref) = xs @ oid # ys"
+  thus "\<exists>xs ys. [] = xs @ ys \<and> insert_spec [] (oid, ref) = xs @ oid # ys"
   proof
     assume "ref = None"
-    thus "\<exists>xs ys. [] = xs@ys \<and> insert_after [] (oid, ref) = xs@oid#ys"
+    thus "\<exists>xs ys. [] = xs@ys \<and> insert_spec [] (oid, ref) = xs@oid#ys"
       by auto
   next
     assume "ref = Some r \<and> r \<in> set []"
-    thus "\<exists>xs ys. [] = xs@ys \<and> insert_after [] (oid, ref) = xs@oid#ys"
+    thus "\<exists>xs ys. [] = xs@ys \<and> insert_spec [] (oid, ref) = xs@oid#ys"
       by auto
   qed
 next
   fix a list
   assume 1: "ref = None \<or> ref = Some r \<and> r \<in> set (a#list)"
-    and IH: "ref = None \<or> ref = Some r \<and> r \<in> set list \<Longrightarrow> \<exists>xs ys. list = xs@ys \<and> insert_after list (oid, ref) = xs@oid#ys"
-  show "\<exists>xs ys. a#list = xs@ys \<and> insert_after (a#list) (oid, ref) = xs@oid#ys"
+    and IH: "ref = None \<or> ref = Some r \<and> r \<in> set list \<Longrightarrow> \<exists>xs ys. list = xs@ys \<and> insert_spec list (oid, ref) = xs@oid#ys"
+  show "\<exists>xs ys. a#list = xs@ys \<and> insert_spec (a#list) (oid, ref) = xs@oid#ys"
   proof(rule disjE[OF 1])
     assume "ref = None"
-    thus "\<exists>xs ys. a # list = xs @ ys \<and> insert_after (a # list) (oid, ref) = xs @ oid # ys"
+    thus "\<exists>xs ys. a # list = xs @ ys \<and> insert_spec (a # list) (oid, ref) = xs @ oid # ys"
       by force
   next
     assume "ref = Some r \<and> r \<in> set (a # list)"
     hence 2: "r = a \<or> r \<in> set list" and 3: "ref = Some r"
       by auto
-    show "\<exists>xs ys. a # list = xs @ ys \<and> insert_after (a # list) (oid, ref) = xs @ oid # ys"
+    show "\<exists>xs ys. a # list = xs @ ys \<and> insert_spec (a # list) (oid, ref) = xs @ oid # ys"
     proof(rule disjE[OF 2])
       assume "r = a"
-      thus "\<exists>xs ys. a # list = xs @ ys \<and> insert_after (a # list) (oid, ref) = xs @ oid # ys"
-        using 3 by(metis append_Cons append_Nil insert_after.simps(3))
+      thus "\<exists>xs ys. a # list = xs @ ys \<and> insert_spec (a # list) (oid, ref) = xs @ oid # ys"
+        using 3 by(metis append_Cons append_Nil insert_spec.simps(3))
     next
       assume "r \<in> set list"
-      from this obtain xs ys where "list = xs@ys \<and> insert_after list (oid, ref) = xs@oid#ys"
+      from this obtain xs ys where "list = xs@ys \<and> insert_spec list (oid, ref) = xs@oid#ys"
         using IH 3 by auto
-      thus "\<exists>xs ys. a # list = xs @ ys \<and> insert_after (a # list) (oid, ref) = xs @ oid # ys"
+      thus "\<exists>xs ys. a # list = xs @ ys \<and> insert_spec (a # list) (oid, ref) = xs @ oid # ys"
         using 3 by clarsimp (metis append_Cons append_Nil)
     qed
   qed
@@ -348,34 +346,34 @@ qed
 
 lemma insert_first_part:
   assumes "ref = None \<or> (ref = Some r \<and> r \<in> set xs)"
-  shows "insert_after (xs @ ys) (oid, ref) = (insert_after xs (oid, ref)) @ ys"
+  shows "insert_spec (xs @ ys) (oid, ref) = (insert_spec xs (oid, ref)) @ ys"
 using assms proof(induction ys rule: rev_induct)
   assume "ref = None \<or> ref = Some r \<and> r \<in> set xs"
-  thus "insert_after (xs @ []) (oid, ref) = insert_after xs (oid, ref) @ []"
+  thus "insert_spec (xs @ []) (oid, ref) = insert_spec xs (oid, ref) @ []"
     by auto
 next
   fix x xsa
-  assume IH: "ref = None \<or> ref = Some r \<and> r \<in> set xs \<Longrightarrow> insert_after (xs @ xsa) (oid, ref) = insert_after xs (oid, ref) @ xsa"
+  assume IH: "ref = None \<or> ref = Some r \<and> r \<in> set xs \<Longrightarrow> insert_spec (xs @ xsa) (oid, ref) = insert_spec xs (oid, ref) @ xsa"
     and "ref = None \<or> ref = Some r \<and> r \<in> set xs"
-  thus "insert_after (xs @ xsa @ [x]) (oid, ref) = insert_after xs (oid, ref) @ xsa @ [x]"
+  thus "insert_spec (xs @ xsa @ [x]) (oid, ref) = insert_spec xs (oid, ref) @ xsa @ [x]"
   proof(induction xs)
     assume "ref = None \<or> ref = Some r \<and> r \<in> set []"
-    thus "insert_after ([] @ xsa @ [x]) (oid, ref) = insert_after [] (oid, ref) @ xsa @ [x]"
+    thus "insert_spec ([] @ xsa @ [x]) (oid, ref) = insert_spec [] (oid, ref) @ xsa @ [x]"
       by auto
   next
     fix a xs
     assume 1: "ref = None \<or> ref = Some r \<and> r \<in> set (a # xs)"
-      and 2: "((ref = None \<or> ref = Some r \<and> r \<in> set xs \<Longrightarrow> insert_after (xs @ xsa) (oid, ref) = insert_after xs (oid, ref) @ xsa) \<Longrightarrow>
-             ref = None \<or> ref = Some r \<and> r \<in> set xs \<Longrightarrow> insert_after (xs @ xsa @ [x]) (oid, ref) = insert_after xs (oid, ref) @ xsa @ [x])"
-      and 3: "(ref = None \<or> ref = Some r \<and> r \<in> set (a # xs) \<Longrightarrow> insert_after ((a # xs) @ xsa) (oid, ref) = insert_after (a # xs) (oid, ref) @ xsa)"
-    show "insert_after ((a # xs) @ xsa @ [x]) (oid, ref) = insert_after (a # xs) (oid, ref) @ xsa @ [x]"
+      and 2: "((ref = None \<or> ref = Some r \<and> r \<in> set xs \<Longrightarrow> insert_spec (xs @ xsa) (oid, ref) = insert_spec xs (oid, ref) @ xsa) \<Longrightarrow>
+             ref = None \<or> ref = Some r \<and> r \<in> set xs \<Longrightarrow> insert_spec (xs @ xsa @ [x]) (oid, ref) = insert_spec xs (oid, ref) @ xsa @ [x])"
+      and 3: "(ref = None \<or> ref = Some r \<and> r \<in> set (a # xs) \<Longrightarrow> insert_spec ((a # xs) @ xsa) (oid, ref) = insert_spec (a # xs) (oid, ref) @ xsa)"
+    show "insert_spec ((a # xs) @ xsa @ [x]) (oid, ref) = insert_spec (a # xs) (oid, ref) @ xsa @ [x]"
     proof(rule disjE[OF 1])
       assume "ref = None"
-      thus "insert_after ((a # xs) @ xsa @ [x]) (oid, ref) = insert_after (a # xs) (oid, ref) @ xsa @ [x]"
+      thus "insert_spec ((a # xs) @ xsa @ [x]) (oid, ref) = insert_spec (a # xs) (oid, ref) @ xsa @ [x]"
         by auto
     next
       assume "ref = Some r \<and> r \<in> set (a # xs)"
-      thus "insert_after ((a # xs) @ xsa @ [x]) (oid, ref) = insert_after (a # xs) (oid, ref) @ xsa @ [x]"
+      thus "insert_spec ((a # xs) @ xsa @ [x]) (oid, ref) = insert_spec (a # xs) (oid, ref) @ xsa @ [x]"
         using 2 3 by auto
     qed
   qed
@@ -385,16 +383,16 @@ lemma insert_second_part:
   assumes "ref = Some r"
     and "r \<notin> set xs"
     and "r \<in> set ys"
-  shows "insert_after (xs @ ys) (oid, ref) = xs @ (insert_after ys (oid, ref))"
+  shows "insert_spec (xs @ ys) (oid, ref) = xs @ (insert_spec ys (oid, ref))"
 using assms proof(induction xs)
   assume "ref = Some r"
-  thus "insert_after ([] @ ys) (oid, ref) = [] @ insert_after ys (oid, ref)"
+  thus "insert_spec ([] @ ys) (oid, ref) = [] @ insert_spec ys (oid, ref)"
     by auto
 next
   fix a xs
   assume "ref = Some r" and "r \<notin> set (a # xs)" and "r \<in> set ys"
-    and "ref = Some r \<Longrightarrow> r \<notin> set xs \<Longrightarrow> r \<in> set ys \<Longrightarrow> insert_after (xs @ ys) (oid, ref) = xs @ insert_after ys (oid, ref)"
-  thus "insert_after ((a # xs) @ ys) (oid, ref) = (a # xs) @ insert_after ys (oid, ref)"
+    and "ref = Some r \<Longrightarrow> r \<notin> set xs \<Longrightarrow> r \<in> set ys \<Longrightarrow> insert_spec (xs @ ys) (oid, ref) = xs @ insert_spec ys (oid, ref)"
+  thus "insert_spec ((a # xs) @ ys) (oid, ref) = (a # xs) @ insert_spec ys (oid, ref)"
     by auto
 qed
 
@@ -418,7 +416,7 @@ lemma insert_twice:
   apply(meson insert_first_part)
   apply(case_tac "a \<in> set ys", simp)
   apply(rule_tac x=xs in exI)
-  apply(rule_tac x="insert_after ys (x2, r2)" in exI)
+  apply(rule_tac x="insert_spec ys (x2, r2)" in exI)
   apply(rule_tac x=zs in exI)
   apply(rule conjI)
   apply(subgoal_tac "a \<notin> set zs", simp)
@@ -427,7 +425,7 @@ lemma insert_twice:
   apply(case_tac "a \<in> set zs")
   apply(rule_tac x=xs in exI)
   apply(rule_tac x=ys in exI)
-  apply(rule_tac x="insert_after zs (x2, r2)" in exI)
+  apply(rule_tac x="insert_spec zs (x2, r2)" in exI)
   apply(simp add: insert_second_part)
   apply force
   done
@@ -452,7 +450,7 @@ lemma insert_preserves_order:
      apply(rule_tac x="xs" in exI, rule_tac x="[oid]" in exI, rule_tac x="ys" in exI)
     apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
    apply clarsimp
-   apply(frule_tac oid="oid" in insert_after_nonex)
+   apply(frule_tac oid="oid" in insert_spec_nonex)
    apply(rule_tac x="list_spec.ins_list before" in exI, rule_tac x="[]" in exI, rule_tac x="[]" in exI)
    apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
   apply clarsimp
@@ -669,10 +667,10 @@ lemma list_order_monotonic:
   apply force
   done
 
-lemma insert_after_nth_oid:
+lemma insert_spec_nth_oid:
   assumes "distinct ys"
        and "n < length ys"
-     shows "insert_after ys (oid, Some (ys ! n)) ! Suc n = oid"
+     shows "insert_spec ys (oid, Some (ys ! n)) ! Suc n = oid"
   using assms
   apply(induction ys arbitrary: n)
    apply clarsimp
@@ -713,21 +711,21 @@ lemma ins_list_correct_position_insert:
       apply force
      apply clarsimp
    prefer 2
-   apply (case_tac "(foldl insert_after [] xs)")
+   apply (case_tac "(foldl insert_spec [] xs)")
     apply clarsimp
     apply (metis interp_list_def list.simps(3) list_spec.ins_list_def list_spec_rm_last)
    apply clarsimp
    apply (rule conjI; clarsimp)
   apply (metis distinct_conv_nth interp_list_def length_Cons lessI list_distinct list_spec.ins_list_def list_spec_rm_last min_Suc_Suc min_less_iff_conj nth_Cons' zero_less_Suc)
-   apply (metis (no_types, lifting) insert_after.simps(3) insert_after_nth_oid interp_list_def length_Cons lessI list_distinct list_spec.ins_list_def list_spec_rm_last min_Suc_Suc min_less_iff_conj nth_Cons_Suc)
+   apply (metis (no_types, lifting) insert_spec.simps(3) insert_spec_nth_oid interp_list_def length_Cons lessI list_distinct list_spec.ins_list_def list_spec_rm_last min_Suc_Suc min_less_iff_conj nth_Cons_Suc)
   apply (case_tac "(list_spec.ins_list xs)")
    apply clarsimp
   apply clarsimp
-  apply (case_tac "(foldl insert_after [] xs)"; clarsimp)
+  apply (case_tac "(foldl insert_spec [] xs)"; clarsimp)
    apply (metis interp_list_def list.discI list_spec.ins_list_def list_spec_rm_last)
   apply (rule conjI; clarsimp)
    apply (metis distinct_conv_nth interp_list_def length_Cons lessI list_distinct list_spec.ins_list_def list_spec_rm_last nth_Cons_0 zero_less_Suc)
-  by (metis (no_types, lifting) insert_after.simps(3) insert_after_nth_oid interp_list_def length_Cons lessI list_distinct list_spec.ins_list_def list_spec_rm_last nth_Cons_Suc)
+  by (metis (no_types, lifting) insert_spec.simps(3) insert_spec_nth_oid interp_list_def length_Cons lessI list_distinct list_spec.ins_list_def list_spec_rm_last nth_Cons_Suc)
 
 lemma pre_suf_eq_distinct_list_var:
   assumes "distinct (pre2@ys@suf2)"
@@ -1084,6 +1082,6 @@ using assms
    apply clarsimp
   using ins_list_remove1_distinct_False apply metis
   apply clarsimp
-  done
+  oops
 
 end

@@ -1,16 +1,6 @@
 theory RGA_Spec
-  imports Main Permute
+  imports Main Permute Insert_Spec
 begin
-
-fun insert_spec :: "'oid list \<Rightarrow> ('oid \<times> 'oid option) \<Rightarrow> 'oid list" where
-  "insert_spec list   (oid, None) = oid # list" |
-  "insert_spec []     (oid, _   ) = []" |
-  "insert_spec (x#xs) (oid, Some ref) = (
-     if x = ref then x # oid # xs
-                else x # (insert_spec xs (oid, Some ref)))"
-
-definition list_spec :: "('oid \<times> 'oid option) list \<Rightarrow> 'oid list" where
-  "list_spec ops \<equiv> foldl insert_spec [] ops"
 
 inductive valid_spec_ops :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> bool" where
   "valid_spec_ops []" |
@@ -163,24 +153,6 @@ lemma rga_ops_oid_unique:
   assumes "valid_rga_ops (xs @ [(oid, ref)])"
   shows "oid \<notin> set (map fst xs)"
   using assms valid_rga_ops.cases by blast
-
-lemma list_spec_monotonic:
-  assumes "valid_spec_ops (xs@[(oid, ref)])"
-  shows "set (list_spec xs) \<subseteq> set (list_spec (xs@[(oid, ref)]))"
-  oops
-
-lemma list_spec_op_ids:
-  assumes "valid_spec_ops xs"
-  shows "set (list_spec xs) \<subseteq> set (map fst xs)"
-  using assms apply(induction xs rule: rev_induct)
-  apply(simp add: list_spec_def)
-  apply(subgoal_tac "set (list_spec xs) \<subseteq> set (map fst xs)") prefer 2
-  using spec_ops_rem_last apply blast
-  apply(simp add: list_spec_def)
-  apply(subgoal_tac "\<And>a. a \<in> set (insert_spec (foldl insert_spec [] xs) x) \<Longrightarrow>
-                          a \<in> insert (fst x) (fst ` set xs)")
-  apply blast
-  oops
 
 lemma final_insert:
   assumes "permut (xs @ [x]) (ys @ [x])"
