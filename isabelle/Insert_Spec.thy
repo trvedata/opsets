@@ -205,6 +205,29 @@ next
   qed
 qed
 
+lemma inserted_item_ident:
+  assumes "a \<in> set (insert_spec xs (e, i))"
+    and "a \<notin> set xs"
+  shows "a = e"
+  using assms apply(induction xs)
+  apply(case_tac i, simp+)
+  apply(case_tac i, simp)
+  apply(case_tac "aa = aaa", simp+)
+  done
+
+lemma interp_list_op_ids:
+  shows "set (interp_list xs) \<subseteq> set (map fst xs)"
+  apply(induction xs rule: rev_induct)
+  apply(simp add: interp_list_def)
+  apply(subgoal_tac "set (interp_list xs) \<subseteq> set (map fst xs)") prefer 2
+  apply blast
+  apply(simp add: interp_list_def)
+  apply(subgoal_tac "\<And>a. a \<in> set (insert_spec (foldl insert_spec [] xs) x) \<Longrightarrow>
+                          a \<in> insert (fst x) (set (map fst xs))")
+  apply(simp add: subsetI)
+  apply(case_tac "a \<in> set (foldl insert_spec [] xs)", force)
+  using inserted_item_ident apply fastforce
+  done
 
 lemma last_op_greatest:
   assumes "list_spec (op_list @ [(oid, oper)])"

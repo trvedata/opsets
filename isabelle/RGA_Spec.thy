@@ -1,5 +1,5 @@
 theory RGA_Spec
-  imports Main Permute Insert_Spec
+  imports Main Permute Insert_Spec RGA
 begin
 
 inductive valid_spec_ops :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> bool" where
@@ -8,24 +8,6 @@ inductive valid_spec_ops :: "('oid::{linorder} \<times> 'oid option) list \<Righ
     \<forall>x \<in> set (map fst xs). x < oid\<rbrakk> \<Longrightarrow> valid_spec_ops (xs@[(oid, None)])" |
   "\<lbrakk>valid_spec_ops xs;
     \<forall>x \<in> set (map fst xs). x < oid; ref < oid\<rbrakk> \<Longrightarrow> valid_spec_ops (xs@[(oid, Some ref)])"
-
-fun insert_body :: "'oid::{linorder} list \<Rightarrow> 'oid \<Rightarrow> 'oid list" where
-  "insert_body []     e = [e]" |
-  "insert_body (x#xs) e =
-     (if x < e then e#x#xs
-               else x#insert_body xs e)"
-
-fun insert_rga :: "'oid::{linorder} list \<Rightarrow> ('oid \<times> 'oid option) \<Rightarrow> 'oid list" where
-  "insert_rga  xs    (e, None)   = insert_body xs e" |
-  "insert_rga  []    (e, Some i) = []" |
-  "insert_rga (x#xs) (e, Some i) =
-     (if x = i then
-        x#insert_body xs e
-      else
-        x#insert_rga xs (e, Some i))"
-
-definition list_rga :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> 'oid list" where
-  "list_rga ops \<equiv> foldl insert_rga [] ops"
 
 inductive valid_rga_ops :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> bool" where
   "valid_rga_ops []" |
@@ -39,6 +21,11 @@ lemma spec_ops_distinct:
   assumes "valid_spec_ops xs"
   shows "distinct xs"
   using assms by(induction rule: valid_spec_ops.induct, force+)
+
+lemma spec_ops_sorted:
+  assumes "valid_spec_ops xs"
+  shows "sorted (map fst xs)"
+  using assms by (induction rule: valid_spec_ops.induct; auto simp add: order_less_imp_le sorted_append)
 
 lemma spec_ops_ref_less:
   assumes "valid_spec_ops (xs @ [(oid, Some ref)])"
@@ -158,21 +145,23 @@ lemma final_insert:
   assumes "permut (xs @ [x]) (ys @ [x])"
     and "valid_rga_ops (xs @ [x])"
     and "valid_spec_ops (ys @ [x])"
-    and "list_rga xs = list_spec ys"
-  shows "list_rga (xs @ [x]) = list_spec (ys @ [x])"
-  using assms apply(simp add: list_rga_def list_spec_def)
+    and "interp_rga xs = interp_list ys"
+  shows "interp_rga (xs @ [x]) = interp_list (ys @ [x])"
+  using assms apply(simp add: interp_rga_def interp_list_def)
   apply(subgoal_tac "\<exists>oid ref. x = (oid, ref)", (erule exE)+, simp) prefer 2
   apply force
   apply(subgoal_tac "\<And>a. a \<in> set (map fst ys) \<Longrightarrow> a < oid") prefer 2
   using spec_ops_id_inc apply blast
+  apply(subgoal_tac "\<And>a. a \<in> set (interp_list ys) \<Longrightarrow> a < oid") prefer 2
+  apply(meson interp_list_op_ids subset_code(1))
   sorry
 
 lemma append_rga_op:
   assumes "permut (xs @ [x]) (ys @ [x] @ zs)"
     and "valid_rga_ops (xs @ [x])"
     and "valid_spec_ops (ys @ [x] @ zs)"
-    and "list_rga xs = list_spec (ys @ zs)"
-  shows "list_rga (xs @ [x]) = list_spec (ys @ [x] @ zs)"
+    and "interp_rga xs = interp_list (ys @ zs)"
+  shows "interp_rga (xs @ [x]) = interp_list (ys @ [x] @ zs)"
   using assms apply(induction zs arbitrary: ys)
   apply(simp add: final_insert)
   sorry
@@ -181,15 +170,15 @@ lemma rga_spec_equal:
   assumes "permut xs ys"
     and "valid_rga_ops xs"
     and "valid_spec_ops ys"
-  shows "list_rga xs = list_spec ys"
+  shows "interp_rga xs = interp_list ys"
   using assms apply(induction xs arbitrary: ys rule: rev_induct)
-  apply(simp add: list_rga_def list_spec_def permut_def)
+  apply(simp add: interp_rga_def interp_list_def permut_def)
   apply(subgoal_tac "\<exists>pre suf. ys=pre@[x]@suf") prefer 2
   apply(subgoal_tac "x \<in> set ys") prefer 2
   apply(metis last_in_set permut_def snoc_eq_iff_butlast)
   using list_split_memb apply force
   apply(erule exE, erule exE, erule_tac x="pre@suf" in meta_allE)
-  apply(subgoal_tac "list_rga xs = list_spec (pre @ suf)", simp) prefer 2
+  apply(subgoal_tac "interp_rga xs = interp_list (pre @ suf)", simp) prefer 2
   apply(meson permut_rem_last rga_ops_rem_last spec_ops_rem_any)
   using append_rga_op apply force
   done
@@ -219,7 +208,7 @@ lemma spec_ops_exist:
 
 theorem rga_meets_spec:
   assumes "valid_rga_ops xs"
-  shows "\<exists>ys. permut xs ys \<and> valid_spec_ops ys \<and> list_rga xs = list_spec ys"
+  shows "\<exists>ys. permut xs ys \<and> valid_spec_ops ys \<and> interp_rga xs = interp_list ys"
   using assms rga_spec_equal spec_ops_exist by blast
 
 end
