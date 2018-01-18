@@ -141,6 +141,40 @@ lemma rga_ops_oid_unique:
   shows "oid \<notin> set (map fst xs)"
   using assms valid_rga_ops.cases by blast
 
+lemma rga_ops_interp_ids:
+  assumes "valid_rga_ops xs"
+  shows "set (interp_rga xs) = set (map fst xs)"
+  using assms apply(induction xs rule: rev_induct)
+  apply(simp add: interp_rga_def)
+  apply(subgoal_tac "valid_rga_ops xs") prefer 2
+  using rga_ops_rem_last apply blast
+  apply(clarsimp simp add: interp_rga_def)
+  apply(case_tac b, simp)
+  apply(subgoal_tac "aa \<in> set (foldl insert_rga [] xs)") prefer 2
+  using valid_rga_ops.cases apply fastforce
+  apply(simp add: insert_some_insert_indices)
+  done
+
+lemma interp_rga_distinct:
+  assumes "valid_rga_ops xs"
+  shows "distinct (interp_rga xs)"
+  using assms apply(induction xs rule: rev_induct)
+  apply(simp add: interp_rga_def)
+  apply(subgoal_tac "distinct (foldl insert_rga [] xs)") prefer 2
+  apply(metis interp_rga_def rga_ops_rem_last)
+  apply(clarsimp simp add: interp_rga_def)
+  apply(subgoal_tac "a \<notin> set (foldl insert_rga [] xs)") prefer 2
+  apply(metis interp_rga_def rga_ops_interp_ids rga_ops_oid_unique rga_ops_rem_last)
+  apply(subgoal_tac "b = None \<or> (\<exists>i. b = Some i \<and> i \<in> set (map fst xs))") prefer 2
+  using valid_rga_ops.cases apply fastforce
+  apply(subgoal_tac "b = None \<or> (\<exists>i. b = Some i \<and> i \<in> set (foldl insert_rga [] xs))") prefer 2
+  apply(metis interp_rga_def rga_ops_interp_ids rga_ops_rem_last)
+  apply(subgoal_tac "\<exists>pre suf. foldl insert_rga [] xs = pre@suf \<and>
+                     insert_rga (foldl insert_rga [] xs) (a, b) = pre @ a # suf")
+  apply force
+  using insert_preserves_order apply blast
+  done
+
 lemma final_insert:
   assumes "permut (xs @ [x]) (ys @ [x])"
     and "valid_rga_ops (xs @ [x])"
@@ -150,11 +184,30 @@ lemma final_insert:
   using assms apply(simp add: interp_rga_def interp_list_def)
   apply(subgoal_tac "\<exists>oid ref. x = (oid, ref)", (erule exE)+, simp) prefer 2
   apply force
-  apply(subgoal_tac "\<And>a. a \<in> set (map fst ys) \<Longrightarrow> a < oid") prefer 2
-  using spec_ops_id_inc apply blast
-  apply(subgoal_tac "\<And>a. a \<in> set (interp_list ys) \<Longrightarrow> a < oid") prefer 2
-  apply(meson interp_list_op_ids subset_code(1))
-  sorry
+  apply(subgoal_tac "permut xs ys") prefer 2
+  using permut_rem_any apply fastforce
+  apply(subgoal_tac "\<And>a. a \<in> set (map fst xs) \<Longrightarrow> a < oid") prefer 2
+  using spec_ops_id_inc permut_pair_fst apply blast
+  apply(subgoal_tac "\<And>a. a \<in> set (interp_rga xs) \<Longrightarrow> a < oid") prefer 2
+  apply(metis assms(4) interp_list_op_ids permut_pair_fst subset_code(1))
+  apply(case_tac ref)
+  apply(subgoal_tac "insert_rga (interp_rga xs) (oid, ref) = oid # interp_rga xs")
+  apply(simp add: interp_rga_def)
+  apply(metis hd_in_set insert_body.elims insert_body.simps(1) insert_rga.simps(1) list.sel(1))
+  apply(subgoal_tac "a \<in> set (map fst xs)") prefer 2
+  using valid_rga_ops.cases apply fastforce
+  apply(subgoal_tac "a \<in> set (interp_rga xs)") prefer 2
+  using rga_ops_interp_ids rga_ops_rem_last apply blast
+  apply(subgoal_tac "\<exists>as bs. interp_rga xs = as@a#bs", clarify) prefer 2
+  apply(simp add: split_list)
+  apply(subgoal_tac "insert_rga (as@a#bs) (oid, Some a) = as@a#oid#bs")
+  apply(subgoal_tac "insert_spec (as@a#bs) (oid, Some a) = as@a#oid#bs")
+  apply(simp add: interp_rga_def)
+  apply(subgoal_tac "distinct (as @ a # bs)") prefer 2
+  apply(metis interp_rga_distinct rga_ops_rem_last)
+  apply(rule insert_after_ref, assumption)
+  apply(metis insert_between_elements interp_rga_distinct rga_ops_rem_last)
+  done                   
 
 lemma append_rga_op:
   assumes "permut (xs @ [x]) (ys @ [x] @ zs)"

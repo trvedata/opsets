@@ -35,6 +35,11 @@ lemma insert_some_preserve_indices:
   shows "set (insert_rga xs (oid, Some i)) = set xs \<union> {oid}"
 using assms by(induction xs, auto)
 
+lemma insert_some_insert_indices:
+  assumes "i \<in> set xs"
+  shows "set (insert_rga xs (oid, Some i)) = insert oid (set xs)"
+using assms insert_some_preserve_indices by auto
+
 subsection\<open>Commutativity of concurrent operations\<close>
 
 lemma insert_body_commutes:

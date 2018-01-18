@@ -324,6 +324,11 @@ proof -
     using assms by(metis append.assoc list_spec.list_orderI)
 qed
 
+lemma insert_after_ref:
+  assumes "distinct (xs@ref#ys)"
+  shows "insert_spec (xs@ref#ys) (oid, Some ref) = xs@ref#oid#ys"
+using assms by (induction xs, auto)
+
 lemma insert_somewhere:
   assumes "ref = None \<or> (ref = Some r \<and> r \<in> set list)"
   shows "\<exists>xs ys. list = xs@ys \<and> insert_spec list (oid, ref) = xs@oid#ys"
