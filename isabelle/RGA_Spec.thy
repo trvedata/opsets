@@ -456,6 +456,67 @@ lemma interp_rga_interp_list_equal_technical:
         apply(clarsimp simp add: permut_def)
         apply(metis distinct.simps(2) distinct_append fst_conv imageI list.map(2) list.set_map map_append valid_rga_ops_distinct_fst)
        apply clarsimp
+      apply(subgoal_tac "interp_rga ((pre @ (xs @ [(a, b)])) @ [(aa, None)]) = interp_list (xsa @ [(aa, None)])") prefer 2
+       apply simp
+      apply(subst (asm) interp_rga_tail_unfold, subst (asm) interp_list_tail_unfold) back back
+      apply(case_tac "interp_rga (pre @ xs @ [(a, b)])"; clarsimp split!: if_split_asm)
+      apply(subst (asm) insert_body_head)
+       apply(subgoal_tac "fst ` set (pre @ xs @ [(a, b)]) = set (aa # list)") prefer 2
+        apply(metis rga_ops_interp_ids set_map)
+       apply(subgoal_tac "\<And>x. x \<in> fst ` set xsa \<Longrightarrow> x < aa") prefer 2
+        apply(simp add: spec_ops_id_inc)
+       apply(subgoal_tac "set xsa = set (pre @ xs @ [(a,b)])") prefer 2
+        apply(metis append_Cons append_Nil append_Nil2 permut_def permut_rem_any)
+       apply simp
+      apply force
+      apply(subst (asm) interp_rga_independent_float_Some)
+        apply(subgoal_tac "valid_rga_ops ((pre @ (xs @ [(a, b)])) @ [(aa, Some ab)])")
+         apply force
+        apply(rule valid_rga_ops.intros)
+         apply force
+        apply clarsimp
+        apply(rule conjI)
+         apply(clarsimp simp add: permut_def)
+    using valid_rga_ops_singleton_tail apply fastforce
+        apply(rule conjI)
+         apply(clarsimp simp add: permut_def)
+         apply(metis Un_iff Un_insert_right fst_conv less_irrefl list.set_map list.simps(15) rev_image_eqI set_ConsD spec_ops_id_inc)
+        apply(clarsimp simp add: permut_def)
+        apply(metis distinct.simps(2) distinct_append fst_conv imageI list.map(2) list.set_map map_append valid_rga_ops_distinct_fst)
+         apply clarsimp
+         apply(simp add: valid_rga_ops_middle_singleton_prefix)
+        apply(simp add: spec_ops_ref_less)
+       apply simp
+      apply clarsimp
+      apply(subgoal_tac "interp_rga ((pre @ (xs @ [(a, b)])) @ [(aa, Some ab)]) = interp_list (xsa @ [(aa, Some ab)])") prefer 2
+         apply simp
+      apply(subst (asm) interp_rga_tail_unfold, subst (asm) interp_list_tail_unfold) back back
+     apply(case_tac "interp_rga (pre @ xs @ [(a, b)])"; clarsimp split!: if_split_asm)
+       apply(case_tac "(interp_list xsa)")
+        apply clarsimp
+      apply(clarsimp split!: if_split_asm)
+      apply(subst (asm) insert_body_head)
+       apply(subgoal_tac "fst ` set (pre @ xs @ [(a, b)]) = set (ab # list)") prefer 2
+        apply(metis rga_ops_interp_ids set_map)
+       apply(subgoal_tac "\<And>x. x \<in> fst ` set xsa \<Longrightarrow> x < aa") prefer 2
+        apply(simp add: spec_ops_id_inc)
+       apply(subgoal_tac "set xsa = set (pre @ xs @ [(a,b)])") prefer 2
+        apply(metis append_Cons append_Nil append_Nil2 permut_def permut_rem_any)
+       apply simp
+      apply(case_tac "(interp_list xsa)"; clarsimp split!: if_split_asm)
+     apply(case_tac "(interp_list xsa)"; clarsimp split!: if_split_asm)
+     apply(drule insert_rga_insert_spec_tail_Some_elim)
+       apply(metis append.left_neutral append_Cons append_Nil2 notin_set_remove1 permut_pair_fst permut_rem_any remove1.simps(2) rga_ops_interp_ids spec_ops_id_inc)
+      apply(metis Un_iff list.set_map map_append rga_ops_interp_ids set_ConsD set_append valid_rga_ops_middle_singleton_prefix)
+     apply force
+    apply(case_tac "xa \<in> set xsa") prefer 2
+     apply(metis append.assoc append_Nil2 in_set_conv_decomp permut_def permut_rem_any)
+    apply(subgoal_tac "\<exists>p s. xsa = p@[xa]@s \<and> xa \<notin> set p \<and> xa \<notin> set s") prefer 2
+     apply(metis append_Cons append_Nil distinct.simps(2) distinct_append permut_def split_list_first)
+    apply clarsimp
+    apply(subgoal_tac "remove1 (a, b) (p @ (a, b) # s) = p@s") prefer 2
+     apply (simp add: remove1_append)
+      apply clarsimp
       
     
 lemma append_rga_op:
