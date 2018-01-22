@@ -90,6 +90,11 @@ lemma insert_body_stop_iteration:
   shows "insert_body (x#xs) e = e#x#xs"
 using assms by simp
 
+lemma insert_body_head:
+  assumes "\<And>x. x \<in> set xs \<Longrightarrow> x < e"
+  shows "insert_body xs e = e#xs"
+using assms by(induction xs, auto)
+
 lemma insert_body_contains_new_elem:
   shows "\<exists>p s. xs = p @ s \<and> insert_body xs e = p @ e # s"
   apply (induction xs)
