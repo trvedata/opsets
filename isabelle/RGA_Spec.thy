@@ -215,8 +215,13 @@ lemma append_rga_op:
     and "valid_spec_ops (ys @ [x] @ zs)"
     and "interp_rga xs = interp_list (ys @ zs)"
   shows "interp_rga (xs @ [x]) = interp_list (ys @ [x] @ zs)"
-  using assms apply(induction zs arbitrary: ys)
+  using assms apply(induction zs arbitrary: xs ys rule: rev_induct)
   apply(simp add: final_insert)
+  apply(subgoal_tac "\<And>oper. oper \<in> set(ys @ [x] @ xs) \<Longrightarrow> fst oper < fst xa") prefer 2
+  apply(metis append_assoc foo)
+  (* xa is biggest op \<Longrightarrow> its insertion happens directly after reference element *)
+  apply(subgoal_tac "xa \<in> set xsa") prefer 2
+  (* therefore we can split xsa into pre@xa#suf, and commutatively swap xa with every op in suf *)
   sorry
 
 lemma rga_spec_equal:
