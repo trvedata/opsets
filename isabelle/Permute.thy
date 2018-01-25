@@ -15,6 +15,10 @@ lemma permut_single:
   shows "ys = [] \<and> zs = []"
   using assms by(clarsimp simp: permut_def subset_insert)
 
+lemma permut_commute:
+  shows "permut xs ys \<longleftrightarrow> permut ys xs"
+using permut_def by blast
+
 lemma distinct_rem_mid:
   assumes "distinct (xs @ [x] @ ys)"
   shows "distinct (xs @ ys)"
@@ -58,6 +62,11 @@ lemma permut_rem_any:
   apply(metis assms distinct_set_remove_mid permut_def)+
   done
 
+lemma permut_subset:
+  assumes "permut xs (ys @ zs)"
+  shows "set ys \<subseteq> set xs" and "set zs \<subseteq> set xs"
+by (metis Un_iff assms permut_def set_append subsetI)+
+
 lemma permut_append:
   assumes "permut xs (ys @ zs)"
     and "distinct (xs @ [x])"
@@ -73,5 +82,19 @@ lemma permut_pair_snd:
   assumes "permut xs ys"
   shows "set (map snd xs) = set (map snd ys)"
   using assms by(simp add: permut_def)
+
+lemma permut_find_append:
+  assumes "permut (xs @ [y]) (ys @ zs)"
+  shows "y \<in> set ys \<or> y \<in> set zs"
+using assms proof(induction xs arbitrary: ys zs rule: rev_induct)
+  case Nil
+  hence "set (ys @ zs) = {y}"
+    by (metis append_self_conv2 empty_set list.simps(15) permut_def)
+  thus "y \<in> set ys \<or> y \<in> set zs" by auto
+next
+  case (snoc a xs)
+  then show "y \<in> set ys \<or> y \<in> set zs"
+    by (metis UnE last_in_set last_snoc permut_def set_append snoc_eq_iff_butlast)
+qed
 
 end
