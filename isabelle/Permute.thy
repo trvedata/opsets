@@ -73,6 +73,17 @@ lemma permut_append:
   shows "permut (xs @ [x]) (ys @ [x] @ zs)"
   using assms by(simp add: permut_def)
 
+lemma permut_reorder1:
+  assumes "permut (xs @ [x]) (ys @ [x] @ zs)"
+  shows "permut (xs @ [x]) (ys @ zs @ [x])"
+  by (metis append.right_neutral append_assoc assms permut_append permut_def permut_rem_last)
+
+lemma permut_trans:
+  assumes "permut xs ys"
+    and "permut ys zs"
+  shows "permut xs zs"
+  using assms permut_def by blast
+
 lemma permut_pair_fst:
   assumes "permut xs ys"
   shows "set (map fst xs) = set (map fst ys)"

@@ -43,29 +43,6 @@ lemma spec_ops_id_inc:
   shows "x < oid"
   using assms valid_spec_ops.cases snoc_eq_iff_butlast by auto
 
-lemma spec_ops_rem_any:
-  assumes "valid_spec_ops (xs@[x]@ys)"
-  shows "valid_spec_ops (xs@ys)"
-  using assms apply(induction ys rule: rev_induct)
-  using valid_spec_ops.simps apply auto[1]
-  apply(subgoal_tac "valid_spec_ops (xs @ [x] @ xsa)") prefer 2
-  using spec_ops_rem_last append_assoc apply metis
-  apply clarsimp
-  apply(subgoal_tac "\<And>xa. xa \<in> set (map fst (xs@xsa)) \<Longrightarrow> xa < a") prefer 2
-  apply(subgoal_tac "set (map fst (xs @ xsa)) \<subseteq> set (map fst (xs @ x # xsa))") prefer 2
-  apply force
-  apply(subgoal_tac "xa \<in> set (map fst (xs @ x # xsa)) \<Longrightarrow> xa < a")
-  apply blast
-  apply(subgoal_tac "valid_spec_ops ((xs @ x # xsa) @ [(a, b)])")
-  using spec_ops_id_inc apply(blast, simp)
-  apply(case_tac b)
-  apply(metis append_assoc valid_spec_ops.simps)
-  apply(subgoal_tac "aa < a")
-  apply(metis append_assoc valid_spec_ops.simps)
-  apply(subgoal_tac "valid_spec_ops ((xs @ x # xsa) @ [(a, Some aa)])")
-  using spec_ops_ref_less apply(blast, simp)
-  done
-
 lemma spec_ops_add_any:
   assumes "valid_spec_ops (xs @ ys)"
     and "\<forall>a \<in> set (map fst xs). a < oid"
@@ -132,16 +109,43 @@ lemma rga_ops_rem_last:
   using assms valid_rga_ops.cases by fastforce
 
 lemma rga_ops_ref_less:
+  assumes "valid_rga_ops xs"
+    and "(oid, Some ref) \<in> set xs"
+  shows "ref < oid"
+using assms by (induction rule: valid_rga_ops.induct, auto)
+
+lemma rga_ops_ref_less_last:
   assumes "valid_rga_ops (xs @ [(oid, Some ref)])"
   shows "ref < oid"
-  using assms valid_rga_ops.cases by force
+using assms rga_ops_ref_less by fastforce
 
-lemma rga_ops_oid_unique:
+lemma rga_ops_unique_last:
   assumes "valid_rga_ops (xs @ [(oid, ref)])"
   shows "oid \<notin> set (map fst xs)"
   using assms valid_rga_ops.cases by blast
 
-lemma rga_ops_interp_ids:
+lemma rga_ops_unique_mid:
+  assumes "valid_rga_ops (xs @ [(oid, ref)] @ ys)"
+  shows "oid \<notin> set (map fst xs) \<and> oid \<notin> set (map fst ys)"
+using assms proof(induction ys rule: rev_induct)  
+  case Nil
+  then show "oid \<notin> set (map fst xs) \<and> oid \<notin> set (map fst [])"
+    using valid_rga_ops.cases snoc_eq_iff_butlast by auto
+next
+  case (snoc y ys)
+  obtain yi yr where y_pair: "y = (yi, yr)"
+    by fastforce
+  have IH: "oid \<notin> set (map fst xs) \<and> oid \<notin> set (map fst ys)"
+    using rga_ops_rem_last snoc by (metis append_assoc)
+  have "(xs @ (oid, ref) # ys) @ [(yi, yr)] = xs @ (oid, ref) # ys @ [(yi, yr)]"
+    by simp
+  hence "yi \<notin> set (map fst (xs @ (oid, ref) # ys))"
+    using rga_ops_unique_last by (metis append_Cons append_self_conv2 snoc.prems y_pair)
+  thus "oid \<notin> set (map fst xs) \<and> oid \<notin> set (map fst (ys @ [y]))"
+    using IH y_pair by auto
+qed
+
+lemma interp_rga_ids:
   assumes "valid_rga_ops xs"
   shows "set (interp_rga xs) = set (map fst xs)"
   using assms apply(induction xs rule: rev_induct)
@@ -164,11 +168,11 @@ lemma interp_rga_distinct:
   apply(metis interp_rga_def rga_ops_rem_last)
   apply(clarsimp simp add: interp_rga_def)
   apply(subgoal_tac "a \<notin> set (foldl insert_rga [] xs)") prefer 2
-  apply(metis interp_rga_def rga_ops_interp_ids rga_ops_oid_unique rga_ops_rem_last)
+  apply(metis interp_rga_def interp_rga_ids rga_ops_unique_last rga_ops_rem_last)
   apply(subgoal_tac "b = None \<or> (\<exists>i. b = Some i \<and> i \<in> set (map fst xs))") prefer 2
   using valid_rga_ops.cases apply fastforce
   apply(subgoal_tac "b = None \<or> (\<exists>i. b = Some i \<and> i \<in> set (foldl insert_rga [] xs))") prefer 2
-  apply(metis interp_rga_def rga_ops_interp_ids rga_ops_rem_last)
+  apply(metis interp_rga_def interp_rga_ids rga_ops_rem_last)
   apply(subgoal_tac "\<exists>pre suf. foldl insert_rga [] xs = pre@suf \<and>
                      insert_rga (foldl insert_rga [] xs) (a, b) = pre @ a # suf")
   apply force
@@ -197,7 +201,7 @@ lemma final_insert:
   apply(subgoal_tac "a \<in> set (map fst xs)") prefer 2
   using valid_rga_ops.cases apply fastforce
   apply(subgoal_tac "a \<in> set (interp_rga xs)") prefer 2
-  using rga_ops_interp_ids rga_ops_rem_last apply blast
+  using interp_rga_ids rga_ops_rem_last apply blast
   apply(subgoal_tac "\<exists>as bs. interp_rga xs = as@a#bs", clarify) prefer 2
   apply(simp add: split_list)
   apply(subgoal_tac "insert_rga (as@a#bs) (oid, Some a) = as@a#oid#bs")
@@ -207,45 +211,10 @@ lemma final_insert:
   apply(metis interp_rga_distinct rga_ops_rem_last)
   apply(rule insert_after_ref, assumption)
   apply(metis insert_between_elements interp_rga_distinct rga_ops_rem_last)
-  done   
-    
-lemma last_element_greatest:
-  assumes "valid_spec_ops (xs @ [x])"
-    and "y \<in> set xs"
-  shows "fst y < fst x"
-    sorry
-
-lemma permut_prefix_suffix_exists:
-  assumes "permut (xsa @ [x]) (ys @ [x] @ xs @ [xa])"
-  shows "\<exists>pre suf. xsa = pre @ [xa] @ suf"
-  sorry
-    
-inductive_cases valid_rga_ops_singleton_middle: "valid_rga_ops (pre @ (a, b) # suf)"
-inductive_cases valid_rga_ops_singleton_tail: "valid_rga_ops (pre @ xa # xs @ [(a, b)])"    
-  
-inductive_cases valid_spec_ops_last: "valid_spec_ops (ys @ [x] @ xs @ [xa])"
-  
-lemma valid_spec_ops_ref_less:
-  shows "valid_spec_ops xs \<Longrightarrow> (oid, Some ref) \<in> set xs \<Longrightarrow> ref < oid"
-  by(induction rule: valid_spec_ops.induct, auto)
-    
-lemma valid_rga_ops_ref_less:
-  shows "valid_rga_ops xs \<Longrightarrow> (oid, Some ref) \<in> set xs \<Longrightarrow> ref < oid"
-  by(induction rule: valid_rga_ops.induct, auto)
-
-lemma valid_rga_ops_middle_elim:
-  shows "(\<And>f r. (f, Some r) \<in> set suf \<Longrightarrow> r \<noteq> fst xa) \<Longrightarrow> valid_rga_ops (pre @ xa # suf) \<Longrightarrow> valid_rga_ops (pre @ suf)"
-  apply(induction suf rule: List.rev_induct)
-   apply(simp add: rga_ops_rem_last)
-  apply(subgoal_tac "(\<And>f r. (f, Some r) \<in> set xs \<Longrightarrow> r \<noteq> fst xa)") prefer 2
-   apply force
-  apply(subgoal_tac "valid_rga_ops (pre @ xa # xs)") prefer 2
-   apply(metis append.assoc append_Cons rga_ops_rem_last)
-  apply clarsimp
-  apply(erule valid_rga_ops_singleton_tail; clarsimp; subst append_assoc[symmetric]; rule valid_rga_ops.intros)
-       apply auto
   done
-    
+
+inductive_cases valid_rga_ops_singleton_tail: "valid_rga_ops (pre @ xa # xs @ [(a, b)])"    
+
 lemma valid_rga_ops_distinct_fst:
   assumes "valid_rga_ops xs"
   shows "distinct (map fst xs)"
@@ -253,7 +222,7 @@ lemma valid_rga_ops_distinct_fst:
   apply(induction xs rule: List.rev_induct)
    apply force
   apply clarsimp
-  apply(metis list.set_map rga_ops_oid_unique rga_ops_rem_last)
+  apply(metis list.set_map rga_ops_unique_last rga_ops_rem_last)
   done
       
 lemma valid_rga_ops_ref_integrity:
@@ -300,7 +269,7 @@ lemma interp_rga_independent_float_Some:
      apply clarsimp
     using valid_rga_ops_ref_integrity
       apply (metis Un_iff append.assoc assms(1) assms(3) list.set_map map_append set_append)
-     apply(metis append_assoc assms(1) rga_ops_ref_less)
+     apply (simp add: rga_ops_ref_less)
     apply(subgoal_tac "(\<And>oid' r. (oid', Some r) \<in> set xs \<Longrightarrow> r \<noteq> oid)") prefer 2
      apply blast
     apply clarsimp
@@ -338,380 +307,176 @@ lemma interp_rga_independent_float_None:
          apply(metis append.assoc insert_rga_None_commutes)
         apply(metis append.left_neutral append_Cons append_assoc interp_rga_tail_unfold)
         done
-      
-lemma valid_rga_ops_middle_singleton_notin_suffix:
-  assumes "valid_rga_ops (pre@[(oid, Some ref)]@suf)"
-  shows "ref \<notin> fst ` set suf"
-  using assms
-  apply -
-  apply(subgoal_tac "ref \<in> fst ` set pre")
-   apply(subgoal_tac "distinct (map fst (pre @ [(oid, Some ref)] @ suf))") prefer 2
-  using valid_rga_ops_distinct_fst apply blast
-    apply clarsimp
-   apply(metis IntI empty_iff fst_conv image_eqI)
-  apply clarsimp
-  using valid_rga_ops_ref_integrity apply blast
-  done
-    
-lemma insert_rga_insert_spec_tail_Some_elim:
-  assumes "insert_rga list1 (oid, Some ref) = insert_spec list2 (oid, Some ref)"
-    and "\<And>i. i \<in> set list1 \<Longrightarrow> i < oid"
-    and "ref \<in> set list1"
-  shows "list1 = list2"
-  using assms
-   apply(induction list1 arbitrary: list2)
-   apply(case_tac list2; clarsimp split!: if_split_asm)
-  apply(erule_tac x="tl list2" in meta_allE)
-  apply clarsimp
-  apply(erule disjE)
-   apply(clarsimp split!: if_split_asm)
-   apply(case_tac list2; clarsimp split!: if_split_asm)
-   apply(metis insert_body.elims list.inject list.set_intros(1))
-  apply(clarsimp split!: if_split_asm)
-   apply(case_tac list2; clarsimp split!: if_split_asm)
-   apply(metis insert_body.elims list.inject list.set_intros(1))
-  apply(case_tac list2; clarsimp split!: if_split_asm)
-  done
-    
-inductive_cases valid_spec_ops_tail_singleton: "valid_spec_ops (xs@[x])"
-  
-lemma valid_spec_ops_remove1:
-  assumes "valid_spec_ops xs"
-  shows "valid_spec_ops (remove1 x xs)"
-  using assms
-  apply(induction xs rule: List.rev_induct)
-   apply clarsimp
-  apply clarsimp
-  apply(erule valid_spec_ops_tail_singleton)
-   apply(clarsimp simp add: remove1_append split!: if_split)
-    apply(rule valid_spec_ops.intros)
-     apply force
-    apply force
-   apply(rule valid_spec_ops.intros)
-    apply force+
-  apply(clarsimp simp add: remove1_append split!: if_split)
-    apply(rule valid_spec_ops.intros)
-     apply force
-    apply force
-    apply force
-   apply(rule valid_spec_ops.intros)
-    apply force+
-    done
 
-lemma valid_rga_ops_rem_middle:
+inductive_cases valid_spec_ops_tail_singleton: "valid_spec_ops (xs@[x])"
+
+lemma distinct_pair_list_memb:
+  assumes "x \<in> set (map fst xs)"
+    and "distinct (map fst (xs @ ys))"
+  shows "x \<notin> set (map fst ys)"
+using assms by (induction ys, force+)
+
+lemma valid_rga_no_future_deps:
+  assumes "valid_rga_ops (xs @ [(oid, ref)] @ ys)"
+  shows "\<And>r. ref = Some r \<Longrightarrow> r \<notin> fst ` set ys"
+proof -
+  from assms(1) have "\<And>r. ref = Some r \<Longrightarrow> r \<in> set (map fst xs)"
+    by (simp add: valid_rga_ops_ref_integrity)
+  moreover have "distinct (map fst (xs @ [(oid, ref)] @ ys))"
+    using assms valid_rga_ops_distinct_fst by blast
+  ultimately have "\<And>r. ref = Some r \<Longrightarrow> r \<notin> set (map fst ([(oid, ref)] @ ys))"
+    using distinct_pair_list_memb by metis
+  thus "\<And>r. ref = Some r \<Longrightarrow> r \<notin> fst ` set ys"
+    by simp
+qed
+
+lemma valid_rga_ops_reorder:
   assumes "valid_rga_ops (xs @ [(oid, ref)] @ ys)"
     and "\<And>r. Some r \<in> snd ` set ys \<Longrightarrow> r \<noteq> oid"
-  shows "valid_rga_ops (xs @ ys)"
+  shows "valid_rga_ops (xs @ ys @ [(oid, ref)])"
 using assms proof(induction ys rule: rev_induct)
   case Nil
-  then show "valid_rga_ops (xs @ [])"
+  then show "valid_rga_ops (xs @ [] @ [(oid, ref)])"
     using rga_ops_rem_last by auto
 next
   case (snoc y ys)
   then obtain yi yr where y_pair: "y = (yi, yr)"
     by force
-  hence ref_less: "\<And>r. yr = Some r \<Longrightarrow> r < yi"
-    using snoc.prems(1) valid_rga_ops_ref_less by fastforce
-  have "valid_rga_ops (xs @ [(oid, ref)] @ ys)"
-    by (metis snoc(2) append.assoc rga_ops_rem_last)
-  hence IH: "valid_rga_ops (xs @ ys)"
-    using snoc.IH snoc.prems(2) by auto
-  have "\<And>r. yr = Some r \<Longrightarrow> r \<noteq> oid"
-    by (simp add: y_pair snoc.prems(2))
-  moreover have "\<And>r. yr = Some r \<Longrightarrow> r \<in> fst ` set (xs @ [(oid, ref)] @ ys)"
-    by (metis y_pair append_assoc snoc.prems(1) valid_rga_ops_ref_integrity)
-  ultimately have "\<And>r. yr = Some r \<Longrightarrow> r \<in> fst ` set (xs @ ys)"
-    by simp
-  moreover have "yi \<notin> fst ` set (xs @ [(oid, ref)] @ ys)"
-    by (metis y_pair append_assoc rga_ops_oid_unique set_map snoc.prems(1))
-  hence "yi \<notin> fst ` set (xs @ ys)"
-    by auto
-  ultimately show "valid_rga_ops (xs @ ys @ [y])"
-    using IH ref_less y_pair valid_rga_ops_intro by (metis append.assoc)
+  have IH: "valid_rga_ops (xs @ ys @ [(oid, ref)])"
+  proof -
+    have "valid_rga_ops (xs @ [(oid, ref)] @ ys)"
+      by (metis snoc(2) append.assoc rga_ops_rem_last)
+    thus "valid_rga_ops (xs @ ys @ [(oid, ref)])"
+      using snoc.IH snoc.prems(2) by auto
+  qed
+  have "valid_rga_ops (xs @ ys @ [y])"
+  proof -
+    have "yi \<notin> fst ` set (xs @ [(oid, ref)] @ ys)"
+      by (metis y_pair append_assoc rga_ops_unique_last set_map snoc.prems(1))
+    hence "yi \<notin> fst ` set (xs @ ys)"
+      by auto
+    moreover have "\<And>r. yr = Some r \<Longrightarrow> r \<in> fst ` set (xs @ ys)"
+    proof -
+      have "\<And>r. yr = Some r \<Longrightarrow> r \<noteq> oid"
+        by (simp add: y_pair snoc.prems(2))
+      moreover have "\<And>r. yr = Some r \<Longrightarrow> r \<in> fst ` set (xs @ [(oid, ref)] @ ys)"
+        by (metis y_pair append_assoc snoc.prems(1) valid_rga_ops_ref_integrity)
+      ultimately show "\<And>r. yr = Some r \<Longrightarrow> r \<in> fst ` set (xs @ ys)"
+        by simp
+    qed
+    moreover have "\<And>r. yr = Some r \<Longrightarrow> r < yi"
+      using snoc.prems(1) rga_ops_ref_less y_pair by fastforce
+    moreover from IH have "valid_rga_ops (xs @ ys)"
+      using rga_ops_rem_last by force
+    ultimately show "valid_rga_ops (xs @ ys @ [y])"
+      using y_pair valid_rga_ops_intro by (metis append_assoc)
+  qed
+  moreover have "oid \<notin> fst ` set (xs @ ys @ [y])"
+    using rga_ops_unique_mid by (metis (no_types, lifting) UnE image_Un 
+      image_set set_append snoc.prems(1))
+  moreover have "\<And>r. ref = Some r \<Longrightarrow> r \<in> fst ` set (xs @ ys @ [y])"
+    using valid_rga_ops_ref_integrity
+    by (metis UnCI append_Cons image_Un set_append snoc.prems(1))
+  moreover have "\<And>r. ref = Some r \<Longrightarrow> r < oid"
+    using IH by (simp add: rga_ops_ref_less)
+  ultimately show "valid_rga_ops (xs @ (ys @ [y]) @ [(oid, ref)])"
+    using valid_rga_ops_intro by (metis append_assoc)
 qed
+
+lemma valid_rga_ops_rem_middle:
+  assumes "valid_rga_ops (xs @ [(oid, ref)] @ ys)"
+    and "\<And>r. Some r \<in> snd ` set ys \<Longrightarrow> r \<noteq> oid"
+  shows "valid_rga_ops (xs @ ys)"
+using assms rga_ops_rem_last valid_rga_ops_reorder append_assoc by metis
+
+lemma valid_rga_ops_reorder_ref:
+  assumes "valid_spec_ops (xs @ [(oid, ref)])"
+    and "valid_rga_ops (ys @ [(oid, ref)] @ zs)"
+    and "permut (xs @ [(oid, ref)]) (ys @ [(oid, ref)] @ zs)"
+  shows "\<And>i r. (i, Some r) \<in> set zs \<Longrightarrow> r \<noteq> oid"
+proof -
+  have "\<And>i r. (i, Some r) \<in> set xs \<Longrightarrow> r < oid"
+  proof -
+    from assms(1) have "\<And>i. i \<in> fst ` set xs \<Longrightarrow> i < oid"
+      using spec_ops_id_inc by fastforce
+    moreover from assms(1) have "\<And>i r. (i, Some r) \<in> set xs \<Longrightarrow> r < i"
+      using assms rga_ops_ref_less by (metis butlast_snoc in_set_butlastD permut_def)
+    ultimately show "\<And>i r. (i, Some r) \<in> set xs \<Longrightarrow> r < oid"
+      by fastforce
+  qed
+  moreover from assms(3) have "set zs \<subseteq> set xs"
+    by (metis permut_rem_last permut_subset(2))
+  ultimately show "\<And>i r. (i, Some r) \<in> set zs \<Longrightarrow> r \<noteq> oid"
+    by fastforce
+qed
+
+lemma valid_rga_ops_reorder_spec:
+  assumes "valid_spec_ops (xs @ [(oid, ref)])"
+    and "valid_rga_ops (ys @ [(oid, ref)] @ zs)"
+    and "permut (xs @ [(oid, ref)]) (ys @ [(oid, ref)] @ zs)"
+  shows "valid_rga_ops (ys @ zs @ [(oid, ref)])"
+using assms valid_rga_ops_reorder valid_rga_ops_reorder_ref by fastforce
 
 lemma valid_rga_ops_rem_spec:
   assumes "valid_spec_ops (xs @ [(oid, ref)])"
     and "valid_rga_ops (ys @ [(oid, ref)] @ zs)"
     and "permut (xs @ [(oid, ref)]) (ys @ [(oid, ref)] @ zs)"
   shows "valid_rga_ops (ys @ zs)"
-proof -
-  from assms(1) have "\<And>i. i \<in> fst ` set xs \<Longrightarrow> i < oid"
-    by (simp add: last_element_greatest spec_ops_id_inc)
-  moreover from assms(1) have "\<And>i r. (i, Some r) \<in> set xs \<Longrightarrow> r < i"
-    using spec_ops_rem_last valid_spec_ops_ref_less by blast
-  ultimately have "\<And>i r. (i, Some r) \<in> set xs \<Longrightarrow> r < oid"
-    by fastforce
-  moreover from assms(3) have "set zs \<subseteq> set xs"
-    by (metis permut_rem_last permut_subset(2))
-  ultimately have "\<And>r. Some r \<in> snd ` set zs \<Longrightarrow> r \<noteq> oid"
-    by fastforce
-  thus "valid_rga_ops (ys @ zs)"
-    using assms(2) valid_rga_ops_rem_middle by blast
-qed
-
-lemma interp_rga_interp_list_equal_technical:
-  assumes "valid_rga_ops (pre @ x # suf)"
-    and "valid_rga_ops (pre @ suf)"
-    and "valid_spec_ops (xs@[x])"
-    and "permut (pre@[x]@suf) (xs@[x])"
-    and "interp_rga (pre @ x # suf) = interp_list (xs @ [x])"
-    and "\<And>f r. (f, Some r) \<in> set suf \<Longrightarrow> r \<noteq> fst x"
-    and "\<And>r. snd x = Some r \<Longrightarrow> r \<notin> fst ` set suf"
-  shows "interp_rga (pre @ suf) = interp_list xs"
-  using assms
-  apply(induction suf arbitrary: xs rule: List.rev_induct)
-   apply clarsimp
-   apply(subst (asm) interp_rga_tail_unfold)
-   apply(subst (asm) interp_list_tail_unfold)
-   apply(ind_cases "valid_rga_ops (pre @ [x])")
-    apply(erule valid_spec_ops_tail_singleton)
-     apply clarsimp
-     apply(subgoal_tac "set pre = set xs") prefer 2
-      apply(clarsimp simp add: permut_def)
-      apply(simp add: insert_ident)
-     apply(subgoal_tac "\<And>x. x \<in> set pre \<Longrightarrow> fst x < oid") prefer 2
-      apply clarsimp
-     apply(subgoal_tac "set (interp_rga pre) = fst ` set pre") prefer 2
-      apply(simp add: rga_ops_interp_ids)
-     apply(metis append_Cons append_Nil insert_body_contains_new_elem list.inject list.set_intros(1) neq_Nil_conv)
-    apply force
-   apply(erule valid_spec_ops_tail_singleton)
-    apply force
-   apply clarsimp
-   apply(drule insert_rga_insert_spec_tail_Some_elim)
-     apply(subgoal_tac "i \<in> fst ` set pre") prefer 2
-      apply(simp add: rga_ops_interp_ids)
-    apply(metis (no_types, lifting) append.right_neutral distinct_set_remove_mid imageE permut_def)
-    apply(metis fst_conv image_eqI rga_ops_interp_ids set_map)
-   apply force
-    apply(erule_tac x="remove1 xa xsa" in meta_allE)
-  apply(subgoal_tac "valid_rga_ops (pre @ x # xs)") prefer 2
-   apply(metis surj_pair valid_rga_ops_singleton_tail)
-  apply(subgoal_tac "valid_rga_ops (pre @ xs)") prefer 2
-   apply(metis append.assoc rga_ops_rem_last)
-  apply(subgoal_tac "valid_spec_ops (remove1 xa xsa @ [x])") prefer 2
-    using valid_spec_ops_remove1 apply(metis remove1_append remove1_idem)
-    apply(subgoal_tac "permut (pre @ [x] @ xs) (remove1 xa xsa @ [x])") prefer 2
-     apply(clarsimp simp add: permut_def)
-     apply auto[1]
-    apply(subgoal_tac "interp_rga (pre @ x # xs) = interp_list (remove1 xa xsa @ [x])") prefer 2
-     defer
-     apply(subgoal_tac "(\<And>f r. (f, Some r) \<in> set xs \<Longrightarrow> r \<noteq> fst x)") prefer 2
-      apply auto[1]
-     apply(subgoal_tac "(\<And>r. snd x = Some r \<Longrightarrow> r \<notin> fst ` set xs)") prefer 2
-      apply auto[1]
-     apply clarsimp
-     apply(cases x; clarsimp)
-     apply(case_tac ba; clarsimp)
-      apply(subst (asm) interp_rga_independent_float_None)
-        apply(subgoal_tac "valid_rga_ops ((pre @ (xs @ [(a, b)])) @ [(aa, None)])")
-         apply force
-        apply(rule valid_rga_ops.intros)
-         apply force
-        apply clarsimp
-        apply(rule conjI)
-         apply(clarsimp simp add: permut_def)
-    using valid_rga_ops_singleton_tail apply fastforce
-        apply(rule conjI)
-         apply(clarsimp simp add: permut_def)
-         apply(metis Un_iff Un_insert_right fst_conv less_irrefl list.set_map list.simps(15) rev_image_eqI set_ConsD spec_ops_id_inc)
-        apply(clarsimp simp add: permut_def)
-        apply(metis distinct.simps(2) distinct_append fst_conv imageI list.map(2) list.set_map map_append valid_rga_ops_distinct_fst)
-       apply clarsimp
-      apply(subgoal_tac "interp_rga ((pre @ (xs @ [(a, b)])) @ [(aa, None)]) = interp_list (xsa @ [(aa, None)])") prefer 2
-       apply simp
-      apply(subst (asm) interp_rga_tail_unfold, subst (asm) interp_list_tail_unfold) back back
-      apply(case_tac "interp_rga (pre @ xs @ [(a, b)])"; clarsimp split!: if_split_asm)
-      apply(subst (asm) insert_body_head)
-       apply(subgoal_tac "fst ` set (pre @ xs @ [(a, b)]) = set (aa # list)") prefer 2
-        apply(metis rga_ops_interp_ids set_map)
-       apply(subgoal_tac "\<And>x. x \<in> fst ` set xsa \<Longrightarrow> x < aa") prefer 2
-        apply(simp add: spec_ops_id_inc)
-       apply(subgoal_tac "set xsa = set (pre @ xs @ [(a,b)])") prefer 2
-        apply(metis append_Cons append_Nil append_Nil2 permut_def permut_rem_any)
-       apply simp
-      apply force
-      apply(subst (asm) interp_rga_independent_float_Some)
-        apply(subgoal_tac "valid_rga_ops ((pre @ (xs @ [(a, b)])) @ [(aa, Some ab)])")
-         apply force
-        apply(rule valid_rga_ops.intros)
-         apply force
-        apply clarsimp
-        apply(rule conjI)
-         apply(clarsimp simp add: permut_def)
-    using valid_rga_ops_singleton_tail apply fastforce
-        apply(rule conjI)
-         apply(clarsimp simp add: permut_def)
-         apply(metis Un_iff Un_insert_right fst_conv less_irrefl list.set_map list.simps(15) rev_image_eqI set_ConsD spec_ops_id_inc)
-        apply(clarsimp simp add: permut_def)
-        apply(metis distinct.simps(2) distinct_append fst_conv imageI list.map(2) list.set_map map_append valid_rga_ops_distinct_fst)
-         apply clarsimp
-         apply(simp add: valid_rga_ops_ref_integrity)
-        apply(simp add: spec_ops_ref_less)
-       apply simp
-      apply clarsimp
-      apply(subgoal_tac "interp_rga ((pre @ (xs @ [(a, b)])) @ [(aa, Some ab)]) = interp_list (xsa @ [(aa, Some ab)])") prefer 2
-         apply simp
-      apply(subst (asm) interp_rga_tail_unfold, subst (asm) interp_list_tail_unfold) back back
-     apply(case_tac "interp_rga (pre @ xs @ [(a, b)])"; clarsimp split!: if_split_asm)
-       apply(case_tac "(interp_list xsa)")
-        apply clarsimp
-      apply(clarsimp split!: if_split_asm)
-      apply(subst (asm) insert_body_head)
-       apply(subgoal_tac "fst ` set (pre @ xs @ [(a, b)]) = set (ab # list)") prefer 2
-        apply(metis rga_ops_interp_ids set_map)
-       apply(subgoal_tac "\<And>x. x \<in> fst ` set xsa \<Longrightarrow> x < aa") prefer 2
-        apply(simp add: spec_ops_id_inc)
-       apply(subgoal_tac "set xsa = set (pre @ xs @ [(a,b)])") prefer 2
-        apply(metis append_Cons append_Nil append_Nil2 permut_def permut_rem_any)
-       apply simp
-      apply(case_tac "(interp_list xsa)"; clarsimp split!: if_split_asm)
-     apply(case_tac "(interp_list xsa)"; clarsimp split!: if_split_asm)
-     apply(drule insert_rga_insert_spec_tail_Some_elim)
-       apply(metis append.left_neutral append_Cons append_Nil2 notin_set_remove1 permut_pair_fst permut_rem_any remove1.simps(2) rga_ops_interp_ids spec_ops_id_inc)
-      apply(metis Un_iff list.set_map map_append rga_ops_interp_ids set_ConsD set_append valid_rga_ops_ref_integrity)
-     apply force
-    apply(case_tac "xa \<in> set xsa") prefer 2
-     apply(metis append.assoc append_Nil2 in_set_conv_decomp permut_def permut_rem_any)
-    apply(subgoal_tac "\<exists>p s. xsa = p@[xa]@s \<and> xa \<notin> set p \<and> xa \<notin> set s") prefer 2
-     apply(metis append_Cons append_Nil distinct.simps(2) distinct_append permut_def split_list_first)
-    apply clarsimp
-    apply(subgoal_tac "remove1 (a, b) (p @ (a, b) # s) = p@s") prefer 2
-     apply (simp add: remove1_append)
-      apply clarsimp
-      
-    
-lemma append_rga_op:
-  assumes "permut (xs @ [x]) (ys @ [x] @ zs)"
-    and "valid_rga_ops (xs @ [x])"
-    and "valid_spec_ops (ys @ [x] @ zs)"
-    and "interp_rga xs = interp_list (ys @ zs)"
-  shows "interp_rga (xs @ [x]) = interp_list (ys @ [x] @ zs)"
-  using assms apply(induction zs arbitrary: xs ys rule: rev_induct)
-  apply(simp add: final_insert)
-  apply(subgoal_tac "\<And>oper. oper \<in> set(ys @ [x] @ xs) \<Longrightarrow> fst oper < fst xa") prefer 2
-   apply(metis append_assoc last_element_greatest)
-  apply(subgoal_tac "\<exists>pre suf. xsa = pre @ [xa] @ suf") prefer 2
-        apply(rule permut_prefix_suffix_exists, assumption)
-  (* therefore we can split xsa into pre@xa#suf, and commutatively swap xa with every op in suf *)
-  apply(erule exE)+
-  apply(subgoal_tac "\<And>oid ref. (oid, Some ref) \<in> set (ys @ [x] @ xs) \<Longrightarrow> ref < oid") prefer 2
-    apply(subgoal_tac "valid_spec_ops (ys @ [x] @ xs)") prefer 2
-    apply (metis append_Cons append_Nil valid_spec_ops_last)
-  using valid_spec_ops_ref_less apply blast
-  apply(subgoal_tac "\<And>oid ref. (oid, Some ref) \<in> set (ys @ [x] @ xs) \<Longrightarrow> ref < fst xa") prefer 2
-    apply(metis fst_conv less_trans)
-  apply(erule_tac x="pre@suf" in meta_allE)
-  apply(erule_tac x="ys" in meta_allE)
-  apply(subgoal_tac "permut ((pre @ suf) @ [x]) (ys @ [x] @ xs)") prefer 2
-   apply(metis append.assoc append_Nil2 permut_rem_any)
-  apply(subgoal_tac "\<And>e f r. e \<in> set suf \<Longrightarrow> e = (f, Some r) \<Longrightarrow> r \<noteq> fst xa") prefer 2
-    apply(metis append.assoc append_Cons in_set_conv_decomp less_irrefl permut_def)
-  apply(subgoal_tac "valid_rga_ops ((pre @ suf) @ [x])") prefer 2
-   apply(subgoal_tac "valid_rga_ops (pre @ xa # suf)") prefer 2
-    apply(metis append_Cons append_Nil rga_ops_rem_last)
-   apply(subst append_assoc)
-   apply(rule_tac xa=xa in valid_rga_ops_middle_elim)
-    apply(metis Un_iff less_irrefl set_append)
-   apply simp
-  apply(subgoal_tac "valid_spec_ops (ys @ [x] @ xs)") prefer 2
-   apply(metis append_Cons append_Nil valid_spec_ops_last)
-  apply(subgoal_tac "interp_rga (pre @ suf) = interp_list (ys @ xs)") prefer 2
-   apply clarsimp
-   apply(rule_tac x="(a,b)" in interp_rga_interp_list_equal_technical)
-       apply(metis append.assoc append_Cons rga_ops_rem_last)
-      apply(metis append.assoc rga_ops_rem_last)
-     apply force
-    apply simp
-   apply clarsimp
-   apply(drule_tac suf="suf @ [x]" in valid_rga_ops_middle_singleton_notin_suffix[simplified])
-    apply clarsimp
-   apply(simp add: rev_image_eqI)
-  apply clarsimp
-  apply(case_tac "b"; clarify)
-   apply(subst interp_rga_independent_float_None)
-     apply(subst append_assoc[symmetric], rule valid_rga_ops.intros)
-      apply force
-    apply clarsimp
-     apply(rule conjI)
-  using prod.collapse apply blast
-     apply(subgoal_tac "distinct (map fst (pre @ (a, None) # suf @ [x]))") prefer 2
-      using valid_rga_ops_distinct_fst apply blast
-         apply(clarsimp simp add: rev_image_eqI)
-        apply clarsimp
-        apply blast
-       apply(subgoal_tac "interp_rga ((pre @ (suf @ [x])) @ [(a, None)]) = interp_list ((ys @ x # xs) @ [(a, None)])")
-        apply simp
-       apply(rule final_insert)
-        apply(clarsimp simp add: permut_def)
-          apply auto[1]
-         apply(rule valid_rga_ops.intros)
-          apply force
-         apply clarsimp
-        apply(rule conjI)
-  using prod.collapse apply blast
-     apply(subgoal_tac "distinct (map fst (pre @ (a, None) # suf @ [x]))") prefer 2
-      using valid_rga_ops_distinct_fst apply blast
-         apply(clarsimp simp add: rev_image_eqI)
-        apply force
-       apply force
-      apply(subst interp_rga_independent_float_Some)
-        apply(subst append_assoc[symmetric], rule valid_rga_ops.intros)
-      apply force
-    apply clarsimp
-     apply(rule conjI)
-  using prod.collapse apply blast
-       apply(subgoal_tac "distinct (map fst (pre @ (a, Some aa) # suf @ [x]))") prefer 2
-      using valid_rga_ops_distinct_fst apply blast
-         apply(clarsimp simp add: rev_image_eqI)
-        apply clarsimp
-      using valid_rga_ops_ref_integrity apply blast
-         apply(metis append.assoc append_Cons spec_ops_ref_less)
-        apply(rule notI)
-        apply clarsimp
-        apply blast
-       apply clarsimp
-       apply(rule conjI)
-      using valid_rga_ops_middle_singleton_notin_suffix apply fastforce
-       apply(metis append_Cons append_Nil old.prod.exhaust valid_rga_ops_middle_singleton_notin_suffix valid_rga_ops_singleton_tail)
-      apply(subgoal_tac "interp_rga ((pre @ (suf @ [x])) @ [(a, Some aa)]) = interp_list ((ys @ x # xs) @ [(a, Some aa)])")
-       apply simp
-        apply(rule final_insert)
-        apply(clarsimp simp add: permut_def)
-          apply auto[1]
-         apply(rule valid_rga_ops.intros)
-          apply force
-         apply clarsimp
-        apply(rule conjI)
-      using prod.collapse apply blast
-          apply(subgoal_tac "distinct (map fst (pre @ (a, Some aa) # suf @ [x]))") prefer 2
-      using valid_rga_ops_distinct_fst apply blast
-          apply(clarsimp simp add: rev_image_eqI)
-         apply clarsimp
-      using valid_rga_ops_ref_integrity apply blast
-        apply clarsimp
-        apply(metis append.assoc append_Cons spec_ops_ref_less)
-       apply clarsimp
-      apply blast
-      done
+using assms rga_ops_rem_last valid_rga_ops_reorder_spec append_assoc by metis
 
 lemma rga_spec_equal:
   assumes "permut xs ys"
-    and "valid_rga_ops xs"
-    and "valid_spec_ops ys"
-  shows "interp_rga xs = interp_list ys"
-  using assms apply(induction xs arbitrary: ys rule: rev_induct)
-  apply(simp add: interp_rga_def interp_list_def permut_def)
-  apply(subgoal_tac "\<exists>pre suf. ys=pre@[x]@suf") prefer 2
-  apply(subgoal_tac "x \<in> set ys") prefer 2
-  apply(metis last_in_set permut_def snoc_eq_iff_butlast)
-  using list_split_memb apply force
-  apply(erule exE, erule exE, erule_tac x="pre@suf" in meta_allE)
-  apply(subgoal_tac "interp_rga xs = interp_list (pre @ suf)", simp) prefer 2
-  apply(meson permut_rem_last rga_ops_rem_last spec_ops_rem_any)
-  using append_rga_op apply force
-  done
+    and "valid_spec_ops xs"
+    and "valid_rga_ops ys"
+  shows "interp_list xs = interp_rga ys"
+using assms proof(induction xs arbitrary: ys rule: rev_induct)
+  case Nil
+  then show ?case by (simp add: interp_rga_def interp_list_def permut_def)
+next
+  case (snoc x xs)
+  hence "x \<in> set ys"
+    by (metis last_in_set permut_def snoc_eq_iff_butlast)
+  from this obtain pre suf where ys_split: "ys = pre @ [x] @ suf"
+    using list_split_memb by force
+  have IH: "interp_list xs = interp_rga (pre @ suf)"
+  proof -
+    have "valid_rga_ops (pre @ suf)"
+      using valid_rga_ops_rem_spec snoc by (metis ys_split valid_spec_ops_tail_singleton)
+    thus ?thesis
+      using permut_rem_last spec_ops_rem_last ys_split snoc by metis
+  qed
+  have valid_rga: "valid_rga_ops (pre @ suf @ [x])"
+    using valid_rga_ops_reorder_spec snoc.prems ys_split
+    by (metis valid_spec_ops_tail_singleton)
+  have "interp_list (xs @ [x]) = interp_rga (pre @ suf @ [x])"
+  proof -
+    have "permut (xs @ [x]) (pre @ suf @ [x])"
+      using permut_reorder1 snoc.prems(1) ys_split by fastforce
+    thus ?thesis
+      using valid_rga final_insert IH by (metis append_assoc permut_commute snoc.prems(2))
+  qed
+  moreover have "interp_rga (pre @ suf @ [x]) = interp_rga (pre @ [x] @ suf)"
+  proof -
+    obtain oid ref where x_pair: "x = (oid, ref)"
+      by force
+    have no_ref: "\<And>i r. (i, Some r) \<in> set suf \<Longrightarrow> r \<noteq> oid"
+      using valid_rga_ops_reorder_ref snoc.prems x_pair ys_split by blast
+    show ?thesis
+    proof(cases ref)
+      case None
+      then show "interp_rga (pre @ suf @ [x]) = interp_rga (pre @ [x] @ suf)" 
+        using no_ref interp_rga_independent_float_None valid_rga x_pair by fastforce
+    next
+      case (Some a)
+      moreover from this have "a \<notin> fst ` set suf"
+        using valid_rga_no_future_deps snoc.prems(3) x_pair ys_split by blast
+      ultimately show "interp_rga (pre @ suf @ [x]) = interp_rga (pre @ [x] @ suf)"
+        using interp_rga_independent_float_Some no_ref valid_rga x_pair by force
+    qed
+  qed
+  ultimately show "interp_list (xs @ [x]) = interp_rga ys"
+    by (simp add: ys_split)
+qed
 
 lemma spec_ops_exist:
   assumes "valid_rga_ops xs"
@@ -730,15 +495,15 @@ lemma spec_ops_exist:
   apply(rule_tac x="pre @ [(oid, ref)] @ suf" in exI)
   apply(rule conjI)
   apply(meson permut_append rga_ops_distinct)
-  apply(metis rga_ops_ref_less spec_ops_add_any)
+  apply(metis rga_ops_ref_less_last spec_ops_add_any)
   apply(subgoal_tac "oid \<notin> set (map fst ys)") prefer 2
-  using permut_pair_fst rga_ops_oid_unique apply blast
+  using permut_pair_fst rga_ops_unique_last apply blast
   using spec_ops_split apply blast
   done
 
 theorem rga_meets_spec:
   assumes "valid_rga_ops xs"
-  shows "\<exists>ys. permut xs ys \<and> valid_spec_ops ys \<and> interp_rga xs = interp_list ys"
-  using assms rga_spec_equal spec_ops_exist by blast
+  shows "\<exists>ys. permut ys xs \<and> valid_spec_ops ys \<and> interp_list ys = interp_rga xs"
+  using assms rga_spec_equal spec_ops_exist permut_commute by blast
 
 end
