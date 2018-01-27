@@ -114,6 +114,12 @@ using assms
   apply(metis distinct.simps(2) hd_append2 list.sel(1) list.sel(3) list.simps(3) tl_append2)
 done
 
+lemma distinct_pair_list_memb:
+  assumes "x \<in> set (map fst xs)"
+    and "distinct (map fst (xs @ ys))"
+  shows "x \<notin> set (map fst ys)"
+using assms by (induction ys, force+)
+
 lemma list_head_unaffected:
   assumes "hd (x @ [y, z]) = v"
     shows "hd (x @ [y   ]) = v"
