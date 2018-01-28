@@ -215,6 +215,10 @@ lemma inserted_item_ident:
   apply(case_tac "aa = aaa", simp+)
   done
 
+lemma interp_list_tail_unfold:
+  shows "interp_list (xs@[x]) = insert_spec (interp_list (xs)) x"
+by (clarsimp simp add: interp_list_def)
+
 lemma interp_list_op_ids:
   shows "set (interp_list xs) \<subseteq> set (map fst xs)"
   apply(induction xs rule: rev_induct)
