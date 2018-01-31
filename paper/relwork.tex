@@ -42,7 +42,7 @@ The proposed solution in this work is to use locks to globally synchronise move 
 However, the resulting datatype is not strictly a CRDT, since some operations require strongly consistent synchronisation.
 
 To our knowledge, our move semantics specified in Section~\ref{sec:tree} is the first definition of such an operation on a fully asynchronous tree CRDT.
-We avoid the apparent contradiction with Najafzadeh's assertion by evaluating the precondition $(\mathit{val},\, \mathit{obj}) \notin \mathrm{ancestor}(F)$ at the same time as applying the operation, rather than at the time when the operation is generated, and by applying all operations in the OpSet in a deterministic order.
+We avoid the apparent contradiction with Najafzadeh's assertion by evaluating the precondition $(\mathit{val},\, \mathit{obj}) \notin \mathrm{ancestor}(V)$ at the same time as applying the operation, rather than at the time when the operation is generated, and by applying all operations in the OpSet in a deterministic order.
 
 \subsection{Ordered Sets of Operations}
 

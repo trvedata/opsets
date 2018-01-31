@@ -43,19 +43,19 @@ An OpSet for these datatypes may contain six types of operation:
 \begin{minipage}[t]{0.5\textwidth}
 \begin{algorithmic}
     \Function{setMapKey}{$O, \mathit{map}, \mathit{key}, \mathit{val}$}
-    \State $(F,\, L) = \llbracket O \rrbracket$
+    \State $(V,\, L) = \llbracket O \rrbracket$
     \State $(\mathit{id}_1, \mathit{op}_1) = \Call{valueID}{O, \mathit{val}}$
     \State $O' = (\textbf{if } \mathit{op}_1 = \bot \textbf{ then } O \textbf{ else } 
         O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
     \State $\mathit{id}_2 = \mathrm{newID}(O')$
-    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{map}, \mathit{key}, \mathit{val}) \in F \}$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{map}, \mathit{key}, \mathit{val}) \in V \}$
     \State \Return $O' \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{map}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\}$
     \EndFunction\Statex
 
     \Function{removeMapKey}{$O, \mathit{map}, \mathit{key}$}
-    \State $(F,\, L) = \llbracket O \rrbracket$
+    \State $(V,\, L) = \llbracket O \rrbracket$
     \State $\mathit{id}_1 = \mathrm{newID}(O)$
-    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{map}, \mathit{key}, \mathit{val}) \in F \}$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{map}, \mathit{key}, \mathit{val}) \in V \}$
     \State \Return $O \;\cup\; \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{map}, \mathit{key}, \mathit{prev})) \big\}$
     \EndFunction\Statex
 
@@ -75,34 +75,34 @@ An OpSet for these datatypes may contain six types of operation:
 \begin{minipage}[t]{0.5\textwidth}
 \begin{algorithmic}
     \Function{setListIndex}{$O, \mathit{list}, \mathit{index}, \mathit{val}$}
-    \State $(F,\, L) = \llbracket O \rrbracket$
+    \State $(V,\, L) = \llbracket O \rrbracket$
     \State $(\mathit{id}_1, \mathit{op}_1) = \Call{valueID}{O, \mathit{val}}$
     \State $O' = (\textbf{if } \mathit{op}_1 = \bot \textbf{ then } O \textbf{ else } 
         O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
     \State $\mathit{id}_2 = \mathrm{newID}(O')$
-    \State $\mathit{key} = \mathrm{idxKey}_{F,\, L}(\mathit{list}, \mathit{list}, \mathit{index})$
-    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{list}, \mathit{key}, \mathit{val}) \in F \}$
+    \State $\mathit{key} = \mathrm{idxKey}_{V,\, L}(\mathit{list}, \mathit{list}, \mathit{index})$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{list}, \mathit{key}, \mathit{val}) \in V \}$
     \State \Return $O' \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{list}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\}$
     \EndFunction\Statex
 
     \Function{insertListIndex}{$O, \mathit{list}, \mathit{index}, \mathit{val}$}
-    \State $(F,\, L) = \llbracket O \rrbracket$
+    \State $(V,\, L) = \llbracket O \rrbracket$
     \State $(\mathit{id}_1, \mathit{op}_1) = \Call{valueID}{O, \mathit{val}}$
     \State $O' = (\textbf{if } \mathit{op}_1 = \bot \textbf{ then } O \textbf{ else } 
         O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
     \State $\mathit{id}_2 = \mathrm{newID}(O')$
     \State $\mathit{ref} = (\textbf{if } \mathit{index}=0 \textbf{ then } \mathit{list}$
-    \State $\hphantom{\mathit{ref} = (}\textbf{else } \mathrm{idxKey}_{F,\, L}(\mathit{list}, \mathit{list}, \mathit{index} - 1))$
+    \State $\hphantom{\mathit{ref} = (}\textbf{else } \mathrm{idxKey}_{V,\, L}(\mathit{list}, \mathit{list}, \mathit{index} - 1))$
     \State $O'' = O' \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{InsertAfter}(\mathit{ref})) \big\}$
     \State $\mathit{id}_3 = \mathrm{newID}(O'')$
     \State \Return $O'' \;\cup\; \big\{ (\mathit{id}_3,\, \mathsf{Assign}(\mathit{list}, \mathit{id}_2, \mathit{id}_1, \emptyset)) \big\}$
     \EndFunction\Statex
 
     \Function{removeListIndex}{$O, \mathit{list}, \mathit{index}$}
-    \State $(F,\, L) = \llbracket O \rrbracket$
+    \State $(V,\, L) = \llbracket O \rrbracket$
     \State $\mathit{id}_1 = \mathrm{newID}(O)$
-    \State $\mathit{key} = \mathrm{idxKey}_{F,\, L}(\mathit{list}, \mathit{list}, \mathit{index})$
-    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{list}, \mathit{key}, \mathit{val}) \in F \}$
+    \State $\mathit{key} = \mathrm{idxKey}_{V,\, L}(\mathit{list}, \mathit{list}, \mathit{index})$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{list}, \mathit{key}, \mathit{val}) \in V \}$
     \State \Return $O \;\cup\; \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{list}, \mathit{key}, \mathit{prev})) \big\}$
     \EndFunction
 \end{algorithmic}
@@ -112,7 +112,7 @@ An OpSet for these datatypes may contain six types of operation:
 \noindent
 Listing~\ref{fig:pseudocode} gives pseudocode for functions that generate these operations.
 The first parameter $O$ of each function is the OpSet that defines the current state of the node, and the functions return an updated OpSet containing new operations.
-The interpretation $\llbracket O \rrbracket$ returns a pair $(F,\, L)$ as defined in Section~\ref{sec:datatypes-interp}.
+The interpretation $\llbracket O \rrbracket$ returns a pair $(V,\, L)$ as defined in Section~\ref{sec:datatypes-interp}.
 The function $\mathrm{newID}(O)$ returns a unique ID (e.g.\ a Lamport timestamp) that is greater than any existing ID in the OpSet $O$.
 The function $\mathrm{objID}(\mathit{obj})$ returns the ID of some existing object.
 
@@ -123,16 +123,16 @@ Finally, the function returns the OpSet with the $\mathsf{Assign}$ operation inc
 The other function definitions follow a similar pattern.
 
 The list manipulation functions \textsc{setListIndex}, \textsc{insertListIndex} and \textsc{removeListIndex} take a numeric index as argument to identify the position in the list being edited.
-The numeric index is translated into the ID of a list element using the function $\mathrm{idxKey}_{F,\, L}()$, which is defined in Section~\ref{sec:datatypes-interp}.
+The numeric index is translated into the ID of a list element using the function $\mathrm{idxKey}_{V,\, L}()$, which is defined in Section~\ref{sec:datatypes-interp}.
 
 \subsection{Interpreting Operations}\label{sec:datatypes-interp}
 
 We use the sequential OpSet interpretation given in Section~\ref{sec:op-serial}.
-To encode the current state of map and list data structures we use a pair of relations $(F,\, L)$:
+To encode the current state of map and list data structures we use a pair of relations $(V,\, L)$:
 \begin{description}
-    \item[The field relation $F \subseteq (\mathrm{ID} \times \mathrm{ID} \times (\mathrm{ID} \cup \mathrm{Key}) \times \mathrm{ID})$]
+    \item[The value relation $V \subseteq (\mathrm{ID} \times \mathrm{ID} \times (\mathrm{ID} \cup \mathrm{Key}) \times \mathrm{ID})$]
         is a set of 4-tuples containing the values currently assigned to map keys and list elements.
-        If $(\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F$, that means an $\mathsf{Assign}$ operation with ID $\mathit{id}$ updated the object with ID $\mathit{obj}$, assigning the value with ID $\mathit{val}$ to the map key or list element $\mathit{key}$.
+        If $(\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in V$, that means an $\mathsf{Assign}$ operation with ID $\mathit{id}$ updated the object with ID $\mathit{obj}$, assigning the value with ID $\mathit{val}$ to the map key or list element $\mathit{key}$.
     \item[The list relation $L \subseteq (\mathrm{ID} \times \mathrm{ID})$] is a set of pairs that indicates the order of list elements.
         If $(p,n) \in L$, that means the list element with ID $p$ is immediately followed by the list element with ID $n$.
         To indicate that $h$ is the first element in the list $l$ (i.e.\ $l$ is the ID of the $\mathsf{MakeList}$ operation that created the list) we have $(l,h) \in L$.
@@ -140,26 +140,26 @@ To encode the current state of map and list data structures we use a pair of rel
 Initially, both relations are empty; that is, we have $\llbracket\emptyset\rrbracket = \mathit{InitialState} = (\emptyset,\, \emptyset)$.
 We can then define the interpretation of the six operation types as follows:
 \begin{align*}
-    \big\llbracket (\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big\rrbracket_{F,\, L} \;=\; \Big( &
-    \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in F \mid
+    \big\llbracket (\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big\rrbracket_{V,\, L} \;=\; \Big( &
+    \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in V \mid
     \mathit{id}' \notin \mathit{prev} \big\} \;\cup\;
     \big\{ (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \big\},\; L \Big) \\[5pt]
     %%%%%%%%%%
-    \big\llbracket (\mathit{id},\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev})) \big\rrbracket_{F,\, L} \;=\; \Big( &
-    \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in F \mid
+    \big\llbracket (\mathit{id},\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev})) \big\rrbracket_{V,\, L} \;=\; \Big( &
+    \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in V \mid
     \mathit{id}' \notin \mathit{prev} \big\},\; L \Big) \\[5pt]
     %%%%%%%%%%
-    \big\llbracket (\mathit{id},\, \mathsf{InsertAfter}(\mathit{ref})) \big\rrbracket_{F,\, L} \;=\; \Big( & F,\;
+    \big\llbracket (\mathit{id},\, \mathsf{InsertAfter}(\mathit{ref})) \big\rrbracket_{V,\, L} \;=\; \Big( & V,\;
     \big\{ (p,n) \in L \mid p \neq \mathit{ref} \big\} \;\cup\;
     \big\{ (\mathit{ref}, \mathit{id}) \big\} \;\cup\;
     \big\{ (\mathit{id}, n) \mid (\mathit{ref}, n) \in L \big\} \Big) \\[10pt]
     %%%%%%%%%%
-    \big\llbracket (\mathit{id},\, \mathsf{MakeVal}(\mathit{val})) \big\rrbracket_{F,\, L} \;=\; (F,\, L) \qquad
-    \big\llbracket&(\mathit{id},\, \mathsf{MakeMap}) \big\rrbracket_{F,\, L} \;=\; (F,\, L) \qquad
-    \big\llbracket (\mathit{id},\, \mathsf{MakeList}) \big\rrbracket_{F,\, L} \;=\; (F,\, L)
+    \big\llbracket (\mathit{id},\, \mathsf{MakeVal}(\mathit{val})) \big\rrbracket_{V,\, L} \;=\; (V,\, L) \qquad
+    \big\llbracket&(\mathit{id},\, \mathsf{MakeMap}) \big\rrbracket_{V,\, L} \;=\; (V,\, L) \qquad
+    \big\llbracket (\mathit{id},\, \mathsf{MakeList}) \big\rrbracket_{V,\, L} \;=\; (V,\, L)
 \end{align*}
 
-The interpretation of $\mathsf{Assign}$ and $\mathsf{Remove}$ updates only $F$ and leaves $L$ unchanged; conversely, the interpretation of $\mathsf{InsertAfter}$ updates only $L$.
+The interpretation of $\mathsf{Assign}$ and $\mathsf{Remove}$ updates only $V$ and leaves $L$ unchanged; conversely, the interpretation of $\mathsf{InsertAfter}$ updates only $L$.
 Both the $\mathsf{Assign}$ and $\mathsf{Remove}$ interpretations remove any tuples from causally prior assignments (those whose IDs appear in $\mathit{prev}$), but leave any tuples from concurrent assignments unchanged.
 This is the behaviour of a multi-value register; if a last-write-wins (LWW) register is required, the condition $\mathit{id}' \notin \mathit{prev}$ can be changed to $\mathit{obj}' \neq \mathit{obj} \;\vee\; \mathit{key}' \neq \mathit{key}$, which removes any existing tuples with the same $\mathit{obj}$ and $\mathit{key}$.
 
@@ -202,21 +202,21 @@ Thus, the new list element $\mathit{id}$ is inserted between $\mathit{ref}$ and 
 \end{figure}
 
 Note that $L$ never shrinks, it only ever grows through interpreting $\mathsf{InsertAfter}$ operations.
-When a list element is removed by the function \textsc{removeListIndex} of Listing~\ref{fig:pseudocode}, the effect is that all values are removed from the list element in the field relation $F$, but the list element remains in $L$ as a \emph{tombstone}, so that any concurrent $\mathsf{InsertAfter}$ operations can still locate the referenced list position.
+When a list element is removed by the function \textsc{removeListIndex} of Listing~\ref{fig:pseudocode}, the effect is that all values are removed from the list element in the value relation $V$, but the list element remains in $L$ as a \emph{tombstone}, so that any concurrent $\mathsf{InsertAfter}$ operations can still locate the referenced list position.
 
-Thus, from a user's point of view a list element only exists if it has at least one associated value in the $F$ relation; any list elements without associated value should be ignored.
+Thus, from a user's point of view a list element only exists if it has at least one associated value in the $V$ relation; any list elements without associated value should be ignored.
 On this basis we can now define the $\mathrm{idxKey}()$ function that is used in Listing~\ref{fig:pseudocode} to translate a list index into a list element ID.
 The function counts only list elements that have an associated value:
-\[ \mathrm{idxKey}_{F,\, L}(\mathit{obj}, \mathit{key}, i) \;=\; \left\{
+\[ \mathrm{idxKey}_{V,\, L}(\mathit{obj}, \mathit{key}, i) \;=\; \left\{
    \arraycolsep=2pt \def\arraystretch{1.3}
    \begin{array}{llllll}
-       \mathrm{idxKey}_{F,\, L}(\mathit{obj}, n, i-1) &
+       \mathrm{idxKey}_{V,\, L}(\mathit{obj}, n, i-1) &
        \quad\text{if }\; i > 0 & \wedge & (\mathit{key}, n) \in L & \wedge &
-       \exists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \\
-       \mathrm{idxKey}_{F,\, L}(\mathit{obj}, n, i) &
+       \exists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in V \\
+       \mathrm{idxKey}_{V,\, L}(\mathit{obj}, n, i) &
        \quad\text{if }\; && (\mathit{key}, n) \in L & \wedge &
-       \nexists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \\
+       \nexists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in V \\
        \mathit{key} &
        \quad\text{if }\; i = 0 & \wedge &&&
-       \exists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in F \\
+       \exists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in V \\
    \end{array} \right. \]
