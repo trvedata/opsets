@@ -1,4 +1,4 @@
-theory List_Insert
+theory Datalog_Insert
   imports Datalog
 begin
 

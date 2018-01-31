@@ -1,5 +1,5 @@
-theory List_Remove
-  imports Assignment
+theory Datalog_Remove
+  imports Datalog_Assignment
 begin
 
 context datalog begin

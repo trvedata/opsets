@@ -1,5 +1,5 @@
-theory Assignment
-  imports List_Insert
+theory Datalog_Assignment
+  imports Datalog_Insert
 begin
 
 (*********** Links between objects and register assignment ***************)
