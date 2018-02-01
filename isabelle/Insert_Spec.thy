@@ -1011,6 +1011,9 @@ lemma interp_list_fail:
      apply clarsimp
     using list_spec.distinct_oids distinct_fst by auto
 
+lemma ins_list_empty_list [simp]:
+  shows "list_spec.ins_list [] = []"
+  by(clarsimp simp add: list_spec.ins_list_def[OF list_spec_NilI] interp_list_def)
 
 lemma ins_list_empty[simp]:
   shows "set (list_spec.ins_list []) = {}"
@@ -1111,6 +1114,107 @@ lemma list_spec_appendD: "list_spec (xs @ ys) \<Longrightarrow> list_spec xs"
   apply (induct ys rule: rev_induct)
    apply simp
   using list_spec_rm_last by force
+
+lemma "distinct xs \<Longrightarrow> distinct (x#ys) \<Longrightarrow> set xs = set ys \<union> {x} \<Longrightarrow> \<exists>p s. xs = p @ [x] @ s \<and> ys = p @ s"
+  apply (induct ys arbitrary: xs rule: length_induct)
+  apply (subgoal_tac "xsa = [x] \<or> (\<exists>a xs1 xs2 xs3. xsa = xs1 @ a # xs2 @ x # xs3) \<or> (\<exists>a xs1 xs2 xs3. xsa = xs1 @ x # xs2 @ a # xs3)")
+   apply (erule disjE)
+    apply clarsimp
+    apply (rule_tac x="[]" in exI, rule_tac x="[]" in exI, clarsimp)
+    apply (metis insertI1 set_empty subset_singleton_iff)
+   apply (erule disjE)
+    apply (elim exE)
+  apply (subgoal_tac "xs = xs1 @ a # xs2 @ xs3")
+    apply (erule_tac x="xs1 @ xs2 @ xs3" in allE)
+    apply (erule impE, force)
+  apply (erule_tac x="xs1 @ xs2 @ x # xs3" in allE)
+     apply (erule impE)
+      apply force
+     apply (erule impE)
+      apply force
+     apply (erule impE)
+      apply force
+     apply clarsimp
+     apply (rule_tac x="xs1 @ a # xs2" in exI)
+     apply (rule_tac x="xs3" in exI)
+     apply force
+  defer
+    apply (elim exE)
+  apply (subgoal_tac "xs = xs1 @ xs2 @ a # xs3")
+    apply (erule_tac x="xs1 @ xs2 @ xs3" in allE)
+    apply (erule impE, force)
+  apply (erule_tac x="xs1 @ xs2 @ x # xs3" in allE)
+     apply (erule impE)
+      apply force
+     apply (erule impE)
+      apply force
+     apply (erule impE)
+      apply force
+     apply clarsimp
+     apply (rule_tac x="xs1" in exI)
+     apply (rule_tac x="xs2 @ a # xs3" in exI)
+     apply force
+  defer
+  (*
+  apply (smt UnI2 Un_empty_right Un_insert_right distinct.simps(2) distinct_length_2_or_more distinct_set_notin distinct_singleton insertI1 insert_iff list.set_intros(1) list.simps(15) list_split_two_elems rotate1.simps(2) set_append set_rotate1)
+*)
+  
+  apply clarsimp
+
+   apply (subgoal_tac "\<exists>xs1 xs2. xsa = xs1 @ a # xs2") prefer 2
+    apply (subgoal_tac "a \<in> set xsa")
+     apply (simp add: split_list)
+  apply simp
+  apply (elim exE, erule_tac x="xs1@xs2" in allE)
+   apply (erule impE)
+    apply force
+   apply (erule impE)
+    apply force
+   apply (erule impE)
+(* TODO: DELETE THIS SMT *)
+  apply (smt Diff_insert_absorb Un_iff Un_insert_right disjoint_insert(1) distinct.simps(2) distinct_append insert_absorb insert_is_Un list.simps(15) set_append sup_commute)
+   apply clarsimp
+   apply (case_tac "x \<in> set xs1")
+    apply (subgoal_tac "\<exists>suf. xs1 = p @ x # suf") prefer 2
+     apply (metis Cons_eq_appendI append.assoc distinct_append distinct_list_split split_list)
+    apply clarsimp
+    apply (rule_tac x=p in exI)
+    apply (rule_tac x="suf @ a # xs2" in exI)
+    apply (rule conjI)
+     apply force
+  nitpick
+
+
+
+  oops
+
+
+
+
+  
+
+lemma
+  assumes "list_spec ops_after"
+  and "set ops_after = set ops \<union> {(x, Some a)}"
+  and "list_spec.ins_list ops = xs @ a # ys"
+shows "\<exists>zs. list_spec.ins_list ops_after = xs @ a # x # zs @ ys"
+  using assms
+  apply (subgoal_tac "\<exists>p s. ops_after = p @ [(x, Some a)] @ s \<and> ops = p @ s") prefer 2
+
+(*
+  apply (induct ops arbitrary: ops_after rule: length_induct)
+  apply (subgoal_tac "xsa = [] \<or> (\<exists>xs x. xsa = xs@[x])") prefer 2
+  using rev_exhaust apply metis
+  apply (erule disjE)
+   apply clarsimp
+  apply (elim exE)
+  apply (erule_tac x=xsaa in allE)
+  apply (erule impE)
+   apply (subgoal_tac "\<exists>p s. ops_after = p @ [(x, Some a)] @ s") prefer 2
+  using list_set_memb apply force
+*)
+  
+
 
 lemma no_interleaving:
   assumes "list_spec ops_before" and "list_spec ops_after"
