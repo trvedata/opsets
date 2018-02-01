@@ -34,7 +34,7 @@
 \date{}
 
 \affil[1]{Department of Computer Science and Technology, University of Cambridge, UK}
-\affil[2]{Arm Research, Cambridge, UK}
+\affil[2]{Security Research Group, Arm Research, Cambridge, UK}
 
 \maketitle
 
@@ -80,7 +80,7 @@ We then review a selection of text editing CRDTs from the literature, prove that
 This operation can be used to move a subtree to a new position within the tree, or to rename a key in a map, or to reorder items in a list.
 The OpSets approach enables a simple definition of this operation that had previously been thought to be impossible without locking \cite{Najafzadeh:2017vk}.
 
-\item Using the Isabelle/HOL proof assistant we formalise the OpSets approach, producing mechanised proofs of correctness of the main claims in this paper.
+\item Using the Isabelle/HOL proof assistant~\cite{DBLP:conf/tphol/WenzelPN08} we formalise the OpSets approach, producing mechanised proofs of correctness of the main claims in this paper.
 In particular, we prove that our list specification is strictly stronger than the recent specification of collaborative text editing by Attiya et al. \cite{Attiya:2016kh}, and we prove that our tree specification satisfies the required invariants.
 By using mechanised proofs we eliminate the ambiguity of previous informal approaches, and rule out reasoning errors that could occur in handwritten proofs.
 \end{itemize}
