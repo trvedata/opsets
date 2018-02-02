@@ -12,38 +12,38 @@ A tree is a restricted form of the object graph specified in Section~\ref{sec:da
 First, we require that there is a designated root object: assume that we have an operation ID $\mathsf{root}$ that is less than all other operation IDs (according to the total order on identifiers, introduced in Section~\ref{sec:system-model}).
 Further assume that for any OpSet $O$ specifying a tree, we have either $(\mathsf{root},\, \mathsf{MakeList}) \in O$ or $(\mathsf{root},\, \mathsf{MakeMap}) \in O$, depending on whether the root node is a list or a map.
 We can then define an object $x$ to be the \emph{parent} of an object $y$ if one of the values in $x$ is a reference to $y$.
-The \emph{ancestor} relation is the transitive closure of the parent relation, which we can define using the value relation $V$:
+The \emph{ancestor} relation is the transitive closure of the parent relation, which we can define using the element relation $E$:
 \begin{align*}
-    \mathrm{parent}(V,\, i) &=
+    \mathrm{parent}(E,\, i) &=
     \begin{cases}
         \big\{ (\mathit{obj}, \mathit{val}) \mid \exists\,\mathit{id}, \mathit{key}.\;
-            (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in V \big\} & \text{if } i=1 \\
-        \big\{ (x, z) \mid (x, y) \in \mathrm{parent}(V,\, i-1) \;\wedge\;
-            (y, z) \in \mathrm{parent}(V,\, 1) \big\} & \text{if } i > 1
+            (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in E \big\} & \text{if } i=1 \\
+        \big\{ (x, z) \mid (x, y) \in \mathrm{parent}(E,\, i-1) \;\wedge\;
+            (y, z) \in \mathrm{parent}(E,\, 1) \big\} & \text{if } i > 1
     \end{cases} \\[8pt]
-    \mathrm{ancestor}(V) &= \bigcup_{i \;\geq\; 1} \mathrm{parent}(V,\, i)
+    \mathrm{ancestor}(E) &= \bigcup_{i \;\geq\; 1} \mathrm{parent}(E,\, i)
 \end{align*}
 
 An object graph is a tree if the root has no parent, every non-root node has exactly one parent, and if the ancestor relation has no cycles.
 We can redefine the operation interpretations from Section~\ref{sec:datatypes-interp} to preserve this tree invariant.
 In fact, it is sufficient to redefine the interpretation of $\mathsf{Assign}$, and leave the interpretation of the other five operation types unchanged:
 \[
-    \big\llbracket (\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big\rrbracket_{V,\, L} \;=\; \left\{
+    \big\llbracket (\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big\rrbracket_{E,\, L} \;=\; \left\{
     \arraycolsep=0pt \def\arraystretch{1.5}
     \begin{array}{llllll}
-        \multicolumn{2}{l}{(V,\, L)}
-        & \text{if } (\mathit{val},\, \mathit{obj}) \in \mathrm{ancestor}(V) \\[8pt]
+        \multicolumn{2}{l}{(E,\, L)}
+        & \text{if } (\mathit{val},\, \mathit{obj}) \in \mathrm{ancestor}(E) \\[8pt]
         \Big( & \multicolumn{2}{l}{
-        \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in V \mid
+        \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in E \mid
         \mathit{id}' \notin \mathit{prev} \;\wedge\; \mathit{val}' \neq \mathit{val} \big\} \;\cup\;} \\
         & \big\{ (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \big\},\; L \Big) \qquad
-        & \text{if } (\mathit{val},\, \mathit{obj}) \notin \mathrm{ancestor}(V)
+        & \text{if } (\mathit{val},\, \mathit{obj}) \notin \mathrm{ancestor}(E)
     \end{array} \right.
 \]
 
 This definition differs in two ways from that in Section~\ref{sec:datatypes-interp}.
 Firstly, the operation has no effect if the value $\mathit{val}$ is already an ancestor of the proposed parent $\mathit{obj}$, since the operation would otherwise introduce a cycle.
-Secondly, any existing tuple in $V$ that references the same value $\mathit{val}$ is removed, preserving the invariant that every non-root node must have exactly one parent.
+Secondly, any existing tuple in $E$ that references the same value $\mathit{val}$ is removed, preserving the invariant that every non-root node must have exactly one parent.
 
 Intuitively, this interpretation of $\mathsf{Assign}$ performs an atomic move whenever $\mathit{val}$ is the ID of an existing object in the tree; in that case, it is moved from its existing position to the key $\mathit{key}$ in the object $\mathit{obj}$.
 If $\mathit{val}$ does not currently exist in the tree (e.g.\ because it has just been freshly created), the operation behaves like conventional assignment.
