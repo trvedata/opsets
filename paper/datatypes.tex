@@ -27,7 +27,8 @@ An OpSet for these datatypes may contain six types of operation:
         Otherwise $\mathit{ref}$ must be the ID of an existing list element (i.e.\ a prior $\mathsf{InsertAfter}$ operation), in which case the new list element is inserted immediately after the referenced list element.
         Note that the $\mathsf{InsertAfter}$ operation does not associate a value with the new list element; that is done by a subsequent $\mathsf{Assign}$ operation.
     \item[$(\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev}))$] assigns a new value to a key within a map (if $\mathit{obj}$ is the ID of a prior $\mathsf{MakeMap}$ operation), or to a list element (if $\mathit{obj}$ is the ID of a prior $\mathsf{MakeList}$ operation).
-        In the case of map assignment, $\mathit{key}$ is the user-specified key to be updated; in the case of a list, $\mathit{key}$ is the ID of the list element to be updated (i.e.\ the ID of a prior $\mathsf{InsertAfter}$ operation).
+        In the case of map assignment, $\mathit{key}$ is the user-specified key to be updated, which may be any primitive value such as a string or integer.
+        In the case of a list, $\mathit{key}$ is the ID of the list element to be updated (i.e.\ the ID of a prior $\mathsf{InsertAfter}$ operation).
         $\mathit{val}$ is the ID of the value being assigned, which may identify a $\mathsf{MakeMap}$, $\mathsf{MakeList}$, or $\mathsf{MakeVal}$ operation.
         $\mathit{prev}$ is the set of IDs of prior $\mathsf{Assign}$ operations to the same key in the same object, which are overwritten by the present operation.
     \item[$(\mathit{id},\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev}))$] removes a key-value pair from a map, or an element from a list.
@@ -133,35 +134,37 @@ To encode the current state of map and list data structures we use a pair of rel
     \item[The element relation $E \subseteq (\mathrm{ID} \times \mathrm{ID} \times (\mathrm{ID} \cup \mathrm{Key}) \times \mathrm{ID})$]
         is a set of 4-tuples containing the values currently assigned to map keys and list elements.
         If $(\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in E$, that means an $\mathsf{Assign}$ operation with ID $\mathit{id}$ updated the object with ID $\mathit{obj}$, assigning the value with ID $\mathit{val}$ to the map key or list element $\mathit{key}$.
+        If $\mathit{obj}$ references a list object, $\mathit{key}$ is the ID of an element in the list relation $L$ (see below).
+        If $\mathit{obj}$ references a map object, any primitive value such as string or integer may be used as $\mathit{key}$.
     \item[The list relation $L \subseteq (\mathrm{ID} \times \mathrm{ID})$] is a set of pairs that indicates the order of list elements.
-        If $(p,n) \in L$, that means the list element with ID $p$ is immediately followed by the list element with ID $n$.
-        To indicate that $h$ is the first element in the list $l$ (i.e.\ $l$ is the ID of the $\mathsf{MakeList}$ operation that created the list) we have $(l,h) \in L$.
+        If $(\mathit{prev}, \mathit{next}) \in L$, that means the list element with ID $\mathit{prev}$ is immediately followed by the list element with ID $\mathit{next}$.
+        To indicate that $\mathit{head}$ is the first element in the list $\mathit{obj}$ (i.e.\ $\mathit{obj}$ is the ID of the $\mathsf{MakeList}$ operation that created the list) we have $(\mathit{obj}, \mathit{head}) \in L$.
 \end{description}
 Initially, both relations are empty; that is, we have $\llbracket\emptyset\rrbracket = \mathit{InitialState} = (\emptyset,\, \emptyset)$.
 We can then define the interpretation of the six operation types as follows:
 \begin{align*}
-    \big\llbracket (\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big\rrbracket_{E,\, L} \;=\; \Big( &
-    \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in E \mid
+    \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{Assign}(\mathit{obj}, k, v, \mathit{prev})) \big] \;=\; \Big( &
+    \big\{ (\mathit{id}', \mathit{obj}', k', v') \in E \mid
     \mathit{id}' \notin \mathit{prev} \big\} \;\cup\;
-    \big\{ (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \big\},\; L \Big) \\[5pt]
+    \big\{ (\mathit{id}, \mathit{obj}, k, v) \big\},\; L \Big) \\[5pt]
     %%%%%%%%%%
-    \big\llbracket (\mathit{id},\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev})) \big\rrbracket_{E,\, L} \;=\; \Big( &
-    \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in E \mid
+    \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{Remove}(\mathit{obj}, k, \mathit{prev})) \big] \;=\; \Big( &
+    \big\{ (\mathit{id}', \mathit{obj}', k', v') \in E \mid
     \mathit{id}' \notin \mathit{prev} \big\},\; L \Big) \\[5pt]
     %%%%%%%%%%
-    \big\llbracket (\mathit{id},\, \mathsf{InsertAfter}(\mathit{ref})) \big\rrbracket_{E,\, L} \;=\; \Big( & E,\;
-    \big\{ (p,n) \in L \mid p \neq \mathit{ref} \big\} \;\cup\;
-    \big\{ (\mathit{ref}, \mathit{id}) \big\} \;\cup\;
-    \big\{ (\mathit{id}, n) \mid (\mathit{ref}, n) \in L \big\} \Big) \\[10pt]
+    \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{InsertAfter}(r)) \big] \;=\; \Big( & E,\;
+    \big\{ (p,n) \in L \mid p \neq r \big\} \;\cup\;
+    \big\{ (r, \mathit{id}) \big\} \;\cup\;
+    \big\{ (\mathit{id}, n) \mid (r, n) \in L \big\} \Big) \\[10pt]
     %%%%%%%%%%
-    \big\llbracket (\mathit{id},\, \mathsf{MakeVal}(\mathit{val})) \big\rrbracket_{E,\, L} \;=\; (E,\, L) \qquad
-    \big\llbracket&(\mathit{id},\, \mathsf{MakeMap}) \big\rrbracket_{E,\, L} \;=\; (E,\, L) \qquad
-    \big\llbracket (\mathit{id},\, \mathsf{MakeList}) \big\rrbracket_{E,\, L} \;=\; (E,\, L)
+    \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{MakeMap}) \big] \;=\; (E,\, L)&\qquad\qquad
+    \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{MakeVal}(\mathit{val})) \big] \;=\; (E,\, L)\\[4pt]
+    \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{MakeList}) \big] \;=\; (E,\, L)&
 \end{align*}
 
 The interpretation of $\mathsf{Assign}$ and $\mathsf{Remove}$ updates only $E$ and leaves $L$ unchanged; conversely, the interpretation of $\mathsf{InsertAfter}$ updates only $L$.
 Both the $\mathsf{Assign}$ and $\mathsf{Remove}$ interpretations remove any tuples from causally prior assignments (those whose IDs appear in $\mathit{prev}$), but leave any tuples from concurrent assignments unchanged.
-This is the behaviour of a multi-value register; if a last-write-wins (LWW) register is required, the condition $\mathit{id}' \notin \mathit{prev}$ can be changed to $\mathit{obj}' \neq \mathit{obj} \;\vee\; \mathit{key}' \neq \mathit{key}$, which removes any existing tuples with the same $\mathit{obj}$ and $\mathit{key}$.
+This is the behaviour of a multi-value register; if a last-write-wins (LWW) register is required, the condition $\mathit{id}' \notin \mathit{prev}$ can be changed to $\mathit{obj}' \neq \mathit{obj} \;\vee\; k' \neq k$, which removes any existing tuples with the same object ID and key.
 
 The interpretation of $\mathsf{InsertAfter}$ resembles the insertion into a linked list, as illustrated in Figure~\ref{fig:list-insert}.
 For example, to interpret $(\mathit{id},\, \mathsf{InsertAfter}(\mathit{ref}))$, if we have $(\mathit{ref}, n) \in L$, then we remove the pair $(\mathit{ref}, n)$ from L, and add the pairs $(\mathit{ref}, \mathit{id})$ and $(\mathit{id}, n)$ to $L$.

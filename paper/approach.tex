@@ -59,23 +59,31 @@ Formally, we can define the interpretation $\llbracket O \rrbracket$ of the OpSe
 \begin{align*}
     \big\llbracket \emptyset \big\rrbracket &= \mathit{InitialState} \\
     \big\llbracket O \;\cup\; \{(\mathit{id},\, \mathit{op})\} \big\rrbracket &=
-    \big\llbracket (\mathit{id},\, \mathit{op}) \big\rrbracket_{\llbracket O \rrbracket}
+    \mathrm{interp}\big[\llbracket O \rrbracket,\, (\mathit{id},\, \mathit{op})\big]
     \qquad\text{ provided that } \forall\,(\mathit{id}',\, \mathit{op}') \in O.\; \mathit{id}' < \mathit{id}
 \end{align*}
-where $\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_S$ is the interpretation of the operation $(\mathit{id},\, \mathit{op})$ in the state $S$.
+where $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the operation $(\mathit{id},\, \mathit{op})$ in the state $S$.
 In other words, if $S$ is the result of interpreting all operations with identifiers less than $\mathit{id}$, then
-$\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_S$ is the interpretation of the OpSet to which $(\mathit{id},\, \mathit{op})$ has been added.
-Provided that the operation interpretation $\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_S$ is deterministic, $\llbracket O \rrbracket$ is also deterministic, due to the fact that the operation order in $O$ is unique.
+$\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the OpSet to which $(\mathit{id},\, \mathit{op})$ has been added.
+For example, if $\mathit{id}_1 < \mathit{id}_2 < \mathit{id}_3$, we have:
+\[ \big\llbracket \{(\mathit{id}_1,\ \mathit{op}_1),\,
+    (\mathit{id}_2,\ \mathit{op}_2),\,
+    (\mathit{id}_3,\ \mathit{op}_3)\} \big\rrbracket \;=\;
+    \mathrm{interp}\big[\mathrm{interp}\big[\mathrm{interp}\big[\mathit{InitialState},\,
+    (\mathit{id}_1,\ \mathit{op}_1)\big],\,
+    (\mathit{id}_2,\ \mathit{op}_2)\big],\,
+    (\mathit{id}_3,\ \mathit{op}_3)\big] \]
+Provided that the operation interpretation $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is deterministic, $\llbracket O \rrbracket$ is also deterministic, due to the fact that the operation order in $O$ is unique.
 
-Note that, unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for $\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_S$ to commute with respect to other operations: any pure function can be used.
+Note that, unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ to commute with respect to other operations: any pure function can be used.
 This fact makes it much simpler to specify the interpretation of operations, as we shall see in Sections~\ref{sec:datatypes} and~\ref{sec:tree}.
 
 In real systems it is likely that operations arrive at nodes in an order that does not match their $\mathit{id}$ order.
 If a new operation $(\mathit{id},\, \mathit{op})$ is added to a node's OpSet $O$, and $\exists\,(\mathit{id}',\, \mathit{op}') \in O.\; \mathit{id}' > \mathit{id}$,
-then the operation interpretation $\llbracket (\mathit{id},\, \mathit{op}) \rrbracket_{\llbracket O \rrbracket}$ cannot be used directly to compute the updated OpSet interpretation
-$\llbracket O \;\cup\; \{(\mathit{id},\, \mathit{op})\} \rrbracket$.
+then $\mathrm{interp}\big[\llbracket O \rrbracket,\, (\mathit{id},\, \mathit{op})\big]$ cannot be used directly to compute the updated OpSet interpretation
+$\big\llbracket O \;\cup\; \{(\mathit{id},\, \mathit{op})\} \big\rrbracket$.
 Instead, the node would have to first compute the interpretation of all operations with lower IDs,
-$\llbracket \{(\mathit{id}',\, \mathit{op}') \in O \mid \mathit{id}' < \mathit{id}\} \rrbracket$,
+$\big\llbracket \{(\mathit{id}',\, \mathit{op}') \in O \mid \mathit{id}' < \mathit{id}\} \big\rrbracket$,
 then apply the new operation $(\mathit{id},\, \mathit{op})$, and finally re-apply all operations with greater IDs.
 
 This algorithm may have poor performance, since it must potentially re-apply the same subset of operations repeatedly.
