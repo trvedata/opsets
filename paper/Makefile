@@ -15,10 +15,10 @@ all:	opsets.pdf
 %-arxiv.tex: %.tex %.bbl
 	sed -e "/\\\\bibliography{references}/ r $(@:-arxiv.tex=.bbl)" -e '/\\bibliography{references}/ d' $(@:-arxiv.tex=.tex) > $@
 
-list-insert.tex: ../isabelle/List_Insert.thy
+list-insert.tex: ../isabelle/List_Spec.thy
 	awk -f isabelle-to-latex.awk $< > $@
 
-assignment.tex: ../isabelle/Assignment.thy
+assignment.tex: ../isabelle/Datalog_Assignment.thy
 	awk -f isabelle-to-latex.awk $< > $@
 
 clean:
