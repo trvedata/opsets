@@ -6,23 +6,23 @@ locale insert_opset = opset opset set_option
   for opset :: "('oid::{linorder} \<times> 'oid option) set"
 
 
-subsection\<open>Lemmata about the rga_ops predicate\<close>
+subsection\<open>Lemmata about the insert_ops and rga_ops predicates\<close>
+
+definition insert_ops :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> bool" where
+  "insert_ops list \<equiv> spec_ops set_option list"
 
 definition rga_ops :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> bool" where
-  "rga_ops list \<equiv> crdt_ops set_option list \<and> insert_opset (set list)"
+  "rga_ops list \<equiv> crdt_ops set_option list"
+
+lemma insert_ops_rem_last:
+  assumes "insert_ops (xs @ [x])"
+  shows "insert_ops xs"
+using assms insert_ops_def spec_ops_rem_last by blast
 
 lemma rga_ops_rem_last:
   assumes "rga_ops (xs @ [x])"
   shows "rga_ops xs"
-using assms proof -
-  have "crdt_ops set_option xs"
-    using assms crdt_ops_rem_last rga_ops_def by blast
-  moreover have "insert_opset (set xs)"
-    using assms opset_insert insert_opset.axioms insert_opset.intro
-    by (metis list.simps(15) rga_ops_def rotate1.simps(2) set_rotate1)
-  ultimately show "rga_ops xs"
-    by (simp add: rga_ops_def)
-qed
+using assms crdt_ops_rem_last rga_ops_def by blast
 
 lemma rga_ops_rem_penultimate:
   assumes "rga_ops (xs @ [(i1, r1), (i2, r2)])"
@@ -31,9 +31,7 @@ lemma rga_ops_rem_penultimate:
 using assms proof -
   have "crdt_ops set_option (xs @ [(i2, r2)])"
     using assms crdt_ops_rem_penultimate rga_ops_def by fastforce
-  moreover have "insert_opset (set (xs @ [(i2, r2)]))"
-    using assms(1) insert_opset.axioms insert_opset.intro opset_insert rga_ops_def by force
-  ultimately show "rga_ops (xs @ [(i2, r2)])"
+  thus "rga_ops (xs @ [(i2, r2)])"
     by (simp add: rga_ops_def)
 qed
 
@@ -122,7 +120,7 @@ subsection\<open>Proof that RGA satisfies the list specification\<close>
 lemma final_insert:
   assumes "permut (xs @ [x]) (ys @ [x])"
     and "rga_ops (xs @ [x])"
-    and "spec_ops (ys @ [x])"
+    and "insert_ops (ys @ [x])"
     and "interp_rga xs = interp_list ys"
   shows "interp_rga (xs @ [x]) = interp_list (ys @ [x])"
 proof -
@@ -132,7 +130,7 @@ proof -
   have oid_greatest: "\<And>i. i \<in> set (interp_rga xs) \<Longrightarrow> i < oid"
   proof -
     have "\<And>i. i \<in> set (map fst ys) \<Longrightarrow> i < oid"
-      using assms(3) by (simp add: spec_ops_id_inc x_pair)
+      using assms(3) by (simp add: spec_ops_id_inc x_pair insert_ops_def)
     hence "\<And>i. i \<in> set (map fst xs) \<Longrightarrow> i < oid"
       using \<open>permut xs ys\<close> permut_pair_fst by blast
     thus "\<And>i. i \<in> set (interp_rga xs) \<Longrightarrow> i < oid"
@@ -212,7 +210,7 @@ qed
 
 lemma rga_spec_equal:
   assumes "permut xs ys"
-    and "spec_ops xs"
+    and "insert_ops xs"
     and "rga_ops ys"
   shows "interp_list xs = interp_rga ys"
 using assms proof(induction xs arbitrary: ys rule: rev_induct)
@@ -230,27 +228,21 @@ next
     proof -
       have "crdt_ops set_option (pre @ [x] @ suf)"
         using rga_ops_def snoc.prems(3) ys_split by blast
-      moreover have "opset (set (xs @ [x])) set_option"
-        by (metis insert_opset.axioms permut_def rga_ops_def snoc.prems(1) snoc.prems(3))
-      ultimately show "crdt_ops set_option (pre @ suf)"
-        using crdt_ops_rem_spec snoc.prems ys_split by blast
+      thus "crdt_ops set_option (pre @ suf)"
+        using crdt_ops_rem_spec snoc.prems ys_split insert_ops_def by blast
     qed
-    moreover have "insert_opset (set (pre @ suf))"
-      using opset_sublist insert_opset.axioms insert_opset.intro rga_ops_def
-        snoc.prems(3) ys_split by blast
-    ultimately have "rga_ops (pre @ suf)"
+    hence "rga_ops (pre @ suf)"
       using rga_ops_def by blast
     thus ?thesis
-      using permut_rem_last spec_ops_rem_last ys_split snoc by metis
+      using permut_rem_last insert_ops_rem_last ys_split snoc by metis
   qed
   have valid_rga: "rga_ops (pre @ suf @ [x])"
   proof -
     have "crdt_ops set_option (pre @ suf @ [x])"
-      using crdt_ops_reorder_spec snoc.prems ys_split
-      by (metis insert_opset.axioms permut_def rga_ops_def)
+      using snoc.prems ys_split
+      by (simp add: crdt_ops_reorder_spec insert_ops_def rga_ops_def)
     thus "rga_ops (pre @ suf @ [x])"
-      by (metis (no_types, lifting) append_Cons append_self_conv2 rga_ops_def
-          rotate1.simps(2) set_append set_rotate1 snoc.prems(3) ys_split)
+      by (simp add: rga_ops_def)
   qed
   have "interp_list (xs @ [x]) = interp_rga (pre @ suf @ [x])"
   proof -
@@ -265,13 +257,13 @@ next
     obtain oid ref where x_pair: "x = (oid, ref)"
       by force
     have "\<And>op2 r. op2 \<in> snd ` set suf \<Longrightarrow> r \<in> set_option op2 \<Longrightarrow> r \<noteq> oid"
-      using crdt_ops_independent_suf snoc.prems
-      by (metis insert_opset.axioms permut_def rga_ops_def x_pair ys_split)
+      using snoc.prems
+      by (simp add: crdt_ops_independent_suf insert_ops_def rga_ops_def x_pair ys_split)
     hence "\<And>i r. (i, Some r) \<in> set suf \<Longrightarrow> r \<noteq> oid"
       by fastforce 
     moreover have "\<And>r. ref = Some r \<Longrightarrow> r \<notin> fst ` set suf"
       using crdt_ops_no_future_ref snoc.prems(3) x_pair ys_split
-      by (metis insert_opset.axioms option.set_intros rga_ops_def)
+      by (metis option.set_intros rga_ops_def)
     ultimately show "interp_rga (pre @ suf @ [x]) = interp_rga (pre @ [x] @ suf)"
       using interp_rga_reorder valid_rga x_pair by force
   qed
@@ -279,19 +271,19 @@ next
     by (simp add: ys_split)
 qed
 
-lemma spec_ops_exist:
+lemma insert_ops_exist:
   assumes "rga_ops xs"
-  shows "\<exists>ys. permut xs ys \<and> spec_ops ys"
+  shows "\<exists>ys. permut xs ys \<and> insert_ops ys"
 using assms proof(induction xs rule: List.rev_induct)
   case Nil
-  then show "\<exists>ys. permut [] ys \<and> spec_ops ys"
-    by (simp add: permut_def spec_ops_empty)
+  then show "\<exists>ys. permut [] ys \<and> insert_ops ys"
+    by (simp add: permut_def spec_ops_empty insert_ops_def)
 next
   case (snoc x xs)
-  hence IH: "\<exists>ys. permut xs ys \<and> spec_ops ys"
+  hence IH: "\<exists>ys. permut xs ys \<and> insert_ops ys"
     using rga_ops_rem_last by blast
   then obtain ys oid ref
-    where "permut xs ys" and "spec_ops ys" and "x = (oid, ref)"
+    where "permut xs ys" and "insert_ops ys" and "x = (oid, ref)"
     by force
   moreover have "\<exists>pre suf. ys = pre@suf \<and>
                        (\<forall>i \<in> set (map fst pre). i < oid) \<and>
@@ -302,22 +294,28 @@ next
     hence "oid \<notin> set (map fst ys)"
       using calculation(1) permut_pair_fst by blast 
     thus ?thesis
-      using spec_ops_split \<open>spec_ops ys\<close> by blast
+      using spec_ops_split \<open>insert_ops ys\<close> insert_ops_def by blast
   qed
   from this obtain pre suf where "ys = pre @ suf" and
                        "\<forall>i \<in> set (map fst pre). i < oid" and
                        "\<forall>i \<in> set (map fst suf). oid < i" by force
   moreover have "permut (xs @ [(oid, ref)]) (pre @ [(oid, ref)] @ suf)"
     using permut_append crdt_ops_distinct calculation snoc.prems rga_ops_def by metis
-  moreover have "spec_ops (pre @ [(oid, ref)] @ suf)"
-    using spec_ops_add_any calculation by fastforce
-  ultimately show "\<exists>ys. permut (xs @ [x]) ys \<and> spec_ops ys"
+  moreover have "insert_ops (pre @ [(oid, ref)] @ suf)"
+  proof -
+    have "\<forall>r \<in> set_option ref. r < oid"
+      using calculation(3) crdt_ops_ref_less_last rga_ops_def snoc.prems by fastforce
+    hence "spec_ops set_option (pre @ [(oid, ref)] @ suf)"
+      using spec_ops_add_any calculation insert_ops_def by metis
+    thus ?thesis by (simp add: insert_ops_def)
+  qed
+  ultimately show "\<exists>ys. permut (xs @ [x]) ys \<and> insert_ops ys"
     by blast
 qed
 
 theorem rga_meets_spec:
   assumes "rga_ops xs"
-  shows "\<exists>ys. permut ys xs \<and> spec_ops ys \<and> interp_list ys = interp_rga xs"
-  using assms rga_spec_equal spec_ops_exist permut_commute by blast
+  shows "\<exists>ys. permut ys xs \<and> insert_ops ys \<and> interp_list ys = interp_rga xs"
+  using assms rga_spec_equal insert_ops_exist permut_commute by blast
 
 end

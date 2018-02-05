@@ -2,14 +2,16 @@ theory OpSet
   imports Main Permute Util
 begin
 
-definition spec_ops :: "('oid::{linorder} \<times> 'oper) list \<Rightarrow> bool" where
-  "spec_ops ops \<equiv> (sorted (map fst ops) \<and> distinct (map fst ops))"
+definition spec_ops :: "('oper \<Rightarrow> 'oid set) \<Rightarrow> ('oid::{linorder} \<times> 'oper) list \<Rightarrow> bool" where
+  "spec_ops deps ops \<equiv> (sorted (map fst ops) \<and> distinct (map fst ops) \<and>
+           (\<forall>oid oper ref. (oid, oper) \<in> set ops \<and> ref \<in> deps oper \<longrightarrow> ref < oid))"
 
 inductive crdt_ops :: "('oper \<Rightarrow> 'oid set) \<Rightarrow> ('oid::{linorder} \<times> 'oper) list \<Rightarrow> bool" where
   "crdt_ops deps []" |
   "\<lbrakk>crdt_ops deps xs;
     oid \<notin> set (map fst xs);
-    \<forall>ref \<in> deps oper. ref \<in> set (map fst xs)\<rbrakk> \<Longrightarrow> crdt_ops deps (xs @ [(oid, oper)])"
+    \<forall>ref \<in> deps oper. ref \<in> set (map fst xs) \<and> ref < oid
+   \<rbrakk> \<Longrightarrow> crdt_ops deps (xs @ [(oid, oper)])"
 
 locale opset =
   fixes opset :: "('oid::{linorder} \<times> 'oper) set"
@@ -56,23 +58,38 @@ qed
 subsection\<open>Lemmata about the spec_ops predicate\<close>
 
 lemma spec_ops_empty:
-  shows "spec_ops []"
+  shows "spec_ops deps []"
 by (simp add: spec_ops_def)
 
 lemma spec_ops_rem_last:
-  assumes "spec_ops (xs @ [x])"
-  shows "spec_ops xs"
+  assumes "spec_ops deps (xs @ [x])"
+  shows "spec_ops deps xs"
 proof -
   have "sorted (map fst (xs @ [x]))" and "distinct (map fst (xs @ [x]))"
     using assms spec_ops_def by blast+
   moreover from this have "sorted (map fst xs)" and "distinct xs"
     by (auto simp add: sorted_append distinct_butlast distinct_map)
-  ultimately show "spec_ops xs"
-    using spec_ops_def by auto
+  moreover have "\<forall>oid oper ref. (oid, oper) \<in> set xs \<and> ref \<in> deps oper \<longrightarrow> ref < oid"
+    by (metis assms butlast_snoc in_set_butlastD spec_ops_def)
+  ultimately show "spec_ops deps xs"
+    by (simp add: spec_ops_def)
 qed
 
+lemma spec_ops_ref_less:
+  assumes "spec_ops deps xs"
+    and "(oid, oper) \<in> set xs"
+    and "r \<in> deps oper"
+  shows "r < oid"
+using assms spec_ops_def by force
+
+lemma spec_ops_ref_less_last:
+  assumes "spec_ops deps (xs @ [(oid, oper)])"
+    and "r \<in> deps oper"
+  shows "r < oid"
+using assms spec_ops_ref_less by fastforce
+
 lemma spec_ops_id_inc:
-  assumes "spec_ops (xs @ [(oid, oper)])"
+  assumes "spec_ops deps (xs @ [(oid, oper)])"
     and "x \<in> set (map fst xs)"
   shows "x < oid"
 proof -
@@ -80,32 +97,39 @@ proof -
     using assms(1) by (simp add: spec_ops_def)
   hence "\<forall>i \<in> set (map fst xs). i \<le> oid"
     by (simp add: sorted_append)
-  moreover have "\<forall>i \<in> set (map fst xs). i \<noteq> oid"
-    using assms(1) spec_ops_def by force
+  moreover have "distinct ((map fst xs) @ (map fst [(oid, oper)]))"
+    using assms(1) by (simp add: spec_ops_def)
+  hence "\<forall>i \<in> set (map fst xs). i \<noteq> oid"
+    by auto
   ultimately show "x < oid"
     using assms(2) le_neq_trans by auto
 qed
 
 lemma spec_ops_add_any:
-  assumes "spec_ops (xs @ ys)"
+  assumes "spec_ops deps (xs @ ys)"
     and "\<forall>i \<in> set (map fst xs). i < oid"
     and "\<forall>i \<in> set (map fst ys). oid < i"
-  shows "spec_ops (xs @ [(oid, oper)] @ ys)"
+    and "\<forall>ref \<in> deps oper. ref < oid"
+  shows "spec_ops deps (xs @ [(oid, oper)] @ ys)"
 using assms proof(induction ys rule: rev_induct)
   case empty_ys: Nil
   hence "sorted ((map fst xs) @ [oid])"
     using assms(2) sorted_append spec_ops_def by fastforce
   moreover have "distinct ((map fst xs) @ [oid])"
     using empty_ys spec_ops_def by auto
-  ultimately show "spec_ops (xs @ [(oid, oper)] @ [])"
+  moreover have "\<forall>oid oper ref. (oid, oper) \<in> set xs \<and> ref \<in> deps oper \<longrightarrow> ref < oid"
+    using empty_ys.prems(1) spec_ops_def by fastforce
+  hence "\<forall>i opr r. (i, opr) \<in> set (xs @ [(oid, oper)]) \<and> r \<in> deps opr \<longrightarrow> r < i"
+    using empty_ys.prems(4) by auto
+  ultimately show "spec_ops deps (xs @ [(oid, oper)] @ [])"
     by (simp add: spec_ops_def)
 next
   case (snoc y ys)
-  have IH: "spec_ops (xs @ [(oid, oper)] @ ys)"
+  have IH: "spec_ops deps (xs @ [(oid, oper)] @ ys)"
   proof -
-    from snoc have "spec_ops (xs @ ys)"
+    from snoc have "spec_ops deps (xs @ ys)"
       by (metis append_assoc spec_ops_rem_last)
-    thus "spec_ops (xs @ [(oid, oper)] @ ys)"
+    thus "spec_ops deps (xs @ [(oid, oper)] @ ys)"
       using assms(2) snoc by auto
   qed
   obtain yi yo where y_pair: "y = (yi, yo)"
@@ -139,12 +163,23 @@ next
     thus "distinct (map fst (xs @ [(oid, oper)] @ ys @ [y]))"
       by (simp add: y_pair)
   qed
-  ultimately show "spec_ops (xs @ [(oid, oper)] @ ys @ [y])"
+  moreover have "\<forall>i opr r. (i, opr) \<in> set (xs @ [(oid, oper)] @ ys @ [y])
+                     \<and> r \<in> deps opr \<longrightarrow> r < i"
+  proof -
+    have "\<forall>i opr r. (i, opr) \<in> set (xs @ [(oid, oper)] @ ys) \<and> r \<in> deps opr \<longrightarrow> r < i"
+      by (meson IH spec_ops_def)
+    moreover have "\<forall>ref. ref \<in> deps yo \<longrightarrow> ref < yi"
+      by (metis spec_ops_ref_less append_is_Nil_conv last_appendR last_in_set last_snoc
+          list.simps(3) snoc.prems(1) y_pair)
+    ultimately show ?thesis
+      using y_pair by auto
+  qed
+  ultimately show "spec_ops deps (xs @ [(oid, oper)] @ ys @ [y])"
     using spec_ops_def by blast
 qed
 
 lemma spec_ops_split:
-  assumes "spec_ops xs"
+  assumes "spec_ops deps xs"
     and "oid \<notin> set (map fst xs)"
   shows "\<exists>pre suf. xs = pre @ suf \<and>
             (\<forall>i \<in> set (map fst pre). i < oid) \<and>
@@ -190,15 +225,16 @@ qed
 lemma spec_ops_exists_base:
   assumes "finite ops"
     and "\<And>i1 i2 op1 op2. (i1, op1) \<in> ops \<Longrightarrow> (i2, op2) \<in> ops \<Longrightarrow> op1 = op2"
-  shows "\<exists>op_list. set op_list = ops \<and> spec_ops op_list"
+    and "\<And>oid oper ref. (oid, oper) \<in> ops \<Longrightarrow> ref \<in> deps oper \<Longrightarrow> ref < oid"
+  shows "\<exists>op_list. set op_list = ops \<and> spec_ops deps op_list"
 using assms proof(induct ops rule: Finite_Set.finite_induct_select)
   case empty
-  then show "\<exists>op_list. set op_list = {} \<and> spec_ops op_list"
+  then show "\<exists>op_list. set op_list = {} \<and> spec_ops deps op_list"
     by (simp add: spec_ops_empty)
 next
   case (select subset)
-  from this obtain op_list where "set op_list = subset" and "spec_ops op_list"
-    using assms(2) by blast
+  from this obtain op_list where "set op_list = subset" and "spec_ops deps op_list"
+    using assms by blast
   moreover obtain oid oper where select: "(oid, oper) \<in> ops - subset"
     using select.hyps(1) by auto
   moreover from this have "\<And>op2. (oid, op2) \<in> ops \<Longrightarrow> op2 = oper"
@@ -212,15 +248,24 @@ next
     using spec_ops_split calculation by (metis (no_types, lifting) set_map)
   moreover have "set (pre @ [(oid, oper)] @ suf) = insert (oid, oper) subset"
     using calculation by auto
-  moreover have "spec_ops (pre @ [(oid, oper)] @ suf)"
-    using calculation spec_ops_add_any by fastforce
+  moreover have "spec_ops deps (pre @ [(oid, oper)] @ suf)"
+    using calculation spec_ops_add_any assms(3) by (metis DiffD1)
   ultimately show ?case by blast
 qed
 
 lemma spec_ops_exists:
   assumes "opset ops deps"
-  shows "\<exists>op_list. set op_list = ops \<and> spec_ops op_list"
-by (meson assms opset.finite_opset opset.unique_oid spec_ops_exists_base)
+  shows "\<exists>op_list. set op_list = ops \<and> spec_ops deps op_list"
+proof -
+  have "finite ops"
+    using assms opset.finite_opset by force
+  moreover have "\<And>i1 i2 op1 op2. (i1, op1) \<in> ops \<Longrightarrow> (i2, op2) \<in> ops \<Longrightarrow> op1 = op2"
+    using assms opset.unique_oid by force
+  moreover have "\<And>oid oper ref. (oid, oper) \<in> ops \<Longrightarrow> ref \<in> deps oper \<Longrightarrow> ref < oid"
+    using assms opset.ref_older by force
+  ultimately show "\<exists>op_list. set op_list = ops \<and> spec_ops deps op_list"
+    by (simp add: spec_ops_exists_base)
+qed
 
 
 subsection\<open>Lemmata about the crdt_ops predicate\<close>
@@ -228,7 +273,7 @@ subsection\<open>Lemmata about the crdt_ops predicate\<close>
 inductive_cases crdt_ops_last: "crdt_ops deps (xs @ [x])"
 
 lemma crdt_ops_intro:
-  assumes "\<And>r. r \<in> deps oper \<Longrightarrow> r \<in> fst ` set xs"
+  assumes "\<And>r. r \<in> deps oper \<Longrightarrow> r \<in> fst ` set xs \<and> r < oid"
     and "oid \<notin> fst ` set xs"
     and "crdt_ops deps xs"
   shows "crdt_ops deps (xs @ [(oid, oper)])"
@@ -238,6 +283,19 @@ lemma crdt_ops_rem_last:
   assumes "crdt_ops deps (xs @ [x])"
   shows "crdt_ops deps xs"
 using assms crdt_ops.cases snoc_eq_iff_butlast by blast
+
+lemma crdt_ops_ref_less:
+  assumes "crdt_ops deps xs"
+    and "(oid, oper) \<in> set xs"
+    and "r \<in> deps oper"
+  shows "r < oid"
+using assms by (induction rule: crdt_ops.induct, auto)
+
+lemma crdt_ops_ref_less_last:
+  assumes "crdt_ops deps (xs @ [(oid, oper)])"
+    and "r \<in> deps oper"
+  shows "r < oid"
+using assms crdt_ops_ref_less by fastforce
 
 lemma crdt_ops_distinct:
   assumes "crdt_ops deps xs"
@@ -289,7 +347,6 @@ qed
 
 lemma crdt_ops_no_future_ref:
   assumes "crdt_ops deps (xs @ [(oid, oper)] @ ys)"
-    and "opset (set (xs @ [(oid, oper)] @ ys)) deps"
   shows "\<And>ref. ref \<in> deps oper \<Longrightarrow> ref \<notin> fst ` set ys"
 proof -
   from assms(1) have "\<And>ref. ref \<in> deps oper \<Longrightarrow> ref \<in> set (map fst xs)"
@@ -327,13 +384,15 @@ next
       by (metis y_pair append_assoc crdt_ops_unique_last set_map snoc.prems(1))
     hence "yi \<notin> fst ` set (xs @ ys)"
       by auto
-    moreover have "\<And>r. r \<in> deps yo \<Longrightarrow> r \<in> fst ` set (xs @ ys)"
+    moreover have "\<And>r. r \<in> deps yo \<Longrightarrow> r \<in> fst ` set (xs @ ys) \<and> r < yi"
     proof -
       have "\<And>r. r \<in> deps yo \<Longrightarrow> r \<noteq> oid"
         using snoc.prems(2) y_pair by fastforce
       moreover have "\<And>r. r \<in> deps yo \<Longrightarrow> r \<in> fst ` set (xs @ [(oid, oper)] @ ys)"
         by (metis y_pair append_assoc snoc.prems(1) crdt_ops_ref_exists)
-      ultimately show "\<And>r. r \<in> deps yo \<Longrightarrow> r \<in> fst ` set (xs @ ys)"
+      moreover have "\<And>r. r \<in> deps yo \<Longrightarrow> r < yi"
+        using crdt_ops_ref_less snoc.prems(1) y_pair by fastforce
+      ultimately show "\<And>r. r \<in> deps yo \<Longrightarrow> r \<in> fst ` set (xs @ ys) \<and> r < yi"
         by simp
     qed
     moreover from IH have "crdt_ops deps (xs @ ys)"
@@ -347,6 +406,8 @@ next
   moreover have "\<And>r. r \<in> deps oper \<Longrightarrow> r \<in> fst ` set (xs @ ys @ [y])"
     using crdt_ops_ref_exists
     by (metis UnCI append_Cons image_Un set_append snoc.prems(1))
+  moreover have "\<And>r. r \<in> deps oper \<Longrightarrow> r < oid"
+    using IH crdt_ops_ref_less by fastforce
   ultimately show "crdt_ops deps (xs @ (ys @ [y]) @ [(oid, oper)])"
     using crdt_ops_intro by (metis append_assoc)
 qed
@@ -358,10 +419,9 @@ lemma crdt_ops_rem_middle:
 using assms crdt_ops_rem_last crdt_ops_reorder append_assoc by metis
 
 lemma crdt_ops_independent_suf:
-  assumes "spec_ops (xs @ [(oid, oper)])"
+  assumes "spec_ops deps (xs @ [(oid, oper)])"
     and "crdt_ops deps (ys @ [(oid, oper)] @ zs)"
     and "permut (xs @ [(oid, oper)]) (ys @ [(oid, oper)] @ zs)"
-    and "opset (set (xs @ [(oid, oper)])) deps"
   shows "\<And>op2 r. op2 \<in> snd ` set zs \<Longrightarrow> r \<in> deps op2 \<Longrightarrow> r \<noteq> oid"
 proof -
   have "\<And>op2 r. op2 \<in> snd ` set xs \<Longrightarrow> r \<in> deps op2 \<Longrightarrow> r < oid"
@@ -369,7 +429,7 @@ proof -
     from assms(1) have "\<And>i. i \<in> fst ` set xs \<Longrightarrow> i < oid"
       using spec_ops_id_inc by fastforce
     moreover have "\<And>i2 op2 r. (i2, op2) \<in> set xs \<Longrightarrow> r \<in> deps op2 \<Longrightarrow> r < i2"
-      using opset.ref_older assms(4) by fastforce
+      using assms(1) spec_ops_ref_less spec_ops_rem_last by fastforce
     ultimately show "\<And>op2 r. op2 \<in> snd ` set xs \<Longrightarrow> r \<in> deps op2 \<Longrightarrow> r < oid"
       by fastforce
   qed
@@ -380,10 +440,9 @@ proof -
 qed
 
 lemma crdt_ops_reorder_spec:
-  assumes "spec_ops (xs @ [x])"
+  assumes "spec_ops deps (xs @ [x])"
     and "crdt_ops deps (ys @ [x] @ zs)"
     and "permut (xs @ [x]) (ys @ [x] @ zs)"
-    and "opset (set (xs @ [x])) deps"
   shows "crdt_ops deps (ys @ zs @ [x])"
 using assms proof -
   obtain oid oper where x_pair: "x = (oid, oper)" by force
@@ -394,10 +453,9 @@ using assms proof -
 qed
 
 lemma crdt_ops_rem_spec:
-  assumes "spec_ops (xs @ [x])"
+  assumes "spec_ops deps (xs @ [x])"
     and "crdt_ops deps (ys @ [x] @ zs)"
     and "permut (xs @ [x]) (ys @ [x] @ zs)"
-    and "opset (set (xs @ [x])) deps"
   shows "crdt_ops deps (ys @ zs)"
 using assms crdt_ops_rem_last crdt_ops_reorder_spec append_assoc by metis
 
@@ -420,9 +478,10 @@ proof -
     using crdt_ops_ref_exists by metis
   hence "\<And>r. r \<in> deps r2 \<Longrightarrow> r \<in> set (map fst xs)"
     using assms(2) by auto
+  moreover have "\<And>r. r \<in> deps r2 \<Longrightarrow> r < i2"
+    using assms(1) crdt_ops_ref_less by fastforce
   ultimately show "crdt_ops deps (xs @ [(i2, r2)])"
     by (simp add: crdt_ops_intro)
 qed
-
 
 end
