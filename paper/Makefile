@@ -9,13 +9,13 @@ all:	opsets.pdf
 %.bbl:	references.bib %.aux
 	bibtex $(@:.bbl=)
 
-%.aux:	*.tex list-insert.tex assignment.tex
+%.aux:	*.tex
 	pdflatex $(@:.aux=)
 
 %-arxiv.tex: %.tex %.bbl
 	sed -e "/\\\\bibliography{references}/ r $(@:-arxiv.tex=.bbl)" -e '/\\bibliography{references}/ d' $(@:-arxiv.tex=.tex) > $@
 
-list-insert.tex: ../isabelle/List_Spec.thy
+list-insert.tex: ../isabelle/Datalog_Insert.thy
 	awk -f isabelle-to-latex.awk $< > $@
 
 assignment.tex: ../isabelle/Datalog_Assignment.thy
