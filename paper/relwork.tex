@@ -28,7 +28,11 @@ However, the work does not specify the datatype semantics beyond the convergence
 Attiya et al.~\cite{Attiya:2016kh} give two specifications of collaborative text editing ($\mathcal{A}_\textsf{strong}$ and $\mathcal{A}_\textsf{weak}$), prove that the RGA CRDT \cite{Roh:2011dw} satisfies $\mathcal{A}_\textsf{strong}$, and conjecture that the Operational Transformation algorithm Jupiter \cite{Nichols:1995fd} satisfies $\mathcal{A}_\textsf{weak}$.
 Wei et al.~\cite{Wei:2017tg} complete the proof that Jupiter satisfies $\mathcal{A}_\textsf{weak}$.
 
-XXX: also~\cite{Burckhardt:2014ft, DBLP:conf/atva/MukundRS15, DBLP:conf/coordination/GadducciMR17, DBLP:conf/popl/GotsmanYFNS16}
+Gaducci et al.~\cite{DBLP:conf/coordination/GadducciMR17} also take a relational view of the semantics of replicated datatypes, placing a focus on the compositionality of their semantics.
+In this work, the semantics of a replicated datatype is given as a function from labeled directed acyclic graphs of events to sets of values, with each value in this set potentially observable at a node under different ordering of events observed at that node.
+A notion of behavioural \emph{refinement} for replicated datatypes induced by set inclusion is also defined, along with a generalisation of their relational semantics to a categorical one.
+
+XXX: also~\cite{Burckhardt:2014ft, DBLP:conf/atva/MukundRS15, DBLP:conf/popl/GotsmanYFNS16}
 
 \subsection{Collaborative Tree Datatypes}
 
