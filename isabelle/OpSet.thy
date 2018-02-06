@@ -75,6 +75,38 @@ proof -
     by (simp add: spec_ops_def)
 qed
 
+lemma distinct_map_fst_remove1:
+  assumes "distinct (map fst xs)"
+  shows "distinct (map fst (remove1 x xs))"
+using assms proof(induction xs)
+  case Nil
+  then show "distinct (map fst (remove1 x []))"
+    by simp
+next
+  case (Cons a xs)
+  hence IH: "distinct (map fst (remove1 x xs))"
+    by simp
+  then show "distinct (map fst (remove1 x (a # xs)))"
+  proof(cases "a = x")
+    case True
+    then show ?thesis
+      using Cons.prems by auto
+  next
+    case False
+    moreover have "fst a \<notin> fst ` set (remove1 x xs)"
+      by (metis (no_types, lifting) Cons.prems distinct_set_notin imageE image_set
+          list.simps(9) notin_set_remove1 rev_image_eqI)
+    ultimately show ?thesis
+      using IH by auto
+  qed
+qed
+
+lemma spec_ops_remove1:
+  assumes "spec_ops deps xs"
+  shows "spec_ops deps (remove1 x xs)"
+using assms distinct_map_fst_remove1 spec_ops_def
+by (metis notin_set_remove1 sorted_map_remove1 spec_ops_def)
+
 lemma spec_ops_ref_less:
   assumes "spec_ops deps xs"
     and "(oid, oper) \<in> set xs"

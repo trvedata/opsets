@@ -46,6 +46,16 @@ lemma list_orderE [elim]:
   shows "\<exists>xs ys zs. ins_list = xs@[x]@ys@[y] @zs"
   using assms by(auto simp add: list_order_def)
 
+lemma list_order_memb1:
+  assumes "x \<sqsubset> y"
+  shows "x \<in> set (ins_list)"
+  using assms by(auto simp add: list_order_def)
+
+lemma list_order_memb2:
+  assumes "x \<sqsubset> y"
+  shows "y \<in> set (ins_list)"
+  using assms by(auto simp add: list_order_def)
+
 end
 
 lemma list_spec_NilI [intro!]:
@@ -56,6 +66,23 @@ lemma list_spec_rm_last [dest]:
   assumes "list_spec (xs@[x])"
   shows "list_spec xs"
 using assms by(clarsimp simp: list_spec_def) (metis sorted_append)
+
+lemma list_spec_rem_prefix:
+  assumes "list_spec (pre @ suf)"
+  shows "list_spec suf"
+using assms proof(induction pre)
+  case Nil
+  then show "list_spec ([] @ suf) \<Longrightarrow> list_spec suf"
+    by auto
+next
+  case (Cons a pre)
+  have "sorted (map fst suf)"
+    using assms list_spec.sorted_oids sorted_append by fastforce
+  moreover have "distinct (map fst suf)"
+    using assms list_spec.distinct_oids by force
+  ultimately show "list_spec ((a # pre) @ suf) \<Longrightarrow> list_spec suf"
+    by (simp add: list_spec_def)
+qed
 
 lemma insert_spec_none [simp]:
   shows "set (insert_spec xs (oid, None)) = set xs \<union> {oid}"
@@ -785,226 +812,11 @@ lemma list_order_irrefl:
   using 1 and list_distinct apply fastforce
   done
 
-lemma distinct_set_length3:
-  assumes "distinct xs" "set xs = {x, y, z}" "x \<noteq> y" "y \<noteq> z" "z \<noteq> x" 
-  shows   "\<exists>a b c. xs = [a, b, c]"
-proof (cases xs)
-  assume "xs = []" thus ?thesis using assms by auto 
-next
-  fix a bs assume 1: "xs = a#bs" thus ?thesis
-  proof (cases bs)
-    assume "bs = []" thus ?thesis using assms 1 by auto
-  next
-    fix b cs assume 2: "bs = b#cs" thus ?thesis
-    proof (cases cs)
-      assume "cs = []" thus ?thesis
-        using assms 1 2 by clarsimp (metis all_not_in_conv insertE insert_subset subset_insertI)
-    next
-      fix c ds assume 3: "cs = c#ds"
-      then show ?thesis
-      proof (cases ds)
-        assume "ds = []" thus ?thesis
-          using 1 2 3 by fastforce
-      next
-        fix d zs assume "ds = d#zs"
-        thus ?thesis 
-          using 1 2 3 assms by clarsimp (metis all_not_in_conv insertE insert_subset subset_insertI)
-      qed
-    qed
-  qed
-qed
-
-lemma set3_injection: "set xs = {x, y, z} \<Longrightarrow> distinct xs \<Longrightarrow> xs = [a, b, c] \<Longrightarrow> distinct [x, y, z] \<Longrightarrow>
-  (a = x \<and> b = y \<and> c = z) \<or>
-  (a = x \<and> b = z \<and> c = y) \<or>
-  (a = y \<and> b = x \<and> c = z) \<or>
-  (a = y \<and> b = z \<and> c = x) \<or>
-  (a = z \<and> b = x \<and> c = y) \<or>
-  (a = z \<and> b = y \<and> c = x)"
-  by (metis distinct.simps(2) distinct_length_2_or_more empty_set list.simps(15))
-
-lemma distinct_sorted_set_3_helper:
-  assumes "distinct [a, b, c]" and "sorted (map fst [a, b, c])"
-    and "set [a, b, c] = {x, y, z}"
-    and "fst x < fst y" and "fst y < fst z"
-  shows "a = x \<and> b = y \<and> c = z"
-  using assms by clarsimp (metis (no_types, lifting) assms(1) distinct.simps(2) empty_set insert_iff less_imp_not_less less_le_trans list.simps(15))
-
-lemma distinct_sorted_set_3:
-  assumes "distinct xs" and "sorted (map fst xs)"
-    and "set xs = {x, y, z}"
-    and "fst x < fst y" and "fst y < fst z"
-  shows "xs = [x, y, z]"
-  by (metis assms distinct_set_length3 distinct_sorted_set_3_helper leD less_imp_le)
-      
-lemma no_interleaving_3:
-  assumes 1: "list_spec op_list"
-    and "x = (xid, None)"
-    and "y = (yid, Some xid)"
-    and "z = (zid, None)"
-    and "set op_list = {x, y, z}"
-    and "xid \<noteq> zid"
-  shows "(list_spec.list_order op_list xid yid \<and> list_spec.list_order op_list yid zid) \<or>
-        (list_spec.list_order op_list zid xid \<and> list_spec.list_order op_list xid yid)"
-  using assms
-  apply(subgoal_tac "yid > xid")
-   prefer 2
-  using list_spec.ref_older apply force
-  apply(subgoal_tac "op_list = [x,y,z] \<or> op_list = [x,z,y] \<or> op_list = [z,x,y]")
-   prefer 2
-   apply(subgoal_tac "sorted (map fst op_list)")
-    prefer 2
-    apply(simp add: list_spec.sorted_oids)
-   apply(subgoal_tac "distinct op_list")
-  prefer 2
-  using list_distinct apply(simp add: distinct_fst list_spec_def)
-   apply(case_tac "xid < zid")
-    apply(case_tac "yid < zid")
-     apply(rule disjI1)
-     apply(rule distinct_sorted_set_3; simp)
-    apply(rule disjI2, rule disjI1)
-    apply(rule distinct_sorted_set_3; simp)
-     apply(force)
-    apply(metis (no_types, lifting) insertI1 insert_commute less_imp_neq list_spec_def map_of_SomeD map_of_is_SomeI neqE)
-   apply(rule disjI2, rule disjI2)
-   apply(rule distinct_sorted_set_3; simp)
-    apply force
-  defer
-   apply(erule disjE)
-    apply(rule disjI2, rule conjI)
-    prefer 2
-    apply(unfold list_spec.list_order_def[OF 1])
-     apply(rule_tac x="[zid]" in exI, rule_tac x="[]" in exI, rule_tac x="[]" in exI)
-    apply(unfold list_spec.ins_list_def[OF 1])
-    apply(unfold interp_list_def, clarsimp)
-   apply(rule_tac x="[]" in exI, rule_tac x="[]" in exI, rule_tac x="[yid]" in exI)
-   apply clarsimp
-  apply(erule disjE)
-   apply(rule disjI2, rule conjI)
-    apply(rule_tac x="[]" in exI, rule_tac x="[]" in exI, rule_tac x="[yid]" in exI)
-    apply clarsimp
-   apply(rule_tac x="[zid]" in exI, rule_tac x="[]" in exI, rule_tac x="[]" in exI)
-   apply clarsimp
-  apply(rule disjI1, rule conjI)
-   apply(rule_tac x="[]" in exI, rule_tac x="[]" in exI, rule_tac x="[zid]" in exI)
-   apply clarsimp
-  apply(rule_tac x="[xid]" in exI, rule_tac x="[]" in exI, rule_tac x="[]" in exI)
-  apply clarsimp
-  done
-
-lemma list_spec_downward_closed:
-  assumes "list_spec A"
-    and "set B \<subseteq> set A"
-    and "sorted (map fst B)" and "distinct B"
-  shows "list_spec B"
-  using assms
-  apply (induct rule: length_induct)
-  apply (case_tac xs)
-   apply clarsimp
-  apply (erule_tac x=list in allE)
-  apply clarsimp
-  apply (subgoal_tac "sorted (map fst list)")
-   apply clarsimp
-   apply (clarsimp simp: list_spec_def)
-   apply (metis map_of_SomeD map_of_is_SomeI subsetCE)
-  using sorted_Cons by blast
-
-lemma distinct_remove1:
-  assumes "set xs = set ys \<union> {x}"
-    and "distinct (x#ys)" and "distinct xs"
-  shows "set (remove1 x xs) = set ys"
-  using assms apply (induct xs arbitrary: x ys; clarsimp simp: insert_ident)
-  by (metis Diff_insert_absorb insert_Diff_if singletonD)
-
-lemma interp_list_fail:
-  assumes "set ops = {(xid, Some a), (yid, Some xid), (zid, Some a)}"
-    and "list_spec ops"
-    and "xid \<noteq> zid"
-    and "yid \<noteq> zid"
-  shows "set (interp_list ops) = {}"
-  using assms
-  apply(clarsimp simp add: interp_list_def)
-  apply(subgoal_tac "\<exists>x y z. ops = [x, y, z]")
-   apply clarsimp
-   apply(subgoal_tac "aa = xid \<or> aa = yid \<or> aa = zid")
-    apply(subgoal_tac "aaa = xid \<or> aaa = yid \<or> aaa = zid")
-     apply(subgoal_tac "ab = xid \<or> ab = yid \<or> ab = zid")
-      apply(erule disjE)+
-         apply clarsimp
-  using list_spec.distinct_oids apply fastforce
-        apply(erule disjE)+
-         apply clarsimp
-  using list_spec.distinct_oids apply fastforce
-  using list_spec.distinct_oids apply fastforce
-       apply(erule disjE)+
-  using list_spec.distinct_oids apply fastforce
-  using list_spec.distinct_oids apply fastforce
-       apply(erule disjE)+
-  using list_spec.distinct_oids apply fastforce
-        apply clarsimp
-        apply(subgoal_tac "(xid, b) = (xid, Some a) \<and> (yid, ba) = (yid, Some xid) \<and> (zid, bb) = (zid, Some a)")
-         apply clarsimp
-        apply(metis empty_set insert_subset list.simps(15) list_spec.distinct_oids map_of_is_SomeI option.inject subsetI)
-       apply(erule disjE)+
-        apply clarsimp
-        apply(subgoal_tac "(xid, b) = (xid, Some a) \<and> (zid, ba) = (zid, Some a) \<and> (yid, bb) = (yid, Some xid)")
-             apply clarsimp
-        apply(metis assms(1) insert_iff list_spec.distinct_oids map_of_is_SomeI option.inject)
-    using list_spec.distinct_oids apply fastforce
-        apply(erule disjE)+
-    using list_spec.distinct_oids apply fastforce
-    using list_spec.distinct_oids apply fastforce
-         apply(erule disjE)+
-    using list_spec.distinct_oids apply fastforce
-      apply clarsimp
-                apply(subgoal_tac "(yid, b) = (yid, Some xid) \<and> (zid, bb) = (zid, Some a) \<and> (xid, ba) = (xid, Some a)")
-             apply clarsimp
-          apply(metis assms(1) insert_iff list_spec.distinct_oids map_of_is_SomeI option.inject)
-         apply(erule disjE)
-          apply clarsimp
-          apply(subgoal_tac "(yid, bb) = (yid, Some xid) \<and> (zid, b) = (zid, Some a) \<and> (xid, ba) = (xid, Some a)")
-           apply clarsimp
-          apply(metis assms(1) insert_iff list_spec.distinct_oids map_of_is_SomeI option.inject)
-    using list_spec.distinct_oids apply fastforce
-        apply(erule disjE)+
-    using list_spec.distinct_oids apply fastforce
-          apply clarsimp
-          apply(subgoal_tac "(yid, b) = (yid, Some xid) \<and> (zid, ba) = (zid, Some a) \<and> (xid, bb) = (xid, Some a)")
-                 apply clarsimp
-          apply(metis assms(1) insert_iff list_spec.distinct_oids map_of_is_SomeI option.inject)
-         apply(erule disjE)+
-          apply clarsimp
-          apply(subgoal_tac "(yid, ba) = (yid, Some xid) \<and> (zid, b) = (zid, Some a) \<and> (xid, bb) = (xid, Some a)")
-                       apply clarsimp
-          apply(metis assms(1) insert_iff list_spec.distinct_oids map_of_is_SomeI option.inject)
-    using list_spec.distinct_oids apply fastforce
-        apply(erule disjE)+
-    using list_spec.distinct_oids apply fastforce
-    using list_spec.distinct_oids apply fastforce
-         apply(erule disjE)+
-    using list_spec.distinct_oids apply fastforce
-    using list_spec.distinct_oids apply fastforce
-        apply(erule disjE)+
-    using list_spec.distinct_oids apply fastforce
-    using list_spec.distinct_oids apply fastforce
-    using list_spec.distinct_oids apply fastforce
-       apply blast
-      apply (smt insert_absorb insert_iff insert_not_empty prod.inject)
-     apply (smt doubleton_eq_iff insertI1 insert_absorb insert_iff old.prod.inject)
-    apply (rule_tac x="(xid, Some a)" and y="(yid, Some xid)" and z="(zid, Some a)" in distinct_set_length3)
-        defer
-        apply clarsimp
-    using list_spec.distinct_oids apply (simp add: list_spec.ref_older neq_iff)
-    using list_spec.distinct_oids apply (simp add: list_spec.ref_older neq_iff)
-    using list_spec.distinct_oids apply (simp add: list_spec.ref_older neq_iff)
-     apply clarsimp
-    using list_spec.distinct_oids distinct_fst by auto
-
 lemma ins_list_empty_list [simp]:
   shows "list_spec.ins_list [] = []"
   by(clarsimp simp add: list_spec.ins_list_def[OF list_spec_NilI] interp_list_def)
 
-lemma ins_list_empty[simp]:
+lemma ins_list_empty [simp]:
   shows "set (list_spec.ins_list []) = {}"
   by(clarsimp simp add: list_spec.ins_list_def[OF list_spec_NilI] interp_list_def)
 
@@ -1044,38 +856,6 @@ lemma ins_list_set_eq_disj2_general:
   apply(rule ins_list_set_eq_disj, force)
   done
 
-lemma ins_list_missing_ref:
-  assumes "list_spec ops"
-    and "\<And>r. (a, r) \<notin> set ops"
-    and "(xid, Some a) \<in> set ops"
-  shows "xid \<notin> set (list_spec.ins_list ops)"
-  using assms
-  apply(induction ops rule: List.rev_induct)
-   apply clarsimp
-  apply(case_tac "(xid, Some a) = x")
-   apply clarsimp
-   apply(subgoal_tac "list_spec.ins_list (xs @ [(xid, Some a)]) = insert_spec (list_spec.ins_list xs) (xid, Some a)") prefer 2
-    apply (metis interp_list_tail_unfold list_spec.ins_list_def list_spec_rm_last)
-  apply clarsimp
-   apply(subgoal_tac "a \<notin> set (map fst xs)") prefer 2
-  apply clarsimp
-   apply(subgoal_tac "a \<notin> set (list_spec.ins_list xs)") prefer 2
-    apply clarsimp
-    apply (metis list_oid_subset list_spec_rm_last set_map subsetCE)
-   apply(metis insert_spec_nonex interp_list_op_ids last_op_greatest list_greater_non_memb list_spec.ins_list_def list_spec_rm_last subsetCE)
-  apply(unfold list_spec.ins_list_def)
-  apply(erule meta_impE)
-   apply auto[1]
-  apply(erule meta_impE)
-   apply simp
-  apply(erule meta_impE)
-   apply clarsimp
-  apply (subgoal_tac "list_spec xs") prefer 2
-  apply blast
-  apply (frule ins_list_set_eq_disj2)
-  apply (clarsimp simp: list_spec.ins_list_def)
-  by (metis fst_conv image_eqI insert_iff last_op_greatest list_greater_non_memb set_map)
-
 lemma list_spec_irrelevant_operation:
   assumes "list_spec ops"
     and "ops = xs @ [(oid, Some ref)] @ ys"
@@ -1104,301 +884,457 @@ lemma list_spec_appendD: "list_spec (xs @ ys) \<Longrightarrow> list_spec xs"
    apply simp
   using list_spec_rm_last by force
 
-lemma "distinct xs \<Longrightarrow> distinct (x#ys) \<Longrightarrow> set xs = set ys \<union> {x} \<Longrightarrow> \<exists>p s. xs = p @ [x] @ s \<and> ys = p @ s"
-  apply (induct ys arbitrary: xs rule: length_induct)
-  apply (subgoal_tac "xsa = [x] \<or> (\<exists>a xs1 xs2 xs3. xsa = xs1 @ a # xs2 @ x # xs3) \<or> (\<exists>a xs1 xs2 xs3. xsa = xs1 @ x # xs2 @ a # xs3)")
-   apply (erule disjE)
-    apply clarsimp
-    apply (rule_tac x="[]" in exI, rule_tac x="[]" in exI, clarsimp)
-    apply (metis insertI1 set_empty subset_singleton_iff)
-   apply (erule disjE)
-    apply (elim exE)
-  apply (subgoal_tac "xs = xs1 @ a # xs2 @ xs3")
-    apply (erule_tac x="xs1 @ xs2 @ xs3" in allE)
-    apply (erule impE, force)
-  apply (erule_tac x="xs1 @ xs2 @ x # xs3" in allE)
-     apply (erule impE)
-      apply force
-     apply (erule impE)
-      apply force
-     apply (erule impE)
-      apply force
-     apply clarsimp
-     apply (rule_tac x="xs1 @ a # xs2" in exI)
-     apply (rule_tac x="xs3" in exI)
-     apply force
-  defer
-    apply (elim exE)
-  apply (subgoal_tac "xs = xs1 @ xs2 @ a # xs3")
-    apply (erule_tac x="xs1 @ xs2 @ xs3" in allE)
-    apply (erule impE, force)
-  apply (erule_tac x="xs1 @ xs2 @ x # xs3" in allE)
-     apply (erule impE)
-      apply force
-     apply (erule impE)
-      apply force
-     apply (erule impE)
-      apply force
-     apply clarsimp
-     apply (rule_tac x="xs1" in exI)
-     apply (rule_tac x="xs2 @ a # xs3" in exI)
-     apply force
-  defer
-  (*
-  apply (smt UnI2 Un_empty_right Un_insert_right distinct.simps(2) distinct_length_2_or_more distinct_set_notin distinct_singleton insertI1 insert_iff list.set_intros(1) list.simps(15) list_split_two_elems rotate1.simps(2) set_append set_rotate1)
-*)
-  
-  apply clarsimp
+lemma map_fst_append1:
+  assumes "\<forall>i \<in> set (map fst xs). P i"
+    and "P x"
+  shows "\<forall>i \<in> set (map fst (xs @ [(x, y)])). P i"
+using assms by (induction xs, auto)
 
-   apply (subgoal_tac "\<exists>xs1 xs2. xsa = xs1 @ a # xs2") prefer 2
-    apply (subgoal_tac "a \<in> set xsa")
-     apply (simp add: split_list)
-  apply simp
-  apply (elim exE, erule_tac x="xs1@xs2" in allE)
-   apply (erule impE)
-    apply force
-   apply (erule impE)
-    apply force
-   apply (erule impE)
-(* TODO: DELETE THIS SMT *)
-  apply (smt Diff_insert_absorb Un_iff Un_insert_right disjoint_insert(1) distinct.simps(2) distinct_append insert_absorb insert_is_Un list.simps(15) set_append sup_commute)
-   apply clarsimp
-   apply (case_tac "x \<in> set xs1")
-    apply (subgoal_tac "\<exists>suf. xs1 = p @ x # suf") prefer 2
-     apply (metis Cons_eq_appendI append.assoc distinct_append distinct_list_split split_list)
-    apply clarsimp
-    apply (rule_tac x=p in exI)
-    apply (rule_tac x="suf @ a # xs2" in exI)
-    apply (rule conjI)
-     apply force
-  nitpick
+lemma list_spec_split:
+  assumes "list_spec ops"
+    and "(oid, ref) \<in> set ops"
+  shows "\<exists>pre suf. ops = pre @ [(oid, ref)] @ suf \<and>
+            (\<forall>i \<in> set (map fst pre). i < oid) \<and>
+            (\<forall>i \<in> set (map fst suf). oid < i)"
+using assms proof(induction ops rule: List.rev_induct)
+  case Nil
+  then show ?case by auto
+next
+  case (snoc x xs)
+  then show ?case
+  proof(cases "x = (oid, ref)")
+    case True
+    moreover from this have "\<forall>i \<in> set (map fst xs). i < oid"
+      using last_op_greatest snoc.prems(1) by blast
+    ultimately have "xs @ [x] = xs @ [(oid, ref)] @ [] \<and>
+            (\<forall>i \<in> set (map fst xs). i < oid) \<and>
+            (\<forall>i \<in> set (map fst []). oid < i)"
+      by auto
+    then show ?thesis by force
+  next
+    case False
+    hence "(oid, ref) \<in> set xs"
+      using snoc.prems(2) by auto
+    from this obtain pre suf where IH: "xs = pre @ [(oid, ref)] @ suf \<and>
+         (\<forall>i \<in> set (map fst pre). i < oid) \<and>
+         (\<forall>i \<in> set (map fst suf). oid < i)"
+      using snoc.IH snoc.prems(1) by blast
+    obtain xi xr where x_pair: "x = (xi, xr)"
+      by force
+    hence "distinct (map fst (pre @ [(oid, ref)] @ suf @ [(xi, xr)]))"
+      by (metis IH append.assoc list_spec.distinct_oids snoc.prems(1))
+    hence "xi \<noteq> oid"
+      by auto
+    have xi_max: "\<forall>x \<in> set (map fst (pre @ [(oid, ref)] @ suf)). x < xi"
+      using IH last_op_greatest snoc.prems(1) x_pair by blast
+    then show ?thesis
+    proof(cases "xi < oid")
+      case True
+      moreover from this have "\<forall>x \<in> set suf. fst x < oid"
+        using xi_max by auto
+      hence "suf = []"
+        using IH last_in_set by fastforce
+      ultimately have "xs @ [x] = (pre @ [(xi, xr)]) @ [] \<and>
+              (\<forall>i \<in> set (map fst ((pre @ [(xi, xr)]))). i < oid) \<and>
+              (\<forall>i \<in> set (map fst []). oid < i)"
+        using dual_order.asym xi_max by auto
+      then show ?thesis by (simp add: IH)
+    next
+      case False
+      hence "oid < xi"
+        using \<open>xi \<noteq> oid\<close> by auto
+      hence "\<forall>i \<in> set (map fst (suf @ [(xi, xr)])). oid < i"
+        using IH map_fst_append1 by auto
+      hence "xs @ [x] = pre @ [(oid, ref)] @ (suf @ [(xi, xr)]) \<and>
+              (\<forall>i \<in> set (map fst pre). i < oid) \<and>
+              (\<forall>i \<in> set (map fst (suf @ [(xi, xr)])). oid < i)"
+        by (simp add: IH x_pair)
+      then show ?thesis by blast
+    qed
+  qed
+qed
 
+lemma list_spec_split_2:
+  assumes "list_spec ops"
+    and "(xid, xr) \<in> set ops"
+    and "(yid, yr) \<in> set ops"
+    and "xid < yid"
+  shows "\<exists>as bs cs. ops = as @ [(xid, xr)] @ bs @ [(yid, yr)] @ cs \<and>
+           (\<forall>i \<in> set (map fst as). i < xid) \<and>
+           (\<forall>i \<in> set (map fst bs). xid < i \<and> i < yid) \<and>
+           (\<forall>i \<in> set (map fst cs). yid < i)"
+proof -
+  obtain as as1 where x_split: "ops = as @ [(xid, xr)] @ as1 \<and>
+      (\<forall>i \<in> set (map fst as). i < xid) \<and> (\<forall>i \<in> set (map fst as1). xid < i)"
+    using assms list_spec_split by blast
+  hence "list_spec ((as @ [(xid, xr)]) @ as1)"
+    using assms(1) by auto
+  hence "list_spec as1"
+    using assms(1) list_spec_rem_prefix by blast
+  have "(yid, yr) \<in> set as1"
+    using x_split assms by auto
+  from this obtain bs cs where y_split: "as1 = bs @ [(yid, yr)] @ cs \<and>
+      (\<forall>i \<in> set (map fst bs). i < yid) \<and> (\<forall>i \<in> set (map fst cs). yid < i)"
+    using assms list_spec_split \<open>list_spec as1\<close> by blast
+  hence "ops = as @ [(xid, xr)] @ bs @ [(yid, yr)] @ cs"
+    using x_split by blast
+  moreover have "\<forall>i \<in> set (map fst bs). xid < i \<and> i < yid"
+    by (simp add: x_split y_split)
+  ultimately show ?thesis
+    using x_split y_split by blast
+qed
 
+lemma list_spec_split_3:
+  assumes "list_spec ops"
+    and "(xid, xr) \<in> set ops"
+    and "(yid, yr) \<in> set ops"
+    and "(zid, zr) \<in> set ops"
+    and "xid < yid" and "yid < zid"
+  shows "\<exists>as bs cs ds. ops = as @ [(xid, xr)] @ bs @ [(yid, yr)] @ cs @ [(zid, zr)] @ ds \<and>
+           (\<forall>i \<in> set (map fst as). i < xid) \<and>
+           (\<forall>i \<in> set (map fst bs). xid < i \<and> i < yid) \<and>
+           (\<forall>i \<in> set (map fst cs). yid < i \<and> i < zid) \<and>
+           (\<forall>i \<in> set (map fst ds). zid < i)"
+proof -
+  obtain as bs cs1 where xy_split: "ops = as @ [(xid, xr)] @ bs @ [(yid, yr)] @ cs1 \<and>
+           (\<forall>i \<in> set (map fst as). i < xid) \<and>
+           (\<forall>i \<in> set (map fst bs). xid < i \<and> i < yid) \<and>
+           (\<forall>i \<in> set (map fst cs1). yid < i)"
+    using assms list_spec_split_2 by blast
+  hence "list_spec ((as @ [(xid, xr)] @ bs @ [(yid, yr)]) @ cs1)"
+    using assms(1) by auto
+  hence "list_spec cs1"
+    using assms(1) list_spec_rem_prefix by blast
+  have "(zid, zr) \<in> set cs1"
+    using assms xy_split by auto
+  from this obtain cs ds where z_split: "cs1 = cs @ [(zid, zr)] @ ds \<and>
+      (\<forall>i \<in> set (map fst cs). i < zid) \<and> (\<forall>i \<in> set (map fst ds). zid < i)"
+    using assms list_spec_split \<open>list_spec cs1\<close> by blast
+  hence "ops = as @ [(xid, xr)] @ bs @ [(yid, yr)] @ cs @ [(zid, zr)] @ ds"
+    using xy_split by blast
+  moreover have "\<forall>i \<in> set (map fst cs). yid < i \<and> i < zid"
+    by (simp add: xy_split z_split)
+  ultimately show ?thesis
+    using xy_split z_split by blast
+qed
 
-  oops
+lemma ins_list_last_None:
+  assumes "list_spec (ops @ [(oid, None)])"
+  shows "oid \<in> set (list_spec.ins_list (ops @ [(oid, None)]))"
+by (simp add: assms interp_list_tail_unfold list_spec.ins_list_def)
 
+lemma ins_list_monotonic:
+  assumes "list_spec (pre @ suf)"
+    and "oid \<in> set (list_spec.ins_list pre)"
+  shows "oid \<in> set (list_spec.ins_list (pre @ suf))"
+using assms ins_list_set_eq_disj2_general by auto
 
+lemma list_spec_sorted_oids:
+  assumes "list_spec (xs @ [(i1, r1)] @ ys @ [(i2, r2)])"
+  shows "i1 < i2"
+proof -
+  have "\<And>i. i \<in> set (map fst (xs @ [(i1, r1)] @ ys)) \<Longrightarrow> i < i2"
+    by (metis append.assoc assms last_op_greatest)
+  moreover have "i1 \<in> set (map fst (xs @ [(i1, r1)] @ ys))"
+    by auto
+  ultimately show "i1 < i2"
+    by blast
+qed
 
+lemma ins_list_append_non_memb:
+  assumes "list_spec (pre @ [(oid, Some ref)] @ suf)"
+    and "ref \<notin> set (list_spec.ins_list pre)"
+  shows "ref \<notin> set (list_spec.ins_list (pre @ [(oid, Some ref)] @ suf))"
+using assms proof(induction suf rule: List.rev_induct)
+  case Nil
+  then show "ref \<notin> set (list_spec.ins_list (pre @ [(oid, Some ref)] @ []))"
+    by (metis append_Nil2 insert_spec_nonex interp_list_tail_unfold
+        list_spec.ins_list_def list_spec_appendD)
+next
+  case (snoc x xs)
+  hence IH: "ref \<notin> set (list_spec.ins_list (pre @ [(oid, Some ref)] @ xs))"
+    by (metis append_assoc list_spec_rm_last)
+  moreover have "ref < oid"
+    by (meson list.set_intros(1) list_spec.ref_older list_spec_appendD list_spec_rem_prefix snoc.prems(1))
+  moreover have "oid < fst x"
+    using list_spec_sorted_oids by (metis prod.collapse snoc.prems(1))
+  have "set (list_spec.ins_list ((pre @ [(oid, Some ref)] @ xs) @ [x])) =
+        set (list_spec.ins_list (pre @ [(oid, Some ref)] @ xs)) \<or>
+        set (list_spec.ins_list ((pre @ [(oid, Some ref)] @ xs) @ [x])) =
+        set (list_spec.ins_list (pre @ [(oid, Some ref)] @ xs)) \<union> {fst x}"
+    by (metis (full_types) append.assoc ins_list_set_eq_disj2 snoc.prems(1))
+  ultimately show "ref \<notin> set (list_spec.ins_list (pre @ [(oid, Some ref)] @ xs @ [x]))"
+    using \<open>oid < fst x\<close> by auto
+qed
 
-  
+lemma list_order_append:
+  assumes "list_spec (pre @ suf)"
+    and "list_spec.list_order pre x y"
+  shows "list_spec.list_order (pre @ suf) x y"
+by (metis Un_iff assms list_order_monotonic list_spec_appendD set_append subset_code(1))
 
-lemma
-  assumes "list_spec ops_after"
-  and "set ops_after = set ops \<union> {(x, Some a)}"
-  and "list_spec.ins_list ops = xs @ a # ys"
-shows "\<exists>zs. list_spec.ins_list ops_after = xs @ a # x # zs @ ys"
-  using assms
-  apply (subgoal_tac "\<exists>p s. ops_after = p @ [(x, Some a)] @ s \<and> ops = p @ s") prefer 2
+lemma list_order_insert_ref:
+  assumes "list_spec (ops @ [(oid, Some ref)])"
+    and "ref \<in> set (list_spec.ins_list ops)"
+  shows "list_spec.list_order (ops @ [(oid, Some ref)]) ref oid"
+proof -
+  have "list_spec.ins_list (ops @ [(oid, Some ref)]) =
+        insert_spec (list_spec.ins_list ops) (oid, Some ref)"
+    by (metis assms(1) interp_list_tail_unfold list_spec.ins_list_def list_spec_appendD)
+  moreover obtain xs ys where "list_spec.ins_list ops = xs @ [ref] @ ys"
+    by (meson assms(2) list_set_memb)
+  hence "insert_spec (list_spec.ins_list ops) (oid, Some ref) = xs @ [ref] @ [] @ [oid] @ ys"
+    using assms(1) insert_after_ref list_distinct by fastforce
+  ultimately show "list_spec.list_order (ops @ [(oid, Some ref)]) ref oid"
+    using assms(1) list_spec.list_orderI by fastforce
+qed
 
-(*
-  apply (induct ops arbitrary: ops_after rule: length_induct)
-  apply (subgoal_tac "xsa = [] \<or> (\<exists>xs x. xsa = xs@[x])") prefer 2
-  using rev_exhaust apply metis
-  apply (erule disjE)
-   apply clarsimp
-  apply (elim exE)
-  apply (erule_tac x=xsaa in allE)
-  apply (erule impE)
-   apply (subgoal_tac "\<exists>p s. ops_after = p @ [(x, Some a)] @ s") prefer 2
-  using list_set_memb apply force
-*)
-  
+lemma list_order_insert_none:
+  assumes "list_spec (ops @ [(oid, None)])"
+    and "x \<in> set (list_spec.ins_list ops)"
+  shows "list_spec.list_order (ops @ [(oid, None)]) oid x"
+proof -
+  have "list_spec.ins_list (ops @ [(oid, None)]) =
+        insert_spec (list_spec.ins_list ops) (oid, None)"
+    by (metis assms(1) interp_list_tail_unfold list_spec.ins_list_def list_spec_appendD)
+  moreover obtain xs ys where "list_spec.ins_list ops = xs @ [x] @ ys"
+    by (meson assms(2) list_set_memb)
+  hence "insert_spec (list_spec.ins_list ops) (oid, None) = [] @ [oid] @ xs @ [x] @ ys"
+    by simp
+  ultimately show "list_spec.list_order (ops @ [(oid, None)]) oid x"
+    using assms(1) list_spec.list_orderI by fastforce
+qed
 
+lemma list_order_insert_between:
+  assumes "list_spec (ops @ [(oid, Some ref)])"
+    and "list_spec.list_order ops ref x"
+  shows "list_spec.list_order (ops @ [(oid, Some ref)]) oid x"
+proof -
+  have "list_spec.ins_list (ops @ [(oid, Some ref)]) =
+        insert_spec (list_spec.ins_list ops) (oid, Some ref)"
+    by (metis assms(1) interp_list_tail_unfold list_spec.ins_list_def list_spec_appendD)
+  moreover obtain xs ys zs where "list_spec.ins_list ops = xs @ [ref] @ ys @ [x] @ zs"
+    using assms list_spec.list_orderE by blast
+  moreover have "... = xs @ ref # (ys @ [x] @ zs)"
+    by simp
+  moreover have "distinct (xs @ ref # (ys @ [x] @ zs))"
+    using assms(1) calculation by (metis list_distinct list_spec_rm_last)
+  hence "insert_spec (xs @ ref # (ys @ [x] @ zs)) (oid, Some ref) = xs @ ref # oid # (ys @ [x] @ zs)"
+    using assms(1) calculation by (simp add: insert_after_ref)
+  moreover have "... = (xs @ [ref]) @ [oid] @ ys @ [x] @ zs"
+    by simp
+  ultimately show "list_spec.list_order (ops @ [(oid, Some ref)]) oid x"
+    using assms(1) list_spec.list_orderI by metis
+qed
 
-lemma no_interleaving:
-  assumes "list_spec ops_before" and "list_spec ops_after"
-    and "set ops_after = set ops_before \<union> {x,y,z}"
-    and "x = (xid, ref)"
-    and "y = (yid, Some xid)"
-    and "z = (zid, ref)"
+theorem no_interleaving:
+  assumes "list_spec ops"
+    and "(xid, ref) \<in> set ops"
+    and "(yid, Some xid) \<in> set ops"
+    and "(zid, ref) \<in> set ops"
     and "xid \<noteq> yid" and "yid \<noteq> zid" and "zid \<noteq> xid"
-    and "xid \<notin> set (map fst ops_before)"
-    and "yid \<notin> set (map fst ops_before)"
-    and "zid \<notin> set (map fst ops_before)"
-  shows "((list_spec.list_order ops_after xid yid \<and> list_spec.list_order ops_after yid zid) \<or>
-        (list_spec.list_order ops_after zid xid \<and> list_spec.list_order ops_after xid yid)) \<or>
-        (xid \<notin> set (list_spec.ins_list ops_after) \<and> yid \<notin> set (list_spec.ins_list ops_after) \<and>
-          zid \<notin> set (list_spec.ins_list ops_after))"
-  using assms
-  apply(cases "ref")
-   defer
-   apply(case_tac "\<exists>r. (a, r) \<in> set ops_before") prefer 2
-    apply(intro disjI2 conjI)
-      apply(rule_tac a=a in ins_list_missing_ref)
-        apply force
-       apply(subgoal_tac "a \<noteq> xid \<and> a \<noteq> yid \<and> a \<noteq> zid")
-        apply force
-  apply(subgoal_tac "a < xid \<and> a < zid \<and> xid < yid") prefer 2
-        apply(simp add: list_spec_def)
-       apply force
-      apply force
-     apply(subgoal_tac "\<exists>pre suf. ops_after = pre@[(yid, Some xid)]@suf")
-  apply(elim exE conjE)
-     apply(rule_tac xs=pre and ys=suf and ref=xid in list_spec_irrelevant_operation)
-        apply force
-       apply assumption
-      apply(rule_tac a=a in ins_list_missing_ref)
-        apply clarsimp
-        apply (metis UnI1 distinct_append list_spec_def map_append set_append sorted_append)
-  apply(subgoal_tac "a < xid \<and> a < zid \<and> xid < yid") prefer 2
-        apply (simp add: list_spec.ref_older)
-       apply clarsimp
-       apply(subgoal_tac "set pre \<subseteq> set ops_before")
-        apply force
-  apply(subgoal_tac "set ops_before = set ops_after - {x, y, z}")
-        apply clarsimp
-        apply fastforce
-       apply(metis (no_types, lifting) Diff_cancel Diff_empty Diff_insert0 Un_Diff Un_empty_right assms(3) fst_conv image_eqI)
-  apply(subgoal_tac "xid < yid") prefer 2
-       apply (simp add: list_spec.ref_older)
-      apply(subgoal_tac "\<And>i. i \<in> set (map fst suf) \<Longrightarrow> yid < i")
-       apply(metis UnE Un_insert_right append_Cons fst_conv image_eqI insertI1 not_less_iff_gr_or_eq self_append_conv2 set_ConsD set_append set_map)
-      apply clarsimp
-      apply(subgoal_tac "sorted (map fst ops_after)")
-  apply (metis (no_types, lifting) distinct.simps(2) distinct_append fst_conv image_eqI leD list.set_map list.simps(9) list_spec.distinct_oids map_append not_less_iff_gr_or_eq sorted_Cons sorted_append)
-  using list_spec.sorted_oids apply blast
-     apply (metis Un_insert_right insert_iff list_set_memb)
-      apply(rule_tac a=a in ins_list_missing_ref)
-        apply force
-       apply(subgoal_tac "a \<noteq> xid \<and> a \<noteq> yid \<and> a \<noteq> zid")
-        apply force
-  apply(subgoal_tac "a < xid \<and> a < zid \<and> xid < yid") prefer 2
-        apply(simp add: list_spec_def)
-       apply force
-    apply force
-   apply(elim exE)
-   apply(subgoal_tac "\<exists>pre suf. ops_after = pre@[(a, r)]@suf") prefer 2
-    apply(metis (no_types, lifting) Un_insert_left Un_insert_right insert_subset list_set_memb mk_disjoint_insert subset_insertI)
-   apply(elim exE)
-   apply(case_tac "a \<in> set (list_spec.ins_list (pre@[(a, r)]))") prefer 2
-    apply(subgoal_tac "x \<in> set suf \<and> y \<in> set suf \<and> z \<in> set suf") prefer 2
-     apply(subgoal_tac "a < xid \<and> a < zid \<and> xid < yid") prefer 2
-      apply(simp add: list_spec_def)
-  using assms(2) list_spec.ref_older apply fastforce
-apply(subgoal_tac "sorted (map fst (pre @ [(a, r)] @ suf))")
-     apply(subgoal_tac "\<And>i. i \<in> set (map fst pre) \<Longrightarrow> i < a")
-      apply(intro conjI)
-  apply clarsimp
-         apply (metis (no_types, lifting) UnE fst_conv image_eqI insert_iff leD list.set_intros(1) list.set_map sorted_append)
-  apply(subgoal_tac "(yid, Some xid) \<notin> set pre")
-  apply clarsimp
-         apply (metis (no_types, lifting) Un_iff insertI1 insert_commute insert_iff not_less_iff_gr_or_eq prod.inject)
-        apply (metis fst_conv image_eqI less_imp_not_less less_trans set_map)
-  apply clarsimp
-       apply (metis UnE fst_conv image_eqI insert_iff insert_subset not_less_iff_gr_or_eq subset_insertI)
-      apply clarsimp
-      apply(subst (asm) sorted_append, clarsimp)
-      apply(erule_tac x="(aa, b)" in ballE, clarsimp)
-       apply(subgoal_tac "aa \<noteq> a")
-        apply force
-       apply(metis Un_iff Un_insert_right disjoint_insert(1) distinct_append distinct_append distinct_fst insertI1 list.simps(15) list_spec.distinct_oids map_append map_of_SomeD map_of_is_SomeI set_append sup.left_idem)
-  apply force
-  using list_spec_def apply blast
-    apply(elim conjE)
-    apply(intro disjI2 conjI)
-      apply(subgoal_tac "\<exists>suf1 suf2. suf = suf1 @ [x] @ suf2", erule exE, erule exE)
-       apply(subgoal_tac "a \<notin> set (list_spec.ins_list (pre @ [(a, r)] @ suf1))")
-        apply(rule_tac xs="pre@[(a, r)]@suf1" and ys="suf2" and ref="a" in list_spec_irrelevant_operation, simp)
-         apply clarsimp
-        apply simp
-       apply clarsimp
-       apply(subgoal_tac "list_spec ((pre @ [(a, r)]) @ suf1)")
-        apply(frule ins_list_set_eq_disj2_general) back
-        apply clarsimp
-        apply(subgoal_tac "\<And>i. i \<in> set (map fst suf1) \<Longrightarrow> a < i")
-         apply(metis less_irrefl list.set_map subsetCE)
-        apply(subgoal_tac "sorted (map fst (pre @ [(a, r)] @ suf1))")
-         apply clarsimp
-         apply (metis distinct_append distinct_set_notin fst_conv list.set_map list.simps(9) list_spec.distinct_oids map_append subsetCE)
-        apply(metis Cons_eq_appendI list_spec.sorted_oids self_append_conv2)
-       apply(subgoal_tac "list_spec (((pre @ [(a, r)]) @ suf1) @ ((xid, Some a) # suf2))")
-        apply (metis Un_iff distinct_append list_spec_def map_append set_append sorted_append)
-       apply force
-      apply (meson list_set_memb)
-     apply(subgoal_tac "\<exists>suf1 suf2. suf = suf1@[(yid, Some xid)]@suf2") prefer 2
-      apply(meson list_set_memb)
-  apply(elim exE)
-     apply(rule_tac xs="pre@[(a, r)]@suf1" and ys=suf2 and ref=xid in list_spec_irrelevant_operation)
-       apply simp
-      apply force
-  apply (subgoal_tac "x \<in> set suf1")
-     apply(subgoal_tac "\<exists>suf1' suf2'. suf1 = suf1'@[(xid, Some a)]@suf2'") prefer 2
-  apply (meson list_set_memb)
-  apply(elim exE)
-     apply(rule_tac xs="pre@[(a, r)]@suf1'" and ys="suf2'" and ref="a" in list_spec_irrelevant_operation)
-  apply clarsimp
-  apply(subgoal_tac "list_spec ((pre @ (a, r) # suf1' @ (xid, Some a) # suf2') @ ((yid, Some xid) # suf2))")
-        apply (metis Un_iff distinct_append list_spec_def map_append set_append sorted_append)
-        apply force
-       apply force
-  apply(subgoal_tac "list_spec ((pre @ [(a, r)]) @ suf1')")
-       apply(frule ins_list_set_eq_disj2_general)
-       apply (elim exE conjE)
-  apply clarsimp
-        apply(subgoal_tac "\<And>i. i \<in> set (map fst suf1') \<Longrightarrow> a < i")
-         apply(metis less_irrefl list.set_map subsetCE)
-        apply(subgoal_tac "sorted (map fst (pre @ [(a, r)] @ suf1'))")
-         apply clarsimp
-         apply (metis distinct_append distinct_set_notin fst_conv list.set_map list.simps(9) list_spec.distinct_oids map_append subsetCE)
-       apply(metis Cons_eq_appendI list_spec.sorted_oids self_append_conv2)
-      apply(subgoal_tac "list_spec ((pre @ (a, r) # suf1') @ ((xid, Some a) # suf2') @ ((yid, Some xid) # suf2))")
-  using list_spec_appendD apply (metis (full_types) append_Cons append_eq_append_conv2 self_append_conv)
-      apply force
-     apply (subgoal_tac "xid < yid") prefer 2
-      apply (simp add: list_spec_def)
-     apply(subgoal_tac "\<And>i. i \<in> set (map fst suf2) \<Longrightarrow> yid < i")
-  apply (metis UnE append_Cons fst_conv image_eqI less_imp_not_less list.set_map self_append_conv2 set_ConsD set_append)
-        apply(subgoal_tac "sorted (map fst (pre @ [(a, r)] @ suf1 @ [y] @ suf2))")
-         apply clarsimp
-  apply (metis (no_types, lifting) distinct.simps(2) distinct_append fst_conv image_insert insertI1 leD list.set_map list.simps(9) list_spec.distinct_oids map_append mk_disjoint_insert not_less_iff_gr_or_eq sorted_Cons sorted_append)
-  using list_spec_def apply blast
-    apply(subgoal_tac "\<exists>suf1 suf2. suf = suf1 @ [z] @ suf2") prefer 2
-     apply (meson list_set_memb)
-    apply(elim exE)
-    apply(rule_tac xs="pre@[(a, r)]@suf1" and ys="suf2" and ref="a" in list_spec_irrelevant_operation)
-      apply simp
-  apply force
-   apply(subgoal_tac "list_spec ((pre @ [(a, r)]) @ suf1)")
-       apply(frule ins_list_set_eq_disj2_general)
-       apply (elim exE conjE)
-  apply clarsimp
-        apply(subgoal_tac "\<And>i. i \<in> set (map fst suf1) \<Longrightarrow> a < i")
-         apply(metis less_irrefl list.set_map subsetCE)
-        apply(subgoal_tac "sorted (map fst (pre @ [(a, r)] @ suf1))")
-         apply clarsimp
-         apply (metis distinct_append distinct_set_notin fst_conv list.set_map list.simps(9) list_spec.distinct_oids map_append subsetCE)
-     apply(metis Cons_eq_appendI list_spec.sorted_oids self_append_conv2)
-  using list_spec_appendD apply(metis append_assoc)
-  defer
-   apply(case_tac "xid < zid")
-    apply(rule disjI1, rule disjI2, rule conjI)
-     
-(*
-     prefer 3
-     apply(case_tac "xid < zid")
-      apply(case_tac "yid < zid")
-       apply(subgoal_tac "xid < yid") prefer 2
-        apply (metis Un_insert_left insertI1 list_spec_def sup.commute)
+  shows "(list_spec.list_order ops xid yid \<and> list_spec.list_order ops yid zid) \<or>
+         (list_spec.list_order ops zid xid \<and> list_spec.list_order ops xid yid) \<or>
+         (xid \<notin> set (list_spec.ins_list ops) \<and> yid \<notin> set (list_spec.ins_list ops) \<and>
+          zid \<notin> set (list_spec.ins_list ops))"
+proof(cases "xid < zid")
+  case True
+  then show ?thesis
+  proof(cases "yid < zid")
+    case True
+    have "xid < yid"
+      using assms list_spec.ref_older by blast
+    then obtain as bs cs ds
+      where split: "ops = as @ [(xid, ref)] @ bs @ [(yid, Some xid)] @ cs @ [(zid, ref)] @ ds"
+      using assms \<open>yid < zid\<close> list_spec_split_3 by blast
+    then show ?thesis
+    proof(cases ref)
+      case None
+      hence "xid \<in> set (list_spec.ins_list (as @ [(xid, ref)]))"
+        using ins_list_last_None assms(1) list_spec_appendD split append.assoc by metis
+      hence xid_in: "xid \<in> set (list_spec.ins_list (as @ [(xid, ref)] @ bs))"
+        using ins_list_monotonic assms(1) list_spec_appendD split append.assoc by metis
+      hence "list_spec.list_order (as @ [(xid, ref)] @ bs @ [(yid, Some xid)]) xid yid"
+        using list_order_insert_ref assms(1) list_spec_appendD split append.assoc by metis
+      hence "list_spec.list_order ops xid yid"
+        using list_order_append assms(1) split append.assoc by metis
+      moreover have "xid \<in> set (list_spec.ins_list (as @ [(xid, ref)] @ bs @ [(yid, Some xid)] @ cs))"
+        using ins_list_monotonic xid_in assms(1) list_spec_appendD split append.assoc by metis
+      hence "list_spec.list_order (as @ [(xid, ref)] @ bs @ [(yid, Some xid)] @ cs @ [(zid, ref)]) zid xid"
+        using list_order_insert_none assms(1) list_spec_appendD split append.assoc None by metis
+      hence "list_spec.list_order ops zid xid"
+        using list_order_append assms(1) split append.assoc by metis
+      ultimately show ?thesis by blast
+    next
+      case (Some r)
+      then show ?thesis
+      proof(cases "r \<in> set (list_spec.ins_list as)")
+        case True
+        hence r_xid: "list_spec.list_order (as @ [(xid, ref)]) r xid"
+          using list_order_insert_ref assms(1) list_spec_appendD split append.assoc Some by metis
+        hence "xid \<in> set (list_spec.ins_list (as @ [(xid, ref)]))"
+          using list_spec.list_order_memb2 assms(1) list_spec_appendD split append.assoc by metis
+        hence xid_in: "xid \<in> set (list_spec.ins_list (as @ [(xid, ref)] @ bs))"
+          using ins_list_monotonic assms(1) list_spec_appendD split append.assoc by metis
+        hence "list_spec.list_order (as @ [(xid, ref)] @ bs @ [(yid, Some xid)]) xid yid"
+          using list_order_insert_ref assms(1) list_spec_appendD split append.assoc by metis
+        hence "list_spec.list_order ops xid yid"
+          using list_order_append assms(1) split append.assoc by metis
+        moreover have "list_spec.list_order (as @ [(xid, ref)] @ bs @ [(yid, Some xid)] @ cs) r xid"
+          using list_order_append r_xid assms(1) list_spec_appendD split append.assoc by metis
+        hence "list_spec.list_order (as @ [(xid, ref)] @ bs @ [(yid, Some xid)] @ cs @ [(zid, ref)]) zid xid"
+          using list_order_insert_between assms(1) list_spec_appendD split append.assoc Some by metis
+        hence "list_spec.list_order ops zid xid"
+          using list_order_append assms(1) split append.assoc by metis
+        ultimately show ?thesis by blast
+      next
+        case False
+        hence "xid \<notin> set (list_spec.ins_list ops)"
+          using list_spec_irrelevant_operation assms(1) split Some by metis
+        moreover have "xid \<notin> set (list_spec.ins_list (as @ [(xid, ref)] @ bs))"
+          using list_spec_irrelevant_operation assms(1) list_spec_appendD split append.assoc Some False by metis
+        hence "yid \<notin> set (list_spec.ins_list ops)"
+          using list_spec_irrelevant_operation assms(1) split append.assoc by metis
+        moreover have "r \<notin> set (list_spec.ins_list (as @ [(xid, ref)] @ bs @ [(yid, Some xid)] @ cs))"
+          using ins_list_append_non_memb assms(1) list_spec_appendD split append.assoc Some False by metis
+        hence "zid \<notin> set (list_spec.ins_list ops)"
+          using list_spec_irrelevant_operation assms(1) split append.assoc Some by metis
+        ultimately show ?thesis by blast
+      qed
+    qed
+  next
+    case False
+    hence "zid < yid"
+      using assms(6) by auto
+    then obtain as bs cs ds
+      where split: "ops = as @ [(xid, ref)] @ bs @ [(zid, ref)] @ cs @ [(yid, Some xid)] @ ds"
+      using assms \<open>xid < zid\<close> list_spec_split_3 by blast
+    then show ?thesis
+    proof(cases ref)
+      case None
+      hence "xid \<in> set (list_spec.ins_list (as @ [(xid, ref)]))"
+        using ins_list_last_None assms(1) list_spec_appendD split append.assoc by metis
+      hence xid_in: "xid \<in> set (list_spec.ins_list (as @ [(xid, ref)] @ bs))"
+        using ins_list_monotonic assms(1) list_spec_appendD split append.assoc by metis
+      hence "list_spec.list_order (as @ [(xid, ref)] @ bs @ [(zid, ref)]) zid xid"
+        using list_order_insert_none assms(1) list_spec_appendD split append.assoc None by metis
+      hence "list_spec.list_order ops zid xid"
+        using list_order_append assms(1) split append.assoc by metis
+      moreover have "xid \<in> set (list_spec.ins_list (as @ [(xid, ref)] @ bs @ [(zid, ref)] @ cs))"
+        using ins_list_monotonic xid_in assms(1) list_spec_appendD split append.assoc by metis
+      hence "list_spec.list_order (as @ [(xid, ref)] @ bs @ [(zid, ref)] @ cs @ [(yid, Some xid)]) xid yid"
+        using list_order_insert_ref assms(1) list_spec_appendD split append.assoc None by metis
+      hence "list_spec.list_order ops xid yid"
+        using list_order_append assms(1) split append.assoc by metis
+      ultimately show ?thesis by blast
+    next
+      case (Some r)
+      then show ?thesis
+      proof(cases "r \<in> set (list_spec.ins_list as)")
+        case True
+        hence r_xid: "list_spec.list_order (as @ [(xid, ref)]) r xid"
+          using list_order_insert_ref assms(1) list_spec_appendD split append.assoc Some by metis
+        hence "xid \<in> set (list_spec.ins_list (as @ [(xid, ref)]))"
+          using list_spec.list_order_memb2 assms(1) list_spec_appendD split append.assoc by metis
+        hence xid_in: "xid \<in> set (list_spec.ins_list (as @ [(xid, ref)] @ bs @ [(zid, ref)] @ cs))"
+          using ins_list_monotonic assms(1) list_spec_appendD split append.assoc by metis
+        moreover have "list_spec.list_order (as @ [(xid, ref)] @ bs) r xid"
+          using list_order_append r_xid assms(1) list_spec_appendD split append.assoc by metis
+        hence "list_spec.list_order (as @ [(xid, ref)] @ bs @ [(zid, ref)]) zid xid"
+          using list_order_insert_between assms(1) list_spec_appendD split append.assoc Some by metis
+        hence "list_spec.list_order ops zid xid"
+          using list_order_append assms(1) split append.assoc by metis
+        moreover have "list_spec.list_order (as @ [(xid, ref)] @ bs @ [(zid, ref)] @ cs @ [(yid, Some xid)]) xid yid"
+          using list_order_insert_ref xid_in assms(1) list_spec_appendD split append.assoc Some by metis
+        hence "list_spec.list_order ops xid yid"
+          using list_order_append assms(1) split append.assoc by metis
+        ultimately show ?thesis by blast
+      next
+        case False
+        hence "xid \<notin> set (list_spec.ins_list ops)"
+          using list_spec_irrelevant_operation assms(1) split Some by metis
+        moreover have "xid \<notin> set (list_spec.ins_list (as @ [(xid, ref)] @ bs @ [(zid, ref)] @ cs))"
+          using list_spec_irrelevant_operation assms(1) list_spec_appendD split append.assoc Some False by metis
+        hence "yid \<notin> set (list_spec.ins_list ops)"
+          using list_spec_irrelevant_operation assms(1) split append.assoc by metis
+        moreover have "r \<notin> set (list_spec.ins_list (as @ [(xid, ref)] @ bs))"
+          using ins_list_append_non_memb assms(1) list_spec_appendD split append.assoc Some False by metis
+        hence "zid \<notin> set (list_spec.ins_list ops)"
+          using list_spec_irrelevant_operation assms(1) split append.assoc Some by metis
+        ultimately show ?thesis by blast
+      qed
+    qed
+  qed
+next
+  case False
+  hence "zid < xid" and "xid < yid"
+    using assms neq_iff list_spec.ref_older by blast+
+  then obtain as bs cs ds
+    where split: "ops = as @ [(zid, ref)] @ bs @ [(xid, ref)] @ cs @ [(yid, Some xid)] @ ds"
+    using assms list_spec_split_3 by blast
+  then show ?thesis
+  proof(cases ref)
+    case None
+    hence "zid \<in> set (list_spec.ins_list (as @ [(zid, ref)]))"
+      using ins_list_last_None assms(1) list_spec_appendD split append.assoc by metis
+    hence "zid \<in> set (list_spec.ins_list (as @ [(zid, ref)] @ bs))"
+      using ins_list_monotonic assms(1) list_spec_appendD split append.assoc by metis
+    hence xid_zid: "list_spec.list_order (as @ [(zid, ref)] @ bs @ [(xid, ref)]) xid zid"
+      using list_order_insert_none assms(1) list_spec_appendD split append.assoc None by metis
+    hence "list_spec.list_order (as @ [(zid, ref)] @ bs @ [(xid, ref)] @ cs) xid zid"
+      using list_order_append assms(1) list_spec_appendD split append.assoc by metis
+    hence "list_spec.list_order (as @ [(zid, ref)] @ bs @ [(xid, ref)] @ cs @ [(yid, Some xid)]) yid zid"
+      using list_order_insert_between assms(1) list_spec_appendD split append.assoc by metis
+    hence "list_spec.list_order ops yid zid"
+      using list_order_append assms(1) split append.assoc by metis
+    moreover have "xid \<in> set (list_spec.ins_list (as @ [(zid, ref)] @ bs @ [(xid, ref)]))"
+      using list_spec.list_order_memb1 xid_zid assms(1) list_spec_appendD split append.assoc by metis
+    hence "xid \<in> set (list_spec.ins_list (as @ [(zid, ref)] @ bs @ [(xid, ref)] @ cs))"
+      using ins_list_monotonic assms(1) list_spec_appendD split append.assoc by metis
+    hence "list_spec.list_order (as @ [(zid, ref)] @ bs @ [(xid, ref)] @ cs @ [(yid, Some xid)]) xid yid"
+      using list_order_insert_ref assms(1) list_spec_appendD split append.assoc by metis
+    hence "list_spec.list_order ops xid yid"
+      using list_order_append assms(1) split append.assoc by metis
+    ultimately show ?thesis by blast
+  next
+    case (Some r)
+    then show ?thesis
+    proof(cases "r \<in> set (list_spec.ins_list as)")
+      case True
+      hence "list_spec.list_order (as @ [(zid, ref)]) r zid"
+        using list_order_insert_ref assms(1) list_spec_appendD split append.assoc Some by metis
+      hence "list_spec.list_order (as @ [(zid, ref)] @ bs) r zid"
+        using list_order_append assms(1) list_spec_appendD split append.assoc by metis
+      hence "list_spec.list_order (as @ [(zid, ref)] @ bs @ [(xid, ref)]) xid zid"
+        using list_order_insert_between assms(1) list_spec_appendD split append.assoc Some by metis
+      hence xid_zid: "list_spec.list_order (as @ [(zid, ref)] @ bs @ [(xid, ref)] @ cs) xid zid"
+        using list_order_append assms(1) list_spec_appendD split append.assoc by metis
+      hence "list_spec.list_order (as @ [(zid, ref)] @ bs @ [(xid, ref)] @ cs @ [(yid, Some xid)]) yid zid"
+        using list_order_insert_between assms(1) list_spec_appendD split append.assoc by metis
+      hence "list_spec.list_order ops yid zid"
+        using list_order_append assms(1) split append.assoc by metis
+      moreover have "xid \<in> set (list_spec.ins_list (as @ [(zid, ref)] @ bs @ [(xid, ref)] @ cs))"
+        using list_spec.list_order_memb1 xid_zid assms(1) list_spec_appendD split append.assoc by metis
+      hence "list_spec.list_order (as @ [(zid, ref)] @ bs @ [(xid, ref)] @ cs @ [(yid, Some xid)]) xid yid"
+        using list_order_insert_ref assms(1) list_spec_appendD split append.assoc by metis
+      hence "list_spec.list_order ops xid yid"
+        using list_order_append assms(1) split append.assoc by metis
+      ultimately show ?thesis by blast
+    next
+      case False
+      hence "zid \<notin> set (list_spec.ins_list ops)"
+        using list_spec_irrelevant_operation assms(1) split Some by metis
+      moreover have r_notin: "r \<notin> set (list_spec.ins_list (as @ [(zid, ref)] @ bs))"
+        using ins_list_append_non_memb assms(1) list_spec_appendD split append.assoc Some False by metis
+      hence "xid \<notin> set (list_spec.ins_list (as @ [(zid, ref)] @ bs @ [(xid, ref)] @ cs))"
+        using list_spec_irrelevant_operation assms(1) list_spec_appendD split append.assoc Some by metis
+      hence "yid \<notin> set (list_spec.ins_list ops)"
+        using list_spec_irrelevant_operation assms(1) split append.assoc by metis
+      moreover have "xid \<notin> set (list_spec.ins_list ops)"
+        using list_spec_irrelevant_operation r_notin assms(1) split append.assoc Some by metis
+      ultimately show ?thesis by blast
+    qed
+  qed
+qed
 
-       apply(subgoal_tac "\<exists>suf1 suf2 suf3. suf = suf1@[x]@suf2@[z]@suf3", elim exE)
-
-
-        apply(rule disjI1, rule disjI2, rule conjI)
-         apply (subst list_spec.list_order_def)
-          apply simp
-  apply (subgoal_tac "\<exists>xs ys. list_spec.ins_list (pre @ [(a, r)]) = xs @ [a] @ ys") prefer 2
-  apply (meson list_set_memb)
-         apply (elim exE)
-         apply (rule_tac x="xs@[a]" in exI)
-         apply (rule_tac x="[yid]" in exI)
-         apply (rule_tac x=ys in exI)
-         apply(clarsimp simp add: list_spec.ins_list_def interp_list_def)
-  find_theorems "interp_list"
-
-
-
-
-       apply(subgoal_tac "\<exists>suf1 suf2. suf = suf1@[x]@suf2", erule exE, erule exE)
-        apply(subgoal_tac "list_spec.list_order (pre @ (a, r) # suf1 @ [(xid, Some a)]) a xid")
-*)
 end
