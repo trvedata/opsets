@@ -1,16 +1,17 @@
 \section{Specifying a Graph of Lists, Maps, and Registers}\label{sec:datatypes}
 
-In this section we make the OpSets approach concrete by defining example semantics for commonly-used data structures: maps (which associate values with user-specified keys) and lists (linear sequences of values).
-The map datatype can also represent a set (by assigning dummy values to keys).
+We now make the OpSets approach concrete by defining example semantics for commonly-used data structures: maps (which associate values with user-specified keys) and lists (linear sequences of values).
+The map datatype can also represent a set (by using keys as members of the set, and ignoring values).
+The list datatype can also represent text (by mapping each character to a list element).
 In both lists and maps the values may be primitives (such as numbers or strings), or references to other map or list objects.
-These references may be used to construct arbitrary object graphs, including cycles of object references, like in most object-oriented programming languages.
-In Section~\ref{sec:tree} we will show how to restrict this object graph so that it always conforms to a tree structure.
+Using these references we can construct arbitrary object graphs, including cycles of object references, like in object-oriented programming languages.
+In Section~\ref{sec:tree} we will show how to restrict this object graph so that it conforms to a tree structure.
 
 We treat each key of a map, and each element of a list, as a multi-value register.
 That is, if there are several concurrent assignments to the same map key or list element, our datatype preserves all concurrently written values.
 Thus, reading a map key or list element may return multiple values, which may be merged explicitly by the user.
 Assigning a new value to a map key or list elements overwrites all causally preceding values.
-Different register behaviour, such as last-writer-wins (arbitrarily picking one of the concurrently written values as winner), can easily be defined, as shown later.
+Different register behaviour, such as last-writer-wins (arbitrarily picking one of the concurrently written values as winner), can easily be defined, as we show later.
 
 \subsection{Generating Operations}\label{sec:datatypes-gen}
 
@@ -49,14 +50,14 @@ An OpSet for these datatypes may contain six types of operation:
     \State $O' = (\textbf{if } \mathit{op}_1 = \bot \textbf{ then } O \textbf{ else } 
         O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
     \State $\mathit{id}_2 = \mathrm{newID}(O')$
-    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{map}, \mathit{key}, \mathit{val}) \in E \}$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,v.\; (\mathit{id}, \mathit{map}, \mathit{key}, v) \in E \}$
     \State \Return $O' \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{map}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\}$
     \EndFunction\Statex
 
     \Function{removeMapKey}{$O, \mathit{map}, \mathit{key}$}
     \State $(E,\, L) = \llbracket O \rrbracket$
     \State $\mathit{id}_1 = \mathrm{newID}(O)$
-    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{map}, \mathit{key}, \mathit{val}) \in E \}$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,v.\; (\mathit{id}, \mathit{map}, \mathit{key}, v) \in E \}$
     \State \Return $O \;\cup\; \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{map}, \mathit{key}, \mathit{prev})) \big\}$
     \EndFunction\Statex
 
@@ -82,7 +83,7 @@ An OpSet for these datatypes may contain six types of operation:
         O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
     \State $\mathit{id}_2 = \mathrm{newID}(O')$
     \State $\mathit{key} = \mathrm{idxKey}_{E,\, L}(\mathit{list}, \mathit{list}, \mathit{index})$
-    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{list}, \mathit{key}, \mathit{val}) \in E \}$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,v.\; (\mathit{id}, \mathit{list}, \mathit{key}, v) \in E \}$
     \State \Return $O' \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{list}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\}$
     \EndFunction\Statex
 
@@ -103,7 +104,7 @@ An OpSet for these datatypes may contain six types of operation:
     \State $(E,\, L) = \llbracket O \rrbracket$
     \State $\mathit{id}_1 = \mathrm{newID}(O)$
     \State $\mathit{key} = \mathrm{idxKey}_{E,\, L}(\mathit{list}, \mathit{list}, \mathit{index})$
-    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,\mathit{val}.\; (\mathit{id}, \mathit{list}, \mathit{key}, \mathit{val}) \in E \}$
+    \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,v.\; (\mathit{id}, \mathit{list}, \mathit{key}, v) \in E \}$
     \State \Return $O \;\cup\; \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{list}, \mathit{key}, \mathit{prev})) \big\}$
     \EndFunction
 \end{algorithmic}
@@ -115,7 +116,6 @@ Listing~\ref{fig:pseudocode} gives pseudocode for functions that generate these 
 The first parameter $O$ of each function is the OpSet that defines the current state of the node, and the functions return an updated OpSet containing new operations.
 The interpretation $\llbracket O \rrbracket$ returns a pair $(E,\, L)$ as defined in Section~\ref{sec:datatypes-interp}.
 The function $\mathrm{newID}(O)$ returns a unique ID (e.g.\ a Lamport timestamp) that is greater than any existing ID in the OpSet $O$.
-The function $\mathrm{objID}(\mathit{obj})$ returns the ID of some existing object.
 
 The function \textsc{setMapKey} can be called by a user to update a map object with ID $\mathit{map}$, setting a key $\mathit{key}$ to a value $\mathit{val}$.
 If $\mathit{val}$ references an existing object, $\mathit{id}_1$ is set to the ID of that existing object; otherwise, the function \textsc{valueID} generates a new $\mathsf{Make}\cdots$ operation for the value, and the new operation is added to $O'$.
@@ -175,7 +175,7 @@ Both the $\mathsf{Assign}$ and $\mathsf{Remove}$ interpretations remove any tupl
 This is the behaviour of a multi-value register; if a last-write-wins (LWW) register is required, the condition $\mathit{id}' \notin \mathit{prev}$ can be changed to $\mathit{obj}' \neq \mathit{obj} \;\vee\; k' \neq k$, which removes any existing tuples with the same object ID and key.
 
 The interpretation of $\mathsf{InsertAfter}$ resembles the insertion into a linked list, as illustrated in Figure~\ref{fig:list-insert}.
-For example, to interpret $(\mathit{id},\, \mathsf{InsertAfter}(r))$, if we have $(r, n) \in L$, then we remove the pair $(r, n)$ from L, and add the pairs $(r, \mathit{id})$ and $(\mathit{id}, n)$ to $L$.
+For example, to interpret $(\mathit{id},\, \mathsf{InsertAfter}(r))$, if we have $(r, n) \in L$, we remove the pair $(r, n)$ from L, and add the pairs $(r, \mathit{id})$ and $(\mathit{id}, n)$ to $L$.
 Thus, the new list element $\mathit{id}$ is inserted between $r$ and $n$.
 
 \begin{figure}
@@ -216,8 +216,7 @@ Note that $L$ never shrinks, it only ever grows through interpreting $\mathsf{In
 When a list element is removed by the function \textsc{removeListIndex} of Listing~\ref{fig:pseudocode}, the effect is that all values are removed from the list element in the element relation $E$, but the list element remains in $L$ as a \emph{tombstone}, so that any concurrent $\mathsf{InsertAfter}$ operations can still locate the referenced list position.
 
 Thus, from a user's point of view a list element only exists if it has at least one associated value in the $E$ relation; any list elements without associated value should be ignored.
-On this basis we can now define the $\mathrm{idxKey}()$ function that is used in Listing~\ref{fig:pseudocode} to translate a list index into a list element ID.
-The function counts only list elements that have an associated value:
+On this basis we can now define the $\mathrm{idxKey}()$ function that is used in Listing~\ref{fig:pseudocode} to translate a list index into a list element ID:
 \[ \mathrm{idxKey}_{E,\, L}(\mathit{obj}, \mathit{key}, i) \;=\; \left\{
    \arraycolsep=2pt \def\arraystretch{1.3}
    \begin{array}{llllll}
@@ -231,3 +230,6 @@ The function counts only list elements that have an associated value:
        \quad\text{if }\; i = 0 & \wedge &&&
        \exists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in E \\
    \end{array} \right. \]
+$\mathit{key}$ is initially the ID of the $\mathsf{MakeList}$ operation that created the list.
+The function recursively moves along the linked list structure in $L$, decrementing the index for every list element that has an associated value, and not counting any list elements without associated value (which are treated as deleted).
+Eventually, it returns the ID of the list element with the desired index.

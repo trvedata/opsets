@@ -48,13 +48,6 @@ Secondly, any existing tuple in $E$ that references the same value $\mathit{val}
 Intuitively, this interpretation of $\mathsf{Assign}$ performs an atomic move whenever $\mathit{val}$ is the ID of an existing object in the tree; in that case, it is moved from its existing position to the key $\mathit{key}$ in the object $\mathit{obj}$.
 If $\mathit{val}$ does not currently exist in the tree (e.g.\ because it has just been freshly created), the operation behaves like conventional assignment.
 
-\begin{proposition}\label{prop:tree-invariant}
-    When using the revised interpretation of $\mathsf{Assign}$, the object graph that results from interpreting any OpSet is always a tree.
-\end{proposition}
-\begin{proof}
-    We prove this using Isabelle{\dots} TODO.
-\end{proof}
-
 \subsection{Discussion: Subtree Move Conflicts}
 
 In a replicated tree datatype that supports move operations, concurrent moves may conflict in various ways \cite{Najafzadeh:2017vk,AhmedNacer:2012us,Tao:2015gd}.
