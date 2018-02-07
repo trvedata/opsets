@@ -36,13 +36,15 @@ Even though the merge in Figure~\ref{fig:bad-merge} is so obviously undesirable,
 
 \begin{proposition}\label{prop:attiya-allows-interleaving}
     The $\mathcal{A}_\textsf{strong}$ specification of collaborative text editing by Attiya et al. \cite{Attiya:2016kh} allows the outcome in Figure~\ref{fig:bad-merge}.
-    Moreover, the text editing CRDT algorithms Treedoc \cite{Preguica:2009fz}, WOOT \cite{Oster:2006wj}, Logoot \cite{Weiss:2010hx}, and LSEQ \cite{Nedelec:2013ky,Nedelec:2016eo} also allow the outcome in Figure~\ref{fig:bad-merge}.
+    Moreover, the text editing CRDT algorithms Logoot \cite{Weiss:2009ht,Weiss:2010hx} and LSEQ \cite{Nedelec:2013ky,Nedelec:2016eo} also allow the outcome in Figure~\ref{fig:bad-merge}.
 \end{proposition}
 \begin{proof}
     Follows directly from the respective definitions, which are all based on the idea of assigning each character a position in a totally ordered identifier space, such that the order of identifiers corresponds to the order of characters in the document.
     When a new character is inserted, it is assigned an identifier that lies between the identifiers of its predecessor and successor.
     However, when concurrent insertions with the same predecessor and successor are performed, those insertions are ordered arbitrarily.
     Repeated insertions within the same predecessor-successor interval may thus be interleaved arbitrarily.
+
+    We also performed tests with open source implementations of Logoot \cite{AhmedNacer:2011ke,ReplicationBenchmark} and LSEQ \cite{LSEQTree,Nedelec:2016eo}, and observed interleaving occurring in practice.
 \end{proof}
 
 Rather than interleaving characters, a better approach to merging is to keep all insertions by a particular user together as a continuous sequence.
@@ -125,7 +127,7 @@ The IDs are arbitrary; we only require $id_0 < id_1 < id_2 < id_3 < id_4$.}\labe
 \end{proof}
 
 \begin{proposition}
-    The RGA algorithm \cite{Roh:2011dw} satisfies the OpSet list specification introduced in this paper, while Treedoc \cite{Preguica:2009fz}, WOOT \cite{Oster:2006wj}, Logoot \cite{Weiss:2010hx}, and LSEQ \cite{Nedelec:2013ky,Nedelec:2016eo} do not.
+    The RGA algorithm \cite{Roh:2011dw} satisfies the OpSet list specification introduced in this paper, while Logoot \cite{Weiss:2009ht,Weiss:2010hx} and LSEQ \cite{Nedelec:2013ky,Nedelec:2016eo} do not.
 \end{proposition}
 \begin{proof}
     We use Isabelle/HOL to prove that RGA satisfies our specification.
