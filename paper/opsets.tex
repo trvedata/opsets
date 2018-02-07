@@ -44,12 +44,13 @@ Regular Paper
 
 \begin{abstract}
 This paper introduces OpSets, a new framework for specifying and reasoning about the semantics of replicated datatypes that provide eventual consistency in a distributed system.
-First, we show our approach is simpler than previous work by using OpSets to succinctly specify a variety of abstract data types, including maps, sets, lists, text, graphs, trees, and registers.
-Our data types are also composable, enabling the construction of complex data structures such as a list of maps.
+First, we show that our approach is simpler than previous work by using OpSets to succinctly specify a variety of abstract datatypes, including maps, sets, lists, text, graphs, trees, and registers.
+Our datatypes are also composable, enabling the construction of complex data structures such as a list of maps.
 We then demonstrate the utility of OpSets as a tool to support the analysis of existing algorithms for eventual consistency.
-In particular, we highlight an important new correctness property in collaborative text editing.
-This property has traditionally been overlooked and can result in awkward interleaving of text, and we use OpSets to specify the required correctness property and prove that one existing algorithm supports this property while other published algorithms do not. 
-Finally, we also show how OpSets can be used to make improvements in the state-of-the-art, by providing a simple specification of an atomic move operation for complex abstract datatypes, something which had previously been thought impossible without locking.
+In particular, we highlight an important new correctness property for collaborative text editing, which has traditionally been overlooked.
+Algorithms that do not satisfy this property can exhibit awkward interleaving of text.
+We use OpSets to specify the required correctness property and prove that one existing algorithm satisfies this property, while other published algorithms do not.
+Finally, we also show how OpSets can be used to develop new replicated datatypes, by providing a simple specification of an atomic move operation for trees, an operation that had previously been thought to be impossible to implement without locking.
 We use the Isabelle/HOL proof assistant throughout to formalise the OpSets approach and produce mechanised proofs of correctness of the main claims in this paper, thereby eliminating the ambiguity of previous informal approaches and ruling out reasoning errors that could occur in handwritten proofs.
 \end{abstract}
 \clearpage
@@ -101,6 +102,13 @@ By using mechanised proofs we eliminate the ambiguity of previous informal appro
 \section{Conclusion}
 
 TODO
+
+\subsection*{Acknowledgements}
+
+The authors wish to acknowledge the support of The Boeing Company,
+the EPSRC ``REMS: Rigorous Engineering for Mainstream Systems'' programme grant (EP/K008528), and
+the EPSRC ``Interdisciplinary Centre for Finding, Understanding and Countering Crime in the Cloud'' grant (EP/M020320).
+We thank KC Sivaramakrishnan for his helpful feedback on this paper.
 
 \bibliographystyle{plainnat}
 \bibliography{references}{}
