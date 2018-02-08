@@ -8,17 +8,17 @@ We outline the general approach in this section, before describing concrete data
 We assume that the system consists of a set of \emph{nodes} connected by a network.
 These nodes concurrently access some \emph{shared data structure}, which may be a relational database (consisting of rows in tables), a text document (a sequence of characters), a vector-graphics document (a tree of records describing graphical objects), a filesystem (a tree of directories and files), or any other kind of data structure.
 
-We assume that each node has a local copy of the shared data structure, which it can read and modify without locking or any other coordination with other nodes.
+We assume that each node has a local copy of the shared data structure, which it can read and modify without distributed locking or any other coordination with other nodes.
 Whenever a node makes a modification to that structure, it records the change as an \emph{operation}.
 For example, an operation may describe a particular insertion at a particular position in a text document.
 
-We assume that each operation has a unique identifier, and that we have a total ordering on operation identifiers.
+We assume that each operation has a unique identifier (ID), and that we have a total ordering on operation IDs.
 This total order is a linear extension of the partial order that captures their causal dependencies (the \emph{happens-before} relation).
-That is, whenever a node changes the shared data and generates a new operation, the identifier of the new operation must be greater than that of any existing operation in the OpSet of the node generating the new operation.
-This requirement can easily be met by using Lamport timestamps \cite{Lamport:1978jq} as identifiers, and is therefore reasonable.
+That is, whenever a node changes the shared data and generates a new operation, the ID of the new operation must be greater than that of any existing operation in the OpSet of the node generating the new operation.
+This requirement can easily be met by using Lamport timestamps \cite{Lamport:1978jq} as IDs.
 
 Each node locally maintains a set of operations, the \emph{OpSet}.
-Whenever a node makes a change, it adds the corresponding operation to its OpSet, and also broadcasts the operation to other nodes.
+Whenever a node makes a change, it adds the corresponding operation to its OpSet, and also sends the operation to other nodes.
 Whenever a node receives an operation from another node, that operation is also added to the recipient's local OpSet.
 Any operations that are lost in the network are retransmitted as necessary.
 Operations remain immutable throughout this process.
@@ -27,10 +27,10 @@ Thus, the OpSet at each node is a monotonically growing set of operations, and e
 %(To deal with unbounded growth, we discuss garbage collection later in this paper.)
 Any two communicating nodes can merge their OpSets using the standard set union operator $\cup$, which is commutative, associative, and idempotent, ensuring that communicating nodes converge towards the same OpSet contents.
 
-\subsection{Data Structures as Queries}\label{sec:queries}
+\subsection{Interpreting an OpSet}\label{sec:op-serial}
 
-Most formulations of operation-based CRDTs describe how a node's local state is manipulated as a result of operations \cite{Shapiro:2011wy,Shapiro:2011un}.
-We now depart from this convention and present an alternative formulation of replicated data structures.
+Most definitions of operation-based CRDTs describe how a node's local state is manipulated by operations \cite{Shapiro:2011wy,Shapiro:2011un}.
+We now depart from this convention and present an alternative formulation of replicated datatypes.
 
 In the OpSets approach, we require that the shared data structure is never manipulated directly.
 Instead, we use an \emph{interpretation function} $\llbracket O \rrbracket$ that takes an OpSet $O$ and returns the current state of the shared data structure described by the OpSet.
@@ -39,8 +39,6 @@ All nodes in the system employ the same interpretation function.
 
 Consequently, whenever any two nodes have the same OpSet $O$, their view of the shared data structure $\llbracket O \rrbracket$ must also be equal.
 This construction trivially ensures eventual consistency: as two nodes converge towards the same OpSet contents, any data structure that is deterministically derived from the OpSet must also converge.
-
-\subsection{Sequential Interpetation of Operations}\label{sec:op-serial}
 
 In principle, any deterministic function can serve as interpretation function $\llbracket O \rrbracket$ of the OpSet $O$.
 However, in defining the semantics of CRDTs (see Sections~\ref{sec:datatypes} and~\ref{sec:tree}), we have found it useful to specialise $\llbracket O \rrbracket$ such that we can interpret one operation at a time.
@@ -68,7 +66,7 @@ For example, if $\mathit{id}_1 < \mathit{id}_2 < \mathit{id}_3$, we have:
     (\mathit{id}_1,\ \mathit{op}_1)\big],\,
     (\mathit{id}_2,\ \mathit{op}_2)\big],\,
     (\mathit{id}_3,\ \mathit{op}_3)\big] \]
-Provided that the operation interpretation $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is deterministic, $\llbracket O \rrbracket$ is also deterministic, due to the fact that the operation order in $O$ is unique.
+Provided that the operation interpretation $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is deterministic, the OpSet interpretation function $\llbracket\dots\rrbracket$ is also deterministic, due to the fact that the operation order in the OpSet is unique.
 
 Note that, unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ to commute with respect to other operations: any pure function can be used.
 This fact makes it much simpler to specify the interpretation of operations, as we shall see in Sections~\ref{sec:datatypes} and~\ref{sec:tree}.

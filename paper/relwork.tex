@@ -1,19 +1,10 @@
 \section{Related Work}\label{sec:relwork}
 
-Algorithms for collaboratively editing a shared data structure have been the topic of active research for approximately 30 years, under the headings of Operational Transformation \cite{Ellis:1989ue,Nichols:1995fd,Ressel:1996wx,Sun:1998un,Sun:1998vf,Suleiman:1997gl,Suleiman:1998eu,Vidot:2000ch,Imine:2003ks,Li:2004er,Li:2008hw,Oster:2006tr} and CRDTs \cite{Shapiro:2011wy,Shapiro:2011un,Roh:2011dw,Preguica:2009fz,Oster:2006wj,Weiss:2010hx,Nedelec:2013ky,Nedelec:2016eo,Grishchenko:2014eh,Kleppmann:2016ve}.
-
+Algorithms for collaboratively editing a shared data structure have been the topic of active research for approximately 30 years, under the headings of Operational Transformation \cite{Ellis:1989ue,Ressel:1996wx,Sun:1998vf,Oster:2006tr} and CRDTs \cite{Shapiro:2011wy,Shapiro:2011un}.
 However, throughout this time, the exact consistency properties provided by the algorithms have been somewhat unclear.
 For example, Sun et al.~\cite{Sun:1998un} identified three desirable properties that they articulated informally: \emph{convergence}, \emph{causality preservation}, and \emph{intention preservation}.
 While the definition of the first two properties is fairly unambiguous, the definition of ``intention preservation'' leaves much more room for interpretation.
-Sun et al.\ define it as follows \cite{Sun:1998un}:
-\begin{displayquote}
-For any operation $O$, the effects of executing $O$ at all sites are the same as the intention of $O$, and the effect of executing $O$ does not change the effects of independent operations.
-\end{displayquote}
-where the term \emph{intention} is in turn defined as:
-\begin{displayquote}
-The intention of an operation $O$ is the execution effect which can be achieved by applying $O$ on the document state from which $O$ was generated.
-\end{displayquote}
-Efforts to formally specify and verify the semantics of replicated datatypes have replaced informal statements of this type with more precise definitions of consistency properties.
+Efforts to formally specify and verify the semantics of replicated datatypes have replaced such informal statements with precise definitions of consistency properties.
 
 \subsection{Specification and Verification}
 
