@@ -87,7 +87,7 @@ We can guarantee the existence of an implementation of each described datatype: 
 This is in contrast to axiomatic specifications, which may not be implementable, and require additional work to demonstrate than an implementation exists which satisfies the axiomatic description.
 \end{enumerate}
 
-For an implementation, each node retaining an explicit OpSet may induce poor performance since the node must potentially apply the same subset of operations repeatedly.
+For an \emph{implementation}, each node retaining an explicit OpSet may induce poor performance, depending on the use-case and application, since nodes must potentially apply the same subset of operations repeatedly.
 More efficient (and, most likely, more complex) algorithms for CRDTs can therefore be developed and shown to satisfy the OpSet-based specification---we do this in Section~\ref{sec:datatypes}.
-We note however that an implementation retaining explicit OpSets provides a straightforward mechanism for recovering from network partitions and failures: missing operations may be retransmitted and added to the OpSets of previously partitioned nodes.
-Similarly, when a new node joins the network, it can be initialised with the union of OpSets of existing nodes.
+However, building an implementation around OpSets does have some advantages: for example, using OpSets provides a straightforward mechanism for recovering from network partitions and failures, as missing operations may be retransmitted and added to the OpSets of previously partitioned nodes.
+Similarly, new nodes joining a network can also be initialised with the union of OpSets of existing nodes.
