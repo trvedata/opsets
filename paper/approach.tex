@@ -77,7 +77,7 @@ $\big\llbracket \{(\mathit{id}',\, \mathit{op}') \in O \mid \mathit{id}' < \math
 then apply the new operation $(\mathit{id},\, \mathit{op})$, and finally re-apply all operations with greater IDs.
 
 Our interpretation functions can be seen as \emph{executable specifications} that define the expected result of interpreting a set of operations.
-We argue that presenting replicated datatypes in this manner has two significant advantages:
+Presenting replicated datatypes in this manner has two significant advantages:
 \begin{enumerate}
 \item
 Unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for the interpretation function $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ to commute with respect to other operations: any pure function can be used.

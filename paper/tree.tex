@@ -11,8 +11,8 @@ On the other hand, if two users concurrently move the same item to different loc
 A tree is a restricted form of the object graph specified in Section~\ref{sec:datatypes}.
 First, we require that there is a designated root object: assume that we have an operation ID $\mathsf{root}$ that is less than all other operation IDs (according to the total order on identifiers, introduced in Section~\ref{sec:system-model}).
 Further assume that for any OpSet $O$ specifying a tree, we have either $(\mathsf{root},\, \mathsf{MakeList}) \in O$ or $(\mathsf{root},\, \mathsf{MakeMap}) \in O$, depending on whether the root node is a list or a map.
-We can then define an object $x$ to be the \emph{parent} of an object $y$ if one of the values in $x$ is a reference to $y$.
-The \emph{ancestor} relation is the transitive closure of the parent relation, which we can define using the element relation $E$:
+We define an object $x$ to be the \emph{parent} of an object $y$ if one of the values in $x$ is a reference to $y$.
+The \emph{ancestor} relation is the transitive closure of the parent relation, defined using the element relation $E$:
 \begin{align*}
     \mathrm{parent}(E,\, i) &=
     \begin{cases}
