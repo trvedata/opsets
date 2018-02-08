@@ -98,16 +98,18 @@ By using mechanised proofs we eliminate the ambiguity of previous informal appro
 
 \section{Conclusion}
 
-In this work we have introduced Operation Sets (or OpSets for short), a novel approach for specifying the semantics of replicated datatypes, and reasoning about algorithms for concurrent data access and manipulation, and using our abstraction we have specified a variety of abstract replicated datatypes.
-Our use of mechanised proof removes any potential ambiguity in our specifications and eliminates reasoning errors.
+In this work we have introduced Operation Sets (OpSets), a simple but expressive approach for specifying the semantics of replicated datatypes.
+We specified a variety of common replicated datatypes in the OpSets model, and used the Isabelle/HOL proof assistant to formally reason about their properties.
+In particular, we highlighted an interleaving anomaly that afflicts some collaborative text editing algorithms, but which is ruled out by our specification.
 
 The OpSets approach is a form of executable specification that precisely defines the permitted states of a replica after some set of updates has been applied.
-We have proved that the RGA algorithm satisfies our list specification; as a CRDT, RGA allows operations to be applied in any causal order while our specification defines the interpretation of operations in strictly ascending order of ID.
-For future work it will be interesting to explore whether other datatype specifications can be translated into commutative CRDT implementations.
+In our sequential OpSet interpetation, operations are applied in strictly ascending order of ID; on the other hand, a CRDT allows operations to be applied in any causal order due to their commutativity.
+For the list datatype we demonstrated this correspondence between sequential specification and commutative implementation, proving that the RGA CRDT satisfies our OpSet specification of lists.
+For future work it will be interesting to further explore this correspondence for other datatypes; in particular, we hypothesise that it is possible to derive a tree CRDT with a commutative move operation from the specification in Section~\ref{sec:tree}.
 
-Finally, one can regard the OpSet as a \emph{database of facts}, containing all changes ever made to the shared data, and the interpretation function a \emph{query} over this database, with the resulting datatype a \emph{materialized view} in database terminology.
-When new operations are added to an OpSet $O$, computing the corresponding change to $\llbracket O \rrbracket$ is a \emph{materialized view maintenance} problem, which has been studied extensively in the database literature \cite{Gupta:1999uz}.
-We have found that thinking about replicated datatypes as materialized views onto an OpSet a useful perspective for understanding and improving replication algorithms, and in future work we aim to explore this idea more fully.
+%More generally, one can regard the OpSet as a \emph{database of facts}, containing all changes ever made to the shared data, and the interpretation function a \emph{query} over this database, with the resulting datatype being a \emph{materialized view} in database terminology.
+%When new operations are added to an OpSet $O$, computing the corresponding change to $\llbracket O \rrbracket$ is a \emph{materialized view maintenance} problem, which has been studied extensively in the database literature \cite{Gupta:1999uz}.
+%We have found that thinking about replicated datatypes as materialized views onto an OpSet a useful perspective for understanding and improving replication algorithms, and in future work we aim to explore this idea more fully.
 
 \subsection*{Acknowledgements}
 
