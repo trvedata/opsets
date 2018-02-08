@@ -64,7 +64,7 @@ On the other hand, \emph{eventual consistency} \cite{Bailis:2013jc,Burckhardt:20
 The premise \emph{if no new updates are made} may never be true, for example if the shared state is continually modified because the system is never quiescent.
 Moreover, the final state that is eventually reached is unconstrained: nothing in the definition of eventual consistency specifies which states are legal.
 
-Conflict-free Replicated Data Types, or CRDTs \cite{Shapiro:2011wy,Shapiro:2011un}, are abstractions for replicated state that have received significant attention in recent years (see Section~\ref{sec:relwork}).
+Conflict-free Replicated Data Types, or CRDTs \cite{Shapiro:2011wy,Shapiro:2011un}, are abstractions for replicated state that have received significant attention in recent years (see \S~\ref{sec:relwork}).
 The primary correctness property for CRDTs is \emph{convergence} \cite{Shapiro:2011un,Gomes:2017gy}, defined as: \emph{``whenever any two replicas have applied the same set of updates, they are in the same state''} (even if each replica applies the updates in a different order).
 Convergence is a stronger property than eventual consistency, but it also fails to define what the converged state should be.
 
@@ -74,14 +74,14 @@ We go beyond merely ensuring replica convergence: the OpSets approach is a form 
 Our contributions in this paper are as follows:
 
 \begin{itemize}
-\item In Section~\ref{sec:approach} we introduce the OpSet, a new abstraction for specifying and reasoning about the consistency properties of concurrently editable data structures.
-On top of this abstraction, we specify a variety of abstract datatypes (maps, sets, lists, text, graphs, trees, and registers) in Sections~\ref{sec:datatypes} and~\ref{sec:tree}, and we argue that our specifications are both simple and precise, making them a suitable tool for reasoning about replicated data.
+\item In \S~\ref{sec:approach} we introduce the OpSet, a new abstraction for specifying and reasoning about the consistency properties of concurrently editable data structures.
+On top of this abstraction, we specify a variety of abstract datatypes (maps, sets, lists, text, graphs, trees, and registers) in \S~\ref{sec:datatypes} and \S~\ref{sec:tree}, and we argue that our specifications are both simple and precise, making them a suitable tool for reasoning about replicated data.
 
-\item In Section~\ref{sec:bad-merge} we highlight an important correctness property for collaborative text editing that has been overlooked by prior work in this area.
+\item In \S~\ref{sec:bad-merge} we highlight an important correctness property for collaborative text editing that has been overlooked by prior work in this area.
 Our specification is, to our knowledge, the first that correctly captures this property.
 We then review a selection of text editing CRDTs from the literature, prove that one satisfies our specification, and identify several others that fail to satisfy our correctness property.
 
-\item In Section~\ref{sec:tree} we demonstrate, for the first time, how an atomic move operation can be defined for a tree CRDT.
+\item In \S~\ref{sec:tree} we demonstrate, for the first time, how an atomic move operation can be defined for a tree CRDT.
 This operation can be used to move a subtree to a new position within the tree, or to rename a key in a map, or to reorder items in a list.
 The OpSets approach enables a simple definition of this operation that had previously been thought impossible without locking \cite{Najafzadeh:2017vk}.
 
@@ -105,7 +105,7 @@ In particular, we highlighted an interleaving anomaly that afflicts some collabo
 The OpSets approach is a form of executable specification that precisely defines the permitted states of a replica after some set of updates has been applied.
 In our sequential OpSet interpretation, operations are applied in strictly ascending order of ID; on the other hand, a CRDT allows operations to be applied in any causal order due to their commutativity.
 For the list datatype we demonstrated this correspondence between sequential specification and commutative implementation, proving that the RGA CRDT satisfies our OpSet specification of lists.
-For future work it will be interesting to further explore this correspondence for other datatypes; in particular, we hypothesise that it is possible to derive a tree CRDT with a commutative move operation from the specification in Section~\ref{sec:tree}.
+For future work it will be interesting to further explore this correspondence for other datatypes; in particular, we hypothesise that it is possible to derive a tree CRDT with a commutative move operation from the specification in \S~\ref{sec:tree}.
 
 %More generally, one can regard the OpSet as a \emph{database of facts}, containing all changes ever made to the shared data, and the interpretation function a \emph{query} over this database, with the resulting datatype being a \emph{materialized view} in database terminology.
 %When new operations are added to an OpSet $O$, computing the corresponding change to $\llbracket O \rrbracket$ is a \emph{materialized view maintenance} problem, which has been studied extensively in the database literature \cite{Gupta:1999uz}.

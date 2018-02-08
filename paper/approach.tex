@@ -1,7 +1,7 @@
 \section{The OpSets Approach}\label{sec:approach}
 
 The OpSets approach is a simple abstraction for describing the consistency properties of a replicated data system.
-We outline the general approach in this section, before describing concrete data structures and specifications in Sections~\ref{sec:datatypes} and~\ref{sec:tree}.
+We outline the general approach in this section, before describing concrete data structures and specifications in \S~\ref{sec:datatypes} and \S~\ref{sec:tree}.
 
 \subsection{System Model}\label{sec:system-model}
 
@@ -41,10 +41,10 @@ Consequently, whenever any two nodes have the same OpSet $O$, their view of the 
 This construction trivially ensures eventual consistency: as two nodes converge towards the same OpSet contents, any data structure that is deterministically derived from the OpSet must also converge.
 
 In principle, any deterministic function can serve as interpretation function $\llbracket O \rrbracket$ of the OpSet $O$.
-However, in defining the semantics of CRDTs (see Sections~\ref{sec:datatypes} and~\ref{sec:tree}), we have found it useful to specialise $\llbracket O \rrbracket$ such that we can interpret one operation at a time.
+However, in defining the semantics of CRDTs (see \S~\ref{sec:datatypes} and \S~\ref{sec:tree}), we have found it useful to specialise $\llbracket O \rrbracket$ such that we can interpret one operation at a time.
 
 Let the OpSet $O$ be a set of pairs $(\mathit{id},\, \mathit{op})$, where $\mathit{id}$ is a unique operation identifier and $\mathit{op}$ is an arbitrary description of the change that occurred.
-Assume that we have a total ordering $<$ on identifiers, as explained in Section~\ref{sec:system-model}.
+Assume that we have a total ordering $<$ on identifiers, as explained in \S~\ref{sec:system-model}.
 Then observe that for any OpSet there exists a unique sequence of operations, containing all operations of the OpSet in ascending order of their identifier.
 We can specify the semantics of each operation~--- that is, the effect of the operation on the query result~--- when applied in this sequential order.
 
@@ -81,13 +81,13 @@ Presenting replicated datatypes in this manner has two significant advantages:
 \begin{enumerate}
 \item
 Unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for the interpretation function $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ to commute with respect to other operations: any pure function can be used.
-This fact makes it much simpler to specify the interpretation of operations, as we shall see in Sections~\ref{sec:datatypes} and~\ref{sec:tree}.
+This fact makes it much simpler to specify the interpretation of operations, as we shall see in \S~\ref{sec:datatypes} and \S~\ref{sec:tree}.
 \item
 We can guarantee the existence of an implementation of each described datatype: the specification itself.
 This is in contrast to axiomatic specifications, which may not be implementable, and require additional work to demonstrate than an implementation exists which satisfies the axiomatic description.
 \end{enumerate}
 
 For an \emph{implementation}, each node retaining an explicit OpSet may induce poor performance, depending on the use-case and application, since nodes must potentially apply the same subset of operations repeatedly.
-More efficient (and, most likely, more complex) algorithms for CRDTs can therefore be developed and shown to satisfy the OpSet-based specification---we do this in Section~\ref{sec:datatypes}.
+More efficient (and, most likely, more complex) algorithms for CRDTs can therefore be developed and shown to satisfy the OpSet-based specification---we do this in \S~\ref{sec:datatypes}.
 However, building an implementation around OpSets does have some advantages: for example, using OpSets provides a straightforward mechanism for recovering from network partitions and failures, as missing operations may be retransmitted and added to the OpSets of previously partitioned nodes.
 Similarly, new nodes joining a network can also be initialised with the union of OpSets of existing nodes.

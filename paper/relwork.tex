@@ -40,7 +40,7 @@ Mukund et al.~\cite{DBLP:conf/atva/MukundRS15} use traces to provide bounded dec
 For collaborative editing of tree data structures, several CRDTs \cite{Martin:2010ih,Kleppmann:2016ve} and Operational Transformation algorithms \cite{Jungnickel:2016cb,Ignat:2003jy,Davis:2002iv} have been proposed.
 However, most of them only consider insertion and deletion of tree nodes, but do not support a move operation.
 
-As explained in Section~\ref{sec:tree}, supporting an operation that can move a subtree to a new location within a tree introduces new conflicts that need to be handled.
+As explained in \S~\ref{sec:tree}, supporting an operation that can move a subtree to a new location within a tree introduces new conflicts that need to be handled.
 Ahmed-Nacer et al.~\cite{AhmedNacer:2012us} survey approaches to handling these conflicts without providing concrete algorithms.
 Tao et al.~\cite{Tao:2015gd} propose handling conflicting move operations by allowing the same object to appear in more than one location; thus, their datatype is strictly a DAG, not a tree.
 
@@ -48,5 +48,5 @@ Najafzadeh~\cite{Najafzadeh:2017vk} asserts that concurrent move operations on a
 Najafzadeh suggests the use of locks to globally synchronise move operations, preventing a scenario such as that in Figure~\ref{fig:concurrent-move} from ever occurring.
 However, the resulting datatype is not strictly a CRDT, since some operations require strongly consistent synchronisation.
 
-To our knowledge, our move semantics specified in Section~\ref{sec:tree} is the first definition of such an operation on a fully asynchronous tree CRDT.
+To our knowledge, our move semantics specified in \S~\ref{sec:tree} is the first definition of such an operation on a fully asynchronous tree CRDT.
 We avoid the apparent contradiction with Najafzadeh's assertion by evaluating the precondition $(\mathit{val},\, \mathit{obj}) \notin \mathrm{ancestor}(E)$ at the same time as applying the operation, rather than at the time when the operation is generated, and by applying all operations in the OpSet in a deterministic order.

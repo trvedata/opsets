@@ -4,7 +4,7 @@ The datatypes we have specified can support a wide range of applications.
 For example, the list datatype can be used to implement a collaborative text editor: by treating the text as a list of individual characters, every edit can be expressed as a sequence of insertion or deletion operations on the list.
 
 The problem of collaborative text editing has been studied extensively, using two main approaches: Operational Transformation and CRDTs.
-We discuss this prior work in Section~\ref{sec:relwork}.
+We discuss this prior work in \S~\ref{sec:relwork}.
 We will now highlight a scenario that, to our knowledge, has not been considered by any previous work on collaborative text editing.
 
 Consider the execution illustrated in Figure~\ref{fig:bad-merge}.
@@ -52,7 +52,7 @@ With this constraint, there are two acceptable merged results in the example of 
 The choice between these two outcomes is arbitrary, as there is no \emph{a priori} requirement for one user's insertions to come before the other's.
 
 \begin{proposition}\label{prop:no-interleaving}
-    The list specification from Section~\ref{sec:datatypes} does not allow the outcome in Figure~\ref{fig:bad-merge}.
+    The list specification from \S~\ref{sec:datatypes} does not allow the outcome in Figure~\ref{fig:bad-merge}.
 \end{proposition}
 \begin{proof}
     A machine-checked formal proof using Isabelle/HOL is included in the appendix.
@@ -68,7 +68,7 @@ All other operations can be reordered without affecting the outcome.
 Thus, even if the inserted strings are longer than two characters, their relative ordering only depends on the IDs of their first character.
 The remaining characters follow their initial character without interleaving.
 
-Note that there are only six possible orderings of the four operations, and not $4! = 24$, because (as discussed in Section~\ref{sec:system-model}) we require that the ordering on identifiers is a linear extension of the causal order.
+Note that there are only six possible orderings of the four operations, and not $4! = 24$, because (as discussed in \S~\ref{sec:system-model}) we require that the ordering on identifiers is a linear extension of the causal order.
 In this example we assume that text is typed from left to right (that is, ``A'' is always inserted before ``l'', and ``C'' is inserted before ``h'').
 This implies that the ID of the operation inserting ``l'' must be greater than that of the insertion of ``A'', and likewise the ``h'' insertion must be greater than the ``C'' insertion.
 

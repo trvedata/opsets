@@ -5,7 +5,7 @@ The map datatype can also represent a set (by using keys as members of the set, 
 The list datatype can also represent text (by mapping each character to a list element).
 In both lists and maps the values may be primitives (such as numbers or strings), or references to other map or list objects.
 Using these references we can construct arbitrary object graphs, including cycles of object references, like in object-oriented programming languages.
-In Section~\ref{sec:tree} we will show how to restrict this object graph so that it conforms to a tree structure.
+In \S~\ref{sec:tree} we will show how to restrict this object graph so that it conforms to a tree structure.
 
 We treat each key of a map, and each element of a list, as a multi-value register.
 That is, if there are several concurrent assignments to the same map key or list element, our datatype preserves all concurrently written values.
@@ -114,7 +114,7 @@ An OpSet for these datatypes may contain six types of operation:
 \noindent
 Listing~\ref{fig:pseudocode} gives pseudocode for functions that generate these operations.
 The first parameter $O$ of each function is the OpSet that defines the current state of the node, and the functions return an updated OpSet containing new operations.
-The interpretation $\llbracket O \rrbracket$ returns a pair $(E,\, L)$ as defined in Section~\ref{sec:datatypes-interp}.
+The interpretation $\llbracket O \rrbracket$ returns a pair $(E,\, L)$ as defined in \S~\ref{sec:datatypes-interp}.
 The function $\mathrm{newID}(O)$ returns a unique ID (e.g.\ a Lamport timestamp) that is greater than any existing ID in the OpSet $O$.
 
 The function \textsc{setMapKey} can be called by a user to update a map object with ID $\mathit{map}$, setting a key $\mathit{key}$ to a value $\mathit{val}$.
@@ -124,11 +124,11 @@ Finally, the function returns the OpSet with the $\mathsf{Assign}$ operation inc
 The other function definitions follow a similar pattern.
 
 The list manipulation functions \textsc{setListIndex}, \textsc{insertListIndex} and \textsc{removeListIndex} take a numeric index as argument to identify the position in the list being edited.
-The numeric index is translated into the ID of a list element using the function $\mathrm{idxKey}_{E,\, L}()$, which is defined in Section~\ref{sec:datatypes-interp}.
+The numeric index is translated into the ID of a list element using the function $\mathrm{idxKey}_{E,\, L}()$, which is defined in \S~\ref{sec:datatypes-interp}.
 
 \subsection{Interpreting Operations}\label{sec:datatypes-interp}
 
-We use the sequential OpSet interpretation given in Section~\ref{sec:op-serial}.
+We use the sequential OpSet interpretation given in \S~\ref{sec:op-serial}.
 To encode the current state of map and list data structures we use a pair of relations $(E,\, L)$:
 \begin{description}
     \item[The element relation $E \subseteq (\mathrm{ID} \times \mathrm{ID} \times (\mathrm{ID} \cup \mathrm{Key}) \times \mathrm{ID})$]

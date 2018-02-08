@@ -1,15 +1,15 @@
 \section{Specifying a Tree Datatype}\label{sec:tree}
 
 Tree data structures are useful in many applications: for example, file systems (consisting of directories and files) and XML or JSON documents are trees.
-In this section we build upon the data structures of Section~\ref{sec:datatypes} to specify a collaboratively editable tree datatype.
+In this section we build upon the data structures of \S~\ref{sec:datatypes} to specify a collaboratively editable tree datatype.
 Branch nodes in this tree may be either maps or lists, and leaf nodes are primitive values (wrapped in a $\mathsf{MakeVal}$ operation).
 
 Unlike previous CRDTs for tree data structures \cite{Martin:2010ih,Kleppmann:2016ve}, our datatype supports an \emph{atomic move} operation, which can move an entire subtree to a new location, or rename a key in a map, or reorder items in a list.
 Moving an item is not the same as deleting it and re-inserting it in a new location: if two users concurrently delete and re-insert the same item, it would be duplicated.
 On the other hand, if two users concurrently move the same item to different locations, the move operation with the greater ID will determine the item's final location.
 
-A tree is a restricted form of the object graph specified in Section~\ref{sec:datatypes}.
-First, we require that there is a designated root object: assume that we have an operation ID $\mathsf{root}$ that is less than all other operation IDs (according to the total order on identifiers, introduced in Section~\ref{sec:system-model}).
+A tree is a restricted form of the object graph specified in \S~\ref{sec:datatypes}.
+First, we require that there is a designated root object: assume that we have an operation ID $\mathsf{root}$ that is less than all other operation IDs (according to the total order on identifiers, introduced in \S~\ref{sec:system-model}).
 Further assume that for any OpSet $O$ specifying a tree, we have either $(\mathsf{root},\, \mathsf{MakeList}) \in O$ or $(\mathsf{root},\, \mathsf{MakeMap}) \in O$, depending on whether the root node is a list or a map.
 We define an object $x$ to be the \emph{parent} of an object $y$ if one of the values in $x$ is a reference to $y$.
 The \emph{ancestor} relation is the transitive closure of the parent relation, defined using the element relation $E$:
@@ -25,7 +25,7 @@ The \emph{ancestor} relation is the transitive closure of the parent relation, d
 \end{align*}
 
 An object graph is a tree if the root has no parent, every non-root node has exactly one parent, and if the ancestor relation has no cycles.
-We can redefine the operation interpretations from Section~\ref{sec:datatypes-interp} to preserve this tree invariant.
+We can redefine the operation interpretations from \S~\ref{sec:datatypes-interp} to preserve this tree invariant.
 In fact, it is sufficient to redefine the interpretation of $\mathsf{Assign}$, and leave the interpretation of the other five operation types unchanged:
 \[
     \mathrm{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big] \;=\; \left\{
@@ -41,12 +41,12 @@ In fact, it is sufficient to redefine the interpretation of $\mathsf{Assign}$, a
     \end{array} \right.
 \]
 
-This definition differs in two ways from that in Section~\ref{sec:datatypes-interp}.
+This definition differs in two ways from that in \S~\ref{sec:datatypes-interp}.
 Firstly, the operation has no effect if the value $\mathit{val}$ is already an ancestor of the proposed parent $\mathit{obj}$, since the operation would otherwise introduce a cycle.
 Secondly, any existing tuple in $E$ that references the same value $\mathit{val}$ is removed, preserving the invariant that every non-root node must have exactly one parent.
 
 Intuitively, this interpretation of $\mathsf{Assign}$ performs an atomic move whenever $\mathit{val}$ is the ID of an existing object in the tree; in that case, it is moved from its existing position to the key $\mathit{key}$ in the object $\mathit{obj}$.
-If $\mathit{val}$ does not currently exist in the tree (e.g.\ because it has just been freshly created), the operation behaves like conventional assignment.
+If $\mathit{val}$ does not currently exist in the tree (e.g.\ because it has just been created), the operation behaves like conventional assignment.
 
 \subsection{Discussion: Subtree Move Conflicts}
 
