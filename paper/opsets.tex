@@ -75,7 +75,7 @@ Our contributions in this paper are as follows:
 
 \begin{itemize}
 \item In Section~\ref{sec:approach} we introduce the OpSet, a new abstraction for specifying and reasoning about the consistency properties of concurrently editable data structures.
-On top of this abstraction, we specify a variety of abstract datatypes (maps, sets, lists, text, graphs, trees, and registers) in Sections~\ref{sec:datatypes} and~\ref{sec:tree}, and we argue that our specification is both simpler and more precise than previous efforts to specify the semantics of these data structures.
+On top of this abstraction, we specify a variety of abstract datatypes (maps, sets, lists, text, graphs, trees, and registers) in Sections~\ref{sec:datatypes} and~\ref{sec:tree}, and we argue that our specifications are both simple and precise, making them a suitable tool for reasoning about replicated data.
 
 \item In Section~\ref{sec:bad-merge} we highlight an important correctness property for collaborative text editing that has been overlooked by prior work in this area.
 Our specification is, to our knowledge, the first that correctly captures this property.
@@ -83,7 +83,7 @@ We then review a selection of text editing CRDTs from the literature, prove that
 
 \item In Section~\ref{sec:tree} we demonstrate, for the first time, how an atomic move operation can be defined for a tree CRDT.
 This operation can be used to move a subtree to a new position within the tree, or to rename a key in a map, or to reorder items in a list.
-The OpSets approach enables a simple definition of this operation that had previously been thought to be impossible without locking \cite{Najafzadeh:2017vk}.
+The OpSets approach enables a simple definition of this operation that had previously been thought impossible without locking \cite{Najafzadeh:2017vk}.
 
 \item Using the Isabelle/HOL proof assistant~\cite{DBLP:conf/tphol/WenzelPN08} we formalise the OpSets approach, producing mechanised proofs of correctness of the main claims in this paper.
 In particular, we prove that our list specification is strictly stronger than the recent specification of collaborative text editing by Attiya et al. \cite{Attiya:2016kh}.
@@ -103,7 +103,7 @@ We specified a variety of common replicated datatypes in the OpSets model, and u
 In particular, we highlighted an interleaving anomaly that afflicts some collaborative text editing algorithms, but which is ruled out by our specification.
 
 The OpSets approach is a form of executable specification that precisely defines the permitted states of a replica after some set of updates has been applied.
-In our sequential OpSet interpetation, operations are applied in strictly ascending order of ID; on the other hand, a CRDT allows operations to be applied in any causal order due to their commutativity.
+In our sequential OpSet interpretation, operations are applied in strictly ascending order of ID; on the other hand, a CRDT allows operations to be applied in any causal order due to their commutativity.
 For the list datatype we demonstrated this correspondence between sequential specification and commutative implementation, proving that the RGA CRDT satisfies our OpSet specification of lists.
 For future work it will be interesting to further explore this correspondence for other datatypes; in particular, we hypothesise that it is possible to derive a tree CRDT with a commutative move operation from the specification in Section~\ref{sec:tree}.
 

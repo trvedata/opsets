@@ -8,25 +8,23 @@ Efforts to formally specify and verify the semantics of replicated datatypes hav
 
 \subsection{Specification and Verification}
 
-Bieniusa et al.~\cite{Bieniusa:2012gt} articulate a \emph{principle of permutation equivalence} that partially specifies the expected semantics of replicated datatypes, but which leaves some combinations of operations unspecified.
-Burckhardt et al.~\cite{Burckhardt:2014ft} give a complete specification of CRDT counters, registers, and sets, and show how to verify that algorithms satisfy these specifications in hand-written proofs.
-Zeller et al.~\cite{Zeller:2014fl} formalise the same datatypes using Isabelle/HOL and provide mechanised proofs of their correctness.
-These papers do not consider lists, maps, or tree datatypes.
+%expand this
+Burckhardt et al.~\cite{Burckhardt:2014ft} give a complete specification of counters, registers, and set CRDTs, and show how to verify that algorithms satisfy these specifications in hand-written proofs.
+Gotsman et al.~\cite{DBLP:conf/popl/GotsmanYFNS16} extend this
+formalism to reason about hybrid consistency models.
+Inspired by permission-based logics, they provide a modular proof rule
+to enforce a desired integrity invariant for a given consistency model.
 
+Bieniusa et al.~\cite{Bieniusa:2012gt} articulate a \emph{principle of permutation equivalence} that partially specifies the expected semantics of replicated datatypes, but which leaves some combinations of operations unspecified.
+Zeller et al.~\cite{Zeller:2014fl} formalise counters, registers, and sets using Isabelle/HOL and provide mechanised proofs of their correctness.
 Gomes et al.~\cite{Gomes:2017gy} establish a formal verification framework for CRDTs in Isabelle/HOL, and verify the strong eventual consistency properties (in particular, convergence) of a list, set, and counter datatype.
 However, the work does not specify the datatype semantics beyond the convergence property.
 
 Attiya et al.~\cite{Attiya:2016kh} give two specifications of collaborative text editing ($\mathcal{A}_\textsf{strong}$ and $\mathcal{A}_\textsf{weak}$), prove that the RGA CRDT \cite{Roh:2011dw} satisfies $\mathcal{A}_\textsf{strong}$, and conjecture that the Operational Transformation algorithm Jupiter \cite{Nichols:1995fd} satisfies $\mathcal{A}_\textsf{weak}$.
 Wei et al.~\cite{Wei:2017tg} complete the proof that Jupiter satisfies $\mathcal{A}_\textsf{weak}$.
 
-Gaducci et al.~\cite{DBLP:conf/coordination/GadducciMR17} also take a relational view of the semantics of replicated datatypes, placing a focus on the compositionality of their semantics.
-In this work, the semantics of a replicated datatype is given as a function from labeled directed acyclic graphs of events to sets of values, with each value in this set potentially observable at a node under different ordering of events observed at that node.
+Gaducci et al.~\cite{DBLP:conf/coordination/GadducciMR17} develop a semantics for replicated datatypes, placing a focus on compositionality, where a replicated datatype is modelled as a function from labeled directed acyclic graphs of events to sets of values, with each value in this set potentially observable at a node under different ordering of events observed at that node.
 A notion of behavioural \emph{refinement} for replicated datatypes induced by set inclusion is also defined, along with a generalisation of their relational semantics to a categorical one.
-
-Gotsman and al.~\cite{DBLP:conf/popl/GotsmanYFNS16} extends Burckhardt et al.'s
-formalism~\cite{Burckhardt:2014ft} to reason about hybrid consistency models.
-Inspired by permission-based logics, they provide a modular proof rule
-to enforce a desired integrity invariant for a given consistency model.
 
 XXX: also~\cite{DBLP:conf/atva/MukundRS15}
 
