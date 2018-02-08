@@ -76,18 +76,18 @@ Instead, the node would have to first compute the interpretation of all operatio
 $\big\llbracket \{(\mathit{id}',\, \mathit{op}') \in O \mid \mathit{id}' < \mathit{id}\} \big\rrbracket$,
 then apply the new operation $(\mathit{id},\, \mathit{op})$, and finally re-apply all operations with greater IDs.
 
-This algorithm may have poor performance, since it must potentially re-apply the same subset of operations repeatedly.
-But the interpretation functions discussed in this paper are not intended to be efficient implementations of replicated datatypes; rather, they are \emph{executable specifications} that define the expected result of interpreting a set of operations.
-We can then develop more efficient (and, most likely, more complex) algorithms for CRDTs, and show that they satisfy the (simpler) specification, as we do in in Section~\ref{sec:datatypes}.
-However, we argue that presenting replicated datatypes in this manner has a number of significant advantages:
+Our interpretation functions can be seen as \emph{executable specifications} that define the expected result of interpreting a set of operations.
+We argue that presenting replicated datatypes in this manner has two significant advantages:
 \begin{enumerate}
 \item
-Unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ to commute with respect to other operations: any pure function can be used.
+Unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for the interpretation function $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ to commute with respect to other operations: any pure function can be used.
 This fact makes it much simpler to specify the interpretation of operations, as we shall see in Sections~\ref{sec:datatypes} and~\ref{sec:tree}.
 \item
-Nodes retaining an explicit set of observed operations provides a simple mechanism for recovering from network partitions and failures: missing operations may be retransmitted and added to the OpSets of previously partitioned nodes.
-Similarly, when a new node joins the network, it can be initialised with the union of OpSets of existing nodes.
-\item
-Our executable specifications guarantee the existence of an implementation of the described datatype, unlike axiomatic specifications, which may not be implementable.
-%They are witnesses of their own specification.
+We can guarantee the existence of an implementation of each described datatype: the specification itself.
+This is in contrast to axiomatic specifications, which may not be implementable, and require additional work to demonstrate than an implementation exists which satisfies the axiomatic description.
 \end{enumerate}
+
+For an implementation, each node retaining an explicit OpSet may induce poor performance since the node must potentially apply the same subset of operations repeatedly.
+More efficient (and, most likely, more complex) algorithms for CRDTs can therefore be developed and shown to satisfy the OpSet-based specification---we do this in Section~\ref{sec:datatypes}.
+We note however that an implementation retaining explicit OpSets provides a straightforward mechanism for recovering from network partitions and failures: missing operations may be retransmitted and added to the OpSets of previously partitioned nodes.
+Similarly, when a new node joins the network, it can be initialised with the union of OpSets of existing nodes.
