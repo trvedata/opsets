@@ -40,11 +40,6 @@ All nodes in the system employ the same interpretation function.
 Consequently, whenever any two nodes have the same OpSet $O$, their view of the shared data structure $\llbracket O \rrbracket$ must also be equal.
 This construction trivially ensures eventual consistency: as two nodes converge towards the same OpSet contents, any data structure that is deterministically derived from the OpSet must also converge.
 
-One can regard the OpSet as a \emph{database of facts}, containing all changes ever made to the shared data.
-Then the interpretation function is effectively a \emph{query} over this database, and the resulting data structure is known as a \emph{materialized view} in database terminology.
-When new operations are added to an OpSet $O$, computing the corresponding change to $\llbracket O \rrbracket$ is a \emph{materialized view maintenance} problem, which has been studied extensively in the database literature \cite{Gupta:1999uz}.
-We have found that thinking about replicated datatypes as materialized views onto an OpSet can provide a useful perspective for understanding and improving replication algorithms.
-
 \subsection{Sequential Interpetation of Operations}\label{sec:op-serial}
 
 In principle, any deterministic function can serve as interpretation function $\llbracket O \rrbracket$ of the OpSet $O$.
