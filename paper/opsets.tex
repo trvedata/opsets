@@ -25,8 +25,7 @@
 
 \begin{document}
 \sloppy
-\title{OpSets: Concurrent Datatypes with Sequential Specifications}
-%\title{OpSets: Sequential Specifications for Concurrent Editing}
+\title{OpSets: Sequential Specifications for Replicated Datatypes}
 \author[1]{Martin Kleppmann\thanks{Corresponding author. Email: martin.kleppmann@cl.cam.ac.uk}}
 \author[1]{Victor B.\ F.\ Gomes}
 \author[2]{Dominic P.\ Mulligan}
@@ -43,14 +42,13 @@ Regular Paper
 \end{center}
 
 \begin{abstract}
-This paper introduces OpSets, a framework for specifying, reasoning about, and formally verifying the semantics of replicated datatypes that provide eventual consistency in a distributed system.
-First, we show that our approach is simpler than previous work by using OpSets to succinctly specify a variety of abstract datatypes, including maps, sets, lists, text, graphs, trees, and registers.
+We introduce OpSets, a framework for specifying and reasoning about the semantics of replicated datatypes that provide eventual consistency in a distributed system, and formally verifying algorithms that implement these datatypes.
+Our approach is simple but expressive, allowing us to succinctly specify a variety of abstract datatypes, including maps, sets, lists, text, graphs, trees, and registers.
 Our datatypes are also composable, enabling the construction of complex data structures.
-We then demonstrate the utility of OpSets for analysing replication algorithms.
-In particular, we highlight an important correctness property for collaborative text editing that has traditionally been overlooked; algorithms that do not satisfy this property can exhibit awkward interleaving of text.
-We use OpSets to specify the required correctness property and prove that although one existing replication algorithm satisfies this property, several other published algorithms do not.
+To demonstrate the utility of OpSets for analysing replication algorithms, we highlight an important correctness property for collaborative text editing that has traditionally been overlooked; algorithms that do not satisfy this property can exhibit awkward interleaving of text.
+We use OpSets to specify this correctness property and prove that although one existing replication algorithm satisfies this property, several other published algorithms do not.
 Finally, we also show how OpSets can be used to develop new replicated datatypes: we provide a simple specification of an atomic move operation for trees, an operation that had previously been thought to be impossible to implement without locking.
-We use the Isabelle/HOL proof assistant throughout to formalise the OpSets approach and produce mechanised proofs of correctness of the main claims in this paper, thereby eliminating the ambiguity of previous informal approaches and ruling out reasoning errors that could occur in handwritten proofs.
+We use the Isabelle/HOL proof assistant throughout to formalise the OpSets approach and produce mechanised proofs of correctness of the main claims in this paper, thereby eliminating the ambiguity of previous informal approaches, and ruling out reasoning errors that could occur in handwritten proofs.
 \end{abstract}
 \clearpage
 
