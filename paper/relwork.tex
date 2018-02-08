@@ -10,7 +10,7 @@ Efforts to formally specify and verify the semantics of replicated datatypes hav
 
 Burckhardt et al.~\cite{Burckhardt:2014ft} is perhaps the closest work to our own, and provides the most wide-ranging formal account of CRDTs, covering their specification and verification, as well as a study of the optimality of a range of existing datatypes.
 The semantics of an operation on a replicated datatype is given as a function of the operation, $o$, as well as an \emph{operation context}---the set of operations visible to a node at the time that $o$ was received.
-Our OpSets-based semantics can be seen as a variation on this idea, passing all operations observed at a node to the interpretation function and building the result from ``the bottom up'', rather than passing the downward-closure of observed events.
+Our OpSets-based semantics can be seen as a variation on this idea, passing all operations observed at a node to the interpretation function and building the result from ``the bottom up'' in a fold-like operation, rather than passing the downward-closure of observed events.
 Moreover, we apply our approach to the specification of lists, maps, and trees, using our OpSets as a tool for designing new replicated datatypes---including those thought previously impossible, such as our replicated tree with atomic move.
 
 Gotsman et al.~\cite{DBLP:conf/popl/GotsmanYFNS16} extend this
