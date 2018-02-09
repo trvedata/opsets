@@ -217,7 +217,7 @@ definition interp_alt :: "'oid \<Rightarrow> ('oid \<times> 'oid option) list \<
       ops)"
 
 theorem insert_alt_equivalent:
-  assumes "list_spec ops"
+  assumes "insert_ops ops"
     and "head \<notin> fst ` set ops"
     and "\<And>r. Some r \<in> snd ` set ops \<Longrightarrow> r \<noteq> head"
   shows "succ_rel (head # interp_list ops) = interp_alt head ops"

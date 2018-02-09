@@ -1,23 +1,15 @@
 theory RGA_Spec
-  imports OpSet Insert_Spec RGA
+  imports Insert_Spec RGA
 begin
 
 locale insert_opset = opset opset set_option
   for opset :: "('oid::{linorder} \<times> 'oid option) set"
 
 
-subsection\<open>Lemmata about the insert_ops and rga_ops predicates\<close>
-
-definition insert_ops :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> bool" where
-  "insert_ops list \<equiv> spec_ops set_option list"
+subsection\<open>Lemmata about the rga_ops predicate\<close>
 
 definition rga_ops :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> bool" where
   "rga_ops list \<equiv> crdt_ops set_option list"
-
-lemma insert_ops_rem_last:
-  assumes "insert_ops (xs @ [x])"
-  shows "insert_ops xs"
-using assms insert_ops_def spec_ops_rem_last by blast
 
 lemma rga_ops_rem_last:
   assumes "rga_ops (xs @ [x])"
