@@ -14,7 +14,7 @@ For example, an operation may describe a particular insertion at a particular po
 
 We assume that each operation has a unique identifier (ID), and that we have a total ordering on operation IDs.
 This total order is a linear extension of the partial order that captures their causal dependencies (the \emph{happens-before} relation).
-That is, whenever a node changes the shared data and generates a new operation, the ID of the new operation must be greater than that of any existing operation in the OpSet of the node generating the new operation.
+That is, whenever a node changes the shared data and generates a new operation, the ID of the new operation must be strictly greater than that of any existing operation in the OpSet of the node generating the new operation.
 This requirement can easily be met by using Lamport timestamps \cite{Lamport:1978jq} as IDs.
 
 Each node locally maintains a set of operations, the \emph{OpSet}.
@@ -89,5 +89,5 @@ This is in contrast to axiomatic specifications, which may not be implementable,
 
 For an \emph{implementation}, each node retaining an explicit OpSet may induce poor performance, depending on the use-case and application, since nodes must potentially apply the same subset of operations repeatedly.
 More efficient (and, most likely, more complex) algorithms for CRDTs can therefore be developed and shown to satisfy the OpSet-based specification---we do this in \S~\ref{sec:datatypes}.
-However, building an implementation around OpSets does have some advantages: for example, using OpSets provides a straightforward mechanism for recovering from network partitions and failures, as missing operations may be retransmitted and added to the OpSets of previously partitioned nodes.
-Similarly, new nodes joining a network can also be initialised with the union of OpSets of existing nodes.
+However, building an implementation around OpSets does have some advantages: for example, users can easily inspect the editing history of a document, since every past version of the document is the interpretation of a particular subset of operations.
+Moreover, using OpSets provides a straightforward mechanism for recovering from network partitions and failures, as missing operations may be retransmitted and added to the OpSets of previously partitioned nodes.

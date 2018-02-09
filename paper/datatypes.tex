@@ -115,7 +115,7 @@ An OpSet for these datatypes may contain six types of operation:
 Listing~\ref{fig:pseudocode} gives pseudocode for functions that generate these operations.
 The first parameter $O$ of each function is the OpSet that defines the current state of the node, and the functions return an updated OpSet containing new operations.
 The interpretation $\llbracket O \rrbracket$ returns a pair $(E,\, L)$ as defined in \S~\ref{sec:datatypes-interp}.
-The function $\mathrm{newID}(O)$ returns a unique ID (e.g.\ a Lamport timestamp) that is greater than any existing ID in the OpSet $O$.
+The function $\mathrm{newID}(O)$ returns a unique ID (e.g.\ a Lamport timestamp \cite{Lamport:1978jq}) that is greater than any existing ID in the OpSet $O$.
 
 The function \textsc{setMapKey} can be called by a user to update a map object with ID $\mathit{map}$, setting a key $\mathit{key}$ to a value $\mathit{val}$.
 If $\mathit{val}$ references an existing object, $\mathit{id}_1$ is set to the ID of that existing object; otherwise, the function \textsc{valueID} generates a new $\mathsf{Make}\cdots$ operation for the value, and the new operation is added to $O'$.

@@ -61,8 +61,8 @@ We use the Isabelle/HOL proof assistant throughout to formalise the OpSets appro
 
 A common requirement across a great variety of systems is that several participants may concurrently access and manipulate some shared data structure, such as a text document, a spreadsheet, or a database.
 In doing so, it is important that the shared data satisfies certain \emph{consistency guarantees}.
-For example, strong consistency models such as serializability \cite{Kleppmann:2017wj} or linearizability \cite{Herlihy:1990jq} attempt to make a system behave like a single sequentially executing node, even when it is in fact replicated and concurrent.
-An unavoidable downside of these models is that they require waiting for synchronous network communication before any operation or transaction is allowed to complete \cite{Davidson:1985hv,Gilbert:2002il}.
+For example, strong consistency models such as serializability \cite{Kleppmann:2017wj} or linearizability \cite{Herlihy:1990jq} make a system behave like a single sequentially executing node, even when it is in fact replicated and concurrent.
+An unavoidable downside of these models is that any operation or transaction must wait for network communication before is allowed to complete \cite{Davidson:1985hv,Gilbert:2002il}.
 Thus, in a system with strong consistency, a node cannot make progress while it is offline or partitioned from other nodes.
 
 On the other hand, \emph{eventual consistency} \cite{Bailis:2013jc,Burckhardt:2014hy,Terry:1994fp,Vogels:2009ca} allows each participant to modify a local copy (\emph{replica}) of a shared data structure while offline, but its definition is very weak: \emph{``if no new updates are made to the shared state, all nodes will eventually have the same data.''}

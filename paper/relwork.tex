@@ -8,10 +8,10 @@ Efforts to formally specify and verify the semantics of replicated datatypes hav
 
 \subsection{Specification and Verification}
 
-Burckhardt et al.~\cite{Burckhardt:2014ft} provides a wide-ranging formal account of CRDTs, covering their specification, verification, and optimality, with the semantics of an operation on a replicated datatype given as a function of the operation, $o$, and a \emph{operation context}---the set of operations visible to a node at the time that $o$ was received.
-Our OpSets can be seen as a variation on this idea: nodes record all operations that they have ever received in a monotonically growing set and the interpretation function builds the result ``bottom up'' in a fold-like operation.
-In contrast to Berkhardt et al., who focus on applying their techniques to set and counter datatypes, we apply our approach to the specification of lists, maps, and trees, using our OpSets as a tool for designing new replicated datatypes---including those thought previously impossible, such as our replicated tree with atomic move.
-Gotsman et al.~\cite{DBLP:conf/popl/GotsmanYFNS16} extend Burkhardt et al's formalism to reason about hybrid consistency models.
+Burckhardt et al.~\cite{Burckhardt:2014ft} provide a wide-ranging formal account of CRDTs, covering their specification, verification, and optimality, with the semantics of an operation on a replicated datatype given as a function of the operation, $o$, and a \emph{operation context}---the set of operations visible to a node at the time that $o$ was received.
+Our OpSets can be seen as a variation on this idea: nodes record all operations that they have ever received in a monotonically growing set, and the interpretation function builds the result ``bottom up'' in a fold-like operation.
+In contrast to Burckhardt et al., who focus on applying their techniques to set and counter datatypes, we apply our approach to the specification of lists, maps, and trees, using our OpSets as a tool for designing new replicated datatypes---including those previously thought impossible, such as our replicated tree with atomic move.
+Gotsman et al.~\cite{DBLP:conf/popl/GotsmanYFNS16} extend Burckhardt et al's formalism to reason about hybrid consistency models.
 Inspired by permission-based logics, they provide a modular proof rule to enforce a desired integrity invariant for a given consistency model.
 
 Baquero et al.~\cite{Baquero:2014ed} and Grishchenko~\cite{Grishchenko:2014eh} have also previously proposed representing CRDTs in terms of a partially-ordered log of operations (where the partial order captures the causal relationships between operations).
@@ -20,7 +20,7 @@ This linear extension is well-known and goes back to Lamport~\cite{Lamport:1978j
 
 Our approach of sequentially interpreting operations, in order of $\mathit{id}$, is reminiscent of the concept of \emph{serializability} in databases: the data structure obtained by interpreting an OpSet is equal to the outcome of applying the operations in their serial order, even if the execution that produced the OpSet was in fact concurrent.
 However, conventional transaction serializability requires synchronous coordination between replicas \cite{Davidson:1985hv}.
-We circumvent this limitation, and hence allow nodes to make progress while offline, by allowing the interpretation of an operation to change if another operation with a lower ID is delivered.
+We circumvent this limitation, and hence allow nodes to make progress while offline, by allowing the interpretation of an operation to be affected by the subsequent delivery of another operation with a lower ID.
 
 Bieniusa et al.~\cite{Bieniusa:2012gt} articulate a \emph{principle of permutation equivalence} that partially specifies the expected semantics of replicated datatypes, but which leaves some combinations of operations unspecified.
 Zeller et al.~\cite{Zeller:2014fl} formalise counters, registers, and sets using Isabelle/HOL and provide mechanised proofs of their correctness.
