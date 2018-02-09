@@ -414,73 +414,117 @@ proof -
     using assms by (metis append.assoc list_orderI)
 qed
 
-lemma insert_twice:
-  assumes "insert_ops (before @ (x1, r1) # after @ [(x2, r2)])"
-    and   "insert_ops (before @            after @ [(x2, r2)])"
-    and "interp_list (before @            after) = xs @      zs"
-    and "interp_list (before @ (x1, r1) # after) = xs @ ys @ zs"
-  shows "\<exists>xsa ysa zsa.
-    interp_list (before @            after @ [(x2, r2)]) = xsa @       zsa \<and>
-    interp_list (before @ (x1, r1) # after @ [(x2, r2)]) = xsa @ ysa @ zsa"
-  using assms apply -
-  apply(subgoal_tac "insert_ops (before @ after)") prefer 2
-  using insert_ops_rem_last apply force
-  apply(subgoal_tac "insert_ops (before @ (x1, r1) # after)") prefer 2
-  using insert_ops_rem_last apply force
-  apply(simp add: interp_list_def)
-  apply(case_tac r2, simp)
-  apply(metis Cons_eq_appendI)
-  apply(case_tac "a \<in> set xs", simp)
-  apply(meson insert_first_part)
-  apply(case_tac "a \<in> set ys", simp)
-  apply(rule_tac x=xs in exI)
-  apply(rule_tac x="insert_spec ys (x2, r2)" in exI)
-  apply(rule_tac x=zs in exI)
-  apply(rule conjI)
-  apply(subgoal_tac "a \<notin> set zs", simp)
-  using assms(4) distinct_append list.simps(15) interp_list_distinct apply force
-  apply(simp add: insert_first_part insert_second_part)
-  apply(case_tac "a \<in> set zs")
-  apply(rule_tac x=xs in exI)
-  apply(rule_tac x=ys in exI)
-  apply(rule_tac x="insert_spec zs (x2, r2)" in exI)
-  apply(simp add: insert_second_part)
-  apply force
-  done
-
 lemma insert_preserves_order:
-  assumes "insert_ops op_list" and "insert_ops rest"
+  assumes "insert_ops ops" and "insert_ops rest"
     and "rest = before @ after"
-    and "op_list = before @ (oid, ref) # after"
-  shows "\<exists>xs ys zs. interp_list rest    = xs @      zs \<and>
-                    interp_list op_list = xs @ ys @ zs"
-  using assms
-  apply(induction after arbitrary: rest op_list rule: rev_induct)
-   apply clarsimp
-   apply(case_tac "ref")
-    apply clarsimp
-    apply(rule_tac x="[]" in exI, rule_tac x="[oid]" in exI, rule_tac x="interp_list before" in exI)
-    apply(clarsimp simp add: interp_list_def)
-    apply(case_tac "a \<in> set (interp_list before)")
-     apply(simp add: interp_list_def)
-     apply(frule_tac oid="oid" in insert_somewhere[OF disjI2, OF conjI], assumption)
-     apply(erule exE)+
-     apply(rule_tac x="xs" in exI, rule_tac x="[oid]" in exI, rule_tac x="ys" in exI)
-    apply(clarsimp simp add: interp_list_def)
-   apply clarsimp
-   apply(frule_tac oid="oid" in insert_spec_nonex)
-   apply(rule_tac x="interp_list before" in exI, rule_tac x="[]" in exI, rule_tac x="[]" in exI)
-   apply(clarsimp simp add: interp_list_def)
-  apply clarsimp
-  apply(erule_tac x="before @ xs" in meta_allE)
-  apply(erule_tac x="before @ (oid, ref) # xs" in meta_allE)
-  apply clarsimp
-  apply(subgoal_tac "insert_ops (before @ (oid, ref) # xs)") prefer 2
-  apply(metis append_Cons append_assoc insert_ops_rem_last)
-  apply(subgoal_tac "insert_ops (before @ xs)") prefer 2
-  apply(metis append_assoc insert_ops_rem_last)
-  apply(clarsimp simp add: insert_twice)
-  done
+    and "ops  = before @ (oid, ref) # after"
+  shows "\<exists>xs ys zs. interp_list rest = xs @ zs \<and> interp_list ops = xs @ ys @ zs"
+using assms proof(induction after arbitrary: rest ops rule: List.rev_induct)
+  case Nil
+  then have 1: "interp_list ops = insert_spec (interp_list before) (oid, ref)"
+    by (simp add: interp_list_tail_unfold)
+  then show "\<exists>xs ys zs. interp_list rest = xs @ zs \<and> interp_list ops = xs @ ys @ zs"
+  proof(cases ref)
+    case None
+    hence "interp_list rest = [] @ (interp_list before) \<and>
+           interp_list ops = [] @ [oid] @ (interp_list before)"
+      using 1 Nil.prems(3) by simp
+    then show ?thesis by blast
+  next
+    case (Some a)
+    then show ?thesis
+    proof(cases "a \<in> set (interp_list before)")
+      case True
+      then obtain xs ys where "interp_list before = xs @ ys \<and>
+          insert_spec (interp_list before) (oid, ref) = xs @ oid # ys"
+        using insert_somewhere Some by metis
+      hence "interp_list rest = xs @ ys \<and> interp_list ops = xs @ [oid] @ ys"
+        using 1 Nil.prems(3) by auto
+      then show ?thesis by blast
+    next
+      case False
+      hence "interp_list ops = (interp_list rest) @ [] @ []"
+        using insert_spec_nonex 1 Nil.prems(3) Some by simp
+      then show ?thesis by blast
+    qed
+  qed
+next
+  case (snoc oper op_list)
+  then have "insert_ops ((before @ (oid, ref) # op_list) @ [oper])"
+    and "insert_ops ((before @ op_list) @ [oper])"
+    by auto
+  then have ops1: "insert_ops (before @ op_list)"
+    and ops2: "insert_ops (before @ (oid, ref) # op_list)"
+    using insert_ops_appendD by blast+
+  then obtain xs ys zs where IH1: "interp_list (before @ op_list) = xs @ zs"
+    and IH2: "interp_list (before @ (oid, ref) # op_list) = xs @ ys @ zs"
+    using snoc.IH by blast
+  obtain i2 r2 where "oper = (i2, r2)" by force
+  then show "\<exists>xs ys zs. interp_list rest = xs @ zs \<and> interp_list ops = xs @ ys @ zs"
+  proof(cases r2)
+    case None
+    hence "interp_list (before @ op_list @ [oper]) = (i2 # xs) @ zs"
+      by (metis IH1 \<open>oper = (i2, r2)\<close> append.assoc append_Cons insert_spec.simps(1)
+          interp_list_tail_unfold)
+    moreover have "interp_list (before @ (oid, ref) # op_list @ [oper]) = (i2 # xs) @ ys @ zs"
+      by (metis IH2 None \<open>oper = (i2, r2)\<close> append.assoc append_Cons insert_spec.simps(1)
+          interp_list_tail_unfold)
+    ultimately show ?thesis
+      using snoc.prems(3) snoc.prems(4) by blast
+  next
+    case (Some r)
+    then have 1: "interp_list (before @ (oid, ref) # op_list @ [(i2, r2)]) =
+                  insert_spec (xs @ ys @ zs) (i2, Some r)"
+      by (metis IH2 append.assoc append_Cons interp_list_tail_unfold)
+    have 2: "interp_list (before @ op_list @ [(i2, r2)]) = insert_spec (xs @ zs) (i2, Some r)"
+      by (metis IH1 append.assoc interp_list_tail_unfold Some)
+    consider (a_xs) "r \<in> set xs" | (a_ys) "r \<in> set ys" | (a_zs) "r \<in> set zs" |
+        (a_nonex) "r \<notin> set (xs @ ys @ zs)"
+      by auto
+    then show "\<exists>xs ys zs. interp_list rest = xs @ zs \<and> interp_list ops = xs @ ys @ zs"
+    proof(cases)
+      case a_xs
+      from this have "insert_spec (xs @ ys @ zs) (i2, Some r) =
+                      (insert_spec xs (i2, Some r)) @ ys @ zs"
+        by (meson insert_first_part)
+      moreover have "insert_spec (xs @ zs) (i2, Some r) = (insert_spec xs (i2, Some r)) @ zs"
+        by (meson a_xs insert_first_part)
+      ultimately show ?thesis
+        using 1 2 \<open>oper = (i2, r2)\<close> snoc.prems by auto
+    next
+      case a_ys
+      hence "r \<notin> set xs" and "r \<notin> set zs"
+        using IH2 ops2 interp_list_distinct by force+
+      moreover from this have "insert_spec (xs @ ys @ zs) (i2, Some r) =
+                               xs @ (insert_spec ys (i2, Some r)) @ zs"
+        using insert_first_part insert_second_part insert_spec_nonex
+        by (metis Some UnE a_ys set_append)
+      moreover have "insert_spec (xs @ zs) (i2, Some r) = xs @ zs"
+        by (simp add: Some calculation(1) calculation(2))
+      ultimately show ?thesis
+        using 1 2 \<open>oper = (i2, r2)\<close> snoc.prems by auto
+    next
+      case a_zs
+      hence "r \<notin> set xs" and "r \<notin> set ys"
+        using IH2 ops2 interp_list_distinct by force+
+      moreover from this have "insert_spec (xs @ ys @ zs) (i2, Some r) =
+                               xs @ ys @ (insert_spec zs (i2, Some r))"
+        by (metis Some UnE insert_second_part insert_spec_nonex set_append)
+      moreover have "insert_spec (xs @ zs) (i2, Some r) = xs @ (insert_spec zs (i2, Some r))"
+        by (simp add: a_zs calculation(1) insert_second_part)
+      ultimately show ?thesis
+        using 1 2 \<open>oper = (i2, r2)\<close> snoc.prems by auto
+    next
+      case a_nonex
+      then have "insert_spec (xs @ ys @ zs) (i2, Some r) = xs @ ys @ zs"
+        by simp
+      moreover have "insert_spec (xs @ zs) (i2, Some r) = xs @ zs"
+        using a_nonex by simp
+      ultimately show ?thesis
+        using 1 2 \<open>oper = (i2, r2)\<close> snoc.prems by auto
+    qed
+  qed
+qed
 
 lemma distinct_fst:
   assumes "distinct (map fst A)"
