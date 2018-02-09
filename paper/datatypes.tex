@@ -121,7 +121,7 @@ The function \textsc{setMapKey} can be called by a user to update a map object w
 If $\mathit{val}$ references an existing object, $\mathit{id}_1$ is set to the ID of that existing object; otherwise, the function \textsc{valueID} generates a new $\mathsf{Make}\cdots$ operation for the value, and the new operation is added to $O'$.
 A new ID $\mathit{id}_2$ is generated for the $\mathsf{Assign}$ operation, in which the key $\mathit{key}$ is set to $\mathit{id}_1$ (which identifies the value $\mathit{val}$).
 Finally, the function returns the OpSet with the $\mathsf{Assign}$ operation included.
-The other function definitions follow a similar pattern.
+The other definitions follow a similar pattern.
 
 The list manipulation functions \textsc{setListIndex}, \textsc{insertListIndex} and \textsc{removeListIndex} take a numeric index as argument to identify the position in the list being edited.
 The numeric index is translated into the ID of a list element using the function $\mathrm{idxKey}_{E,\, L}()$, which is defined in \S~\ref{sec:datatypes-interp}.

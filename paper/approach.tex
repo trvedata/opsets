@@ -78,14 +78,14 @@ then apply the new operation $(\mathit{id},\, \mathit{op})$, and finally re-appl
 
 Our interpretation functions can be seen as \emph{executable specifications} that define the expected result of interpreting a set of operations.
 Presenting replicated datatypes in this manner has two significant advantages:
-\begin{enumerate}
+\begin{enumerate*}
 \item
 Unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for the interpretation function $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ to commute with respect to other operations: any pure function can be used.
 This fact makes it much simpler to specify the interpretation of operations, as we shall see in \S~\ref{sec:datatypes} and \S~\ref{sec:tree}.
 \item
 We can guarantee the existence of an implementation of each described datatype: the specification itself.
 This is in contrast to axiomatic specifications, which may not be implementable, and require additional work to demonstrate than an implementation exists which satisfies the axiomatic description.
-\end{enumerate}
+\end{enumerate*}
 
 For an \emph{implementation}, each node retaining an explicit OpSet may induce poor performance, depending on the use-case and application, since nodes must potentially apply the same subset of operations repeatedly.
 More efficient (and, most likely, more complex) algorithms for CRDTs can therefore be developed and shown to satisfy the OpSet-based specification---we do this in \S~\ref{sec:datatypes}.
