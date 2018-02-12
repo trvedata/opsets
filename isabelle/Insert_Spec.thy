@@ -478,48 +478,48 @@ next
       by (metis IH2 append.assoc append_Cons interp_list_tail_unfold)
     have 2: "interp_list (before @ op_list @ [(i2, r2)]) = insert_spec (xs @ zs) (i2, Some r)"
       by (metis IH1 append.assoc interp_list_tail_unfold Some)
-    consider (a_xs) "r \<in> set xs" | (a_ys) "r \<in> set ys" | (a_zs) "r \<in> set zs" |
-        (a_nonex) "r \<notin> set (xs @ ys @ zs)"
+    consider (r_xs) "r \<in> set xs" | (r_ys) "r \<in> set ys" | (r_zs) "r \<in> set zs" |
+             (r_nonex) "r \<notin> set (xs @ ys @ zs)"
       by auto
     then show "\<exists>xs ys zs. interp_list rest = xs @ zs \<and> interp_list ops = xs @ ys @ zs"
     proof(cases)
-      case a_xs
+      case r_xs
       from this have "insert_spec (xs @ ys @ zs) (i2, Some r) =
                       (insert_spec xs (i2, Some r)) @ ys @ zs"
         by (meson insert_first_part)
       moreover have "insert_spec (xs @ zs) (i2, Some r) = (insert_spec xs (i2, Some r)) @ zs"
-        by (meson a_xs insert_first_part)
+        by (meson r_xs insert_first_part)
       ultimately show ?thesis
         using 1 2 \<open>oper = (i2, r2)\<close> snoc.prems by auto
     next
-      case a_ys
+      case r_ys
       hence "r \<notin> set xs" and "r \<notin> set zs"
         using IH2 ops2 interp_list_distinct by force+
       moreover from this have "insert_spec (xs @ ys @ zs) (i2, Some r) =
                                xs @ (insert_spec ys (i2, Some r)) @ zs"
         using insert_first_part insert_second_part insert_spec_nonex
-        by (metis Some UnE a_ys set_append)
+        by (metis Some UnE r_ys set_append)
       moreover have "insert_spec (xs @ zs) (i2, Some r) = xs @ zs"
         by (simp add: Some calculation(1) calculation(2))
       ultimately show ?thesis
         using 1 2 \<open>oper = (i2, r2)\<close> snoc.prems by auto
     next
-      case a_zs
+      case r_zs
       hence "r \<notin> set xs" and "r \<notin> set ys"
         using IH2 ops2 interp_list_distinct by force+
       moreover from this have "insert_spec (xs @ ys @ zs) (i2, Some r) =
                                xs @ ys @ (insert_spec zs (i2, Some r))"
         by (metis Some UnE insert_second_part insert_spec_nonex set_append)
       moreover have "insert_spec (xs @ zs) (i2, Some r) = xs @ (insert_spec zs (i2, Some r))"
-        by (simp add: a_zs calculation(1) insert_second_part)
+        by (simp add: r_zs calculation(1) insert_second_part)
       ultimately show ?thesis
         using 1 2 \<open>oper = (i2, r2)\<close> snoc.prems by auto
     next
-      case a_nonex
+      case r_nonex
       then have "insert_spec (xs @ ys @ zs) (i2, Some r) = xs @ ys @ zs"
         by simp
       moreover have "insert_spec (xs @ zs) (i2, Some r) = xs @ zs"
-        using a_nonex by simp
+        using r_nonex by simp
       ultimately show ?thesis
         using 1 2 \<open>oper = (i2, r2)\<close> snoc.prems by auto
     qed
@@ -529,69 +529,90 @@ qed
 lemma distinct_fst:
   assumes "distinct (map fst A)"
   shows "distinct A"
-using assms by(induction A) auto
+using assms by (induction A) auto
 
 lemma subset_distinct_le:
   assumes "set A \<subseteq> set B" and "distinct A" and "distinct B"
   shows "length A \<le> length B"
-  using assms
-  apply(induction B arbitrary: A)
-   apply clarsimp
-  apply clarsimp
-  apply(case_tac "a \<in> set A")
-   apply(erule_tac x="List.remove1 a A" in meta_allE)
-   apply clarsimp
-   apply(simp add: length_remove1 subset_insert_iff)
-  apply(erule_tac x="A" in meta_allE, clarsimp)
-    by(simp add: subset_insert)
+using assms proof(induction B arbitrary: A)
+  case Nil
+  then show "length A \<le> length []" by simp
+next
+  case (Cons a B)
+  then show "length A \<le> length (a # B)"
+  proof(cases "a \<in> set A")
+    case True
+    have "set (remove1 a A) \<subseteq> set B"
+      using Cons.prems by auto
+    hence "length (remove1 a A) \<le> length B"
+      using Cons.IH Cons.prems by auto
+    then show "length A \<le> length (a # B)"
+      by (simp add: True length_remove1)
+  next
+    case False
+    hence "set A \<subseteq> set B"
+      using Cons.prems by auto
+    hence "length A \<le> length B"
+      using Cons.IH Cons.prems by auto
+    then show "length A \<le> length (a # B)"
+      by simp
+  qed
+qed
 
 lemma set_subset_length_eq:
-  assumes "set A \<subseteq> set B" and "length B \<le> length A" and "distinct A" and "distinct B"
+  assumes "set A \<subseteq> set B" and "length B \<le> length A"
+    and "distinct A" and "distinct B"
   shows "set A = set B"
-  using assms
-    apply -
-  apply(frule subset_distinct_le, assumption, assumption)
-  apply(rule card_subset_eq, force, force)
-  apply(simp add: distinct_card)
-  done
+proof -
+  have "length A \<le> length B"
+    using assms by (simp add: subset_distinct_le)
+  moreover from this have "card (set A) = card (set B)"
+    using assms by (simp add: distinct_card le_antisym)
+  ultimately show "set A = set B"
+    using assms(1) by (simp add: card_subset_eq)
+qed
 
 lemma length_diff_Suc_exists:
   assumes "length xs - length ys = Suc m"
     and "set ys \<subseteq> set xs"
     and "distinct ys" and "distinct xs"
   shows "\<exists>e. e \<in> set xs \<and> e \<notin> set ys"
-  using assms
-  apply(induction xs arbitrary: ys, clarsimp)
-  apply clarsimp
-  apply(case_tac "a \<in> set ys")
-   apply(erule_tac x="List.remove1 a ys" in meta_allE)
-   apply(subgoal_tac "length xs - length (remove1 a ys) = Suc m")
-    prefer 2
-    apply(metis Suc_diff_eq_diff_pred length_pos_if_in_set length_remove1)
-   apply clarsimp
-   apply(subgoal_tac "set ys - {a} \<subseteq> set xs")
-    prefer 2
-    apply blast
-   apply clarsimp
-   apply force
-  apply blast
-  done
+using assms proof(induction xs arbitrary: ys)
+  case Nil
+  then show "\<exists>e. e \<in> set [] \<and> e \<notin> set ys"
+    by simp
+next
+  case (Cons a xs)
+  then show "\<exists>e. e \<in> set (a # xs) \<and> e \<notin> set ys"
+  proof(cases "a \<in> set ys")
+    case True
+    have IH: "\<exists>e. e \<in> set xs \<and> e \<notin> set (remove1 a ys)"
+    proof -
+      have "length xs - length (remove1 a ys) = Suc m"
+        by (metis Cons.prems(1) One_nat_def Suc_pred True diff_Suc_Suc length_Cons
+            length_pos_if_in_set length_remove1)
+      moreover have "set (remove1 a ys) \<subseteq> set xs"
+        using Cons.prems by auto
+      ultimately show ?thesis
+        by (meson Cons.IH Cons.prems distinct.simps(2) distinct_remove1)
+    qed
+    moreover have "set ys - {a} \<subseteq> set xs"
+      using Cons.prems(2) by auto
+    ultimately show "\<exists>e. e \<in> set (a # xs) \<and> e \<notin> set ys"
+      by (metis Cons.prems(4) distinct.simps(2) in_set_remove1 set_subset_Cons subsetCE)
+  next
+    case False
+    then show "\<exists>e. e \<in> set (a # xs) \<and> e \<notin> set ys"
+      by auto
+  qed
+qed
 
 lemma app_length_lt_exists:
   assumes "xsa @ zsa = xs @ ys"
     and "length xsa \<le> length xs"
-  shows "xsa@(drop (length xsa) xs) = xs"
-  using assms
-  apply(induction xsa arbitrary: xs zsa ys, clarsimp)
-  apply clarsimp
-  apply(metis append_Cons append_eq_append_conv_if append_take_drop_id length_Cons)
-  done
-
-lemma app_length_lt_exists':
-  assumes "xsa @ zsa = xs @ ys"
-    and "length xsa \<le> length xs"
-  shows "\<exists>zs. xsa@zs = xs"
-  using assms app_length_lt_exists by blast
+  shows "xsa @ (drop (length xsa) xs) = xs"
+using assms by (induction xsa arbitrary: xs zsa ys, simp,
+                metis append_eq_append_conv_if append_take_drop_id)
 
 lemma list_order_monotonic:
   assumes "insert_ops A" and "insert_ops B"
@@ -696,23 +717,34 @@ using assms proof(induction rule: measure_induct_rule[where f="\<lambda>x. (leng
 qed
 
 lemma insert_spec_nth_oid:
-  assumes "distinct ys"
-       and "n < length ys"
-     shows "insert_spec ys (oid, Some (ys ! n)) ! Suc n = oid"
-  using assms
-  apply(induction ys arbitrary: n)
-   apply clarsimp
-  apply clarsimp
-  apply safe
-   apply(subgoal_tac "n = 0")
-    prefer 2
-    apply(metis distinct.simps(2) length_Cons nth_Cons_0 nth_eq_iff_index_eq zero_less_Suc)
-   apply clarsimp
-  apply(subgoal_tac "\<exists>m. n = Suc m")
-   prefer 2
-   apply(metis not0_implies_Suc nth_Cons')
-  apply clarsimp
-  done
+  assumes "distinct xs"
+       and "n < length xs"
+     shows "insert_spec xs (oid, Some (xs ! n)) ! Suc n = oid"
+using assms proof(induction xs arbitrary: n)
+  case Nil
+  then show "insert_spec [] (oid, Some ([] ! n)) ! Suc n = oid"
+    by simp
+next
+  case (Cons a xs)
+  have "distinct (a # xs)"
+    using Cons.prems(1) by auto
+  then show "insert_spec (a # xs) (oid, Some ((a # xs) ! n)) ! Suc n = oid"
+  proof(cases "a = (a # xs) ! n")
+    case True
+    then have "n = 0"
+      using \<open>distinct (a # xs)\<close> Cons.prems(2) gr_implies_not_zero by force
+    then show "insert_spec (a # xs) (oid, Some ((a # xs) ! n)) ! Suc n = oid"
+      by auto
+  next
+    case False
+    then have "n > 0"
+      using \<open>distinct (a # xs)\<close> Cons.prems(2) gr_implies_not_zero by force
+    then obtain m where "n = Suc m"
+      using Suc_pred' by blast
+    then show "insert_spec (a # xs) (oid, Some ((a # xs) ! n)) ! Suc n = oid"
+      using Cons.IH Cons.prems by auto
+  qed
+qed
 
 lemma correct_position_insert:
   assumes "insert_ops (xs @ [make_insert ys oid m])"
@@ -778,63 +810,84 @@ lemma list_order_irrefl:
 using assms interp_list_distinct list_orderE by force
 
 lemma interp_list_maybe_grow:
-  assumes "insert_ops (ys @ [(oid, ref)])"
-  shows "set (interp_list (ys @ [(oid, ref)])) = set (interp_list ys) \<or>
-         set (interp_list (ys @ [(oid, ref)])) = (set (interp_list ys) \<union> {oid})"
-  using assms
-  apply (subgoal_tac "insert_ops ys") prefer 2
-  apply auto[1]
-  apply(clarsimp simp add: interp_list_def)
-  apply(cases ref; clarsimp)
-  apply(metis insert_spec.simps(1) insert_spec_none insert_spec_nonex insert_spec_set list.simps(15))
-  done
+  assumes "insert_ops (xs @ [(oid, ref)])"
+  shows "set (interp_list (xs @ [(oid, ref)])) = set (interp_list xs) \<or>
+         set (interp_list (xs @ [(oid, ref)])) = (set (interp_list xs) \<union> {oid})"
+by (cases ref, simp add: interp_list_tail_unfold,
+    metis insert_spec_nonex insert_spec_set interp_list_tail_unfold)
 
 lemma interp_list_maybe_grow2:
-  assumes "insert_ops (ys @ [x])"
-  shows "set (interp_list (ys @ [x])) = set (interp_list ys) \<or>
-         set (interp_list (ys @ [x])) = (set (interp_list ys) \<union> {fst x})"
-  apply (cases x)
-  using interp_list_maybe_grow assms by auto
+  assumes "insert_ops (xs @ [x])"
+  shows "set (interp_list (xs @ [x])) = set (interp_list xs) \<or>
+         set (interp_list (xs @ [x])) = (set (interp_list xs) \<union> {fst x})"
+using assms interp_list_maybe_grow by (cases x, auto)
 
 lemma interp_list_maybe_grow3:
-  assumes "insert_ops (ys @ xs)"
-  shows "\<exists>A. A \<subseteq> set (map fst xs) \<and> set (interp_list (ys @ xs)) = (set (interp_list ys) \<union> A)"
-  using assms
-  apply(induction xs rule: List.rev_induct, clarsimp)
-  apply clarsimp
-  apply(erule meta_impE)
-   apply(metis append_assoc insert_ops_rem_last)
-  apply clarsimp
-  apply(subgoal_tac "set (interp_list ((ys @ xs) @ [(a, b)])) = set (interp_list (ys @ xs)) \<or>
-    set (interp_list ((ys @ xs) @ [(a, b)])) = set (interp_list (ys @ xs)) \<union> {a}")
-   apply(erule disjE)
-    apply(rule_tac x="A" in exI, force)
-   apply(rule_tac x="A \<union> {a}" in exI, force)
-  apply(rule interp_list_maybe_grow, force)
-  done
+  assumes "insert_ops (xs @ ys)"
+  shows "\<exists>A. A \<subseteq> set (map fst ys) \<and> set (interp_list (xs @ ys)) = set (interp_list xs) \<union> A"
+using assms proof(induction ys rule: List.rev_induct)
+  case Nil
+  then show ?case by simp
+next
+  case (snoc x ys)
+  then have "insert_ops (xs @ ys)"
+    by (metis append_assoc insert_ops_rem_last)
+  then obtain A where IH: "A \<subseteq> set (map fst ys) \<and>
+            set (interp_list (xs @ ys)) = set (interp_list xs) \<union> A"
+    using snoc.IH by blast
+  then show ?case
+  proof(cases "set (interp_list (xs @ ys @ [x])) = set (interp_list (xs @ ys))")
+    case True
+    moreover have "A \<subseteq> set (map fst (ys @ [x]))"
+      using IH by auto
+    ultimately show ?thesis
+      using IH by auto
+  next
+    case False
+    then have "set (interp_list (xs @ ys @ [x])) = set (interp_list (xs @ ys)) \<union> {fst x}"
+      by (metis append_assoc interp_list_maybe_grow2 snoc.prems)
+    moreover have "A \<union> {fst x} \<subseteq> set (map fst (ys @ [x]))"
+      using IH by auto
+    ultimately show ?thesis
+      using IH Un_assoc by metis
+  qed
+qed
 
 lemma interp_list_ref_nonex:
   assumes "insert_ops ops"
     and "ops = xs @ [(oid, Some ref)] @ ys"
     and "ref \<notin> set (interp_list xs)"
   shows "oid \<notin> set (interp_list ops)"
-  using assms
-  apply(induction ys arbitrary: ops rule: List.rev_induct)
-   apply(metis append_Nil2 insert_spec_nonex interp_list_tail_unfold last_op_greatest list_greater_non_memb interp_list_subset subsetCE)
-  apply clarsimp
-  apply(erule_tac x="xs @ (oid, Some ref) # xsa" in meta_allE)
-  apply(erule meta_impE)
-   apply(metis (no_types, lifting) Nil_is_append_conv append_butlast_last_id butlast.simps(2) butlast_append butlast_snoc list.discI insert_ops_rem_last)
-  apply clarsimp
-  apply(subgoal_tac "distinct (map fst (xs @ (oid, Some ref) # xsa @ [(a, b)]))") prefer 2
-  apply(simp add: insert_ops_def spec_ops_def)
-  apply(subgoal_tac "a \<noteq> oid") prefer 2
-   apply clarsimp
-  apply(subgoal_tac "set (interp_list ((xs @ (oid, Some ref) # xsa) @ [(a, b)])) = set (interp_list (xs @ (oid, Some ref) # xsa)) \<or> 
-                      set (interp_list ((xs @ (oid, Some ref) # xsa) @ [(a, b)])) = set (interp_list (xs @ (oid, Some ref) # xsa)) \<union> {a}")
-   apply clarsimp apply force
-  apply(rule interp_list_maybe_grow, force)
-  done
+using assms proof(induction ys arbitrary: ops rule: List.rev_induct)
+  case Nil
+  then have "interp_list ops = insert_spec (interp_list xs) (oid, Some ref)"
+    by (simp add: interp_list_tail_unfold)
+  moreover have "\<And>i. i \<in> set (map fst xs) \<Longrightarrow> i < oid"
+    using Nil.prems last_op_greatest by fastforce
+  hence "\<And>i. i \<in> set (interp_list xs) \<Longrightarrow> i < oid"
+    by (meson interp_list_subset subsetCE)
+  ultimately show "oid \<notin> set (interp_list ops)"
+    using assms(3) by auto
+next
+  case (snoc x ys)
+  then have "insert_ops (xs @ (oid, Some ref) # ys)"
+    by (metis append.assoc append.simps(1) append_Cons insert_ops_appendD)
+  hence IH: "oid \<notin> set (interp_list (xs @ (oid, Some ref) # ys))"
+    by (simp add: snoc.IH snoc.prems(3))
+  moreover have "distinct (map fst (xs @ (oid, Some ref) # ys @ [x]))"
+    using snoc.prems by (metis append_Cons append_self_conv2 insert_ops_def spec_ops_def)
+  hence "fst x \<noteq> oid"
+    using empty_iff by auto
+  moreover have "insert_ops ((xs @ (oid, Some ref) # ys) @ [x])"
+    using snoc.prems by auto
+  hence "set (interp_list ((xs @ (oid, Some ref) # ys) @ [x])) =
+         set (interp_list (xs @ (oid, Some ref) # ys)) \<or> 
+         set (interp_list ((xs @ (oid, Some ref) # ys) @ [x])) =
+         set (interp_list (xs @ (oid, Some ref) # ys)) \<union> {fst x}"
+    using interp_list_maybe_grow2 by blast
+  ultimately show "oid \<notin> set (interp_list ops)"
+    using snoc.prems(2) by auto
+qed
 
 lemma map_fst_append1:
   assumes "\<forall>i \<in> set (map fst xs). P i"
