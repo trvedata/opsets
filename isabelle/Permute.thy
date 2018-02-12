@@ -1,5 +1,5 @@
 theory Permute
-  imports Main (*"../../crdt-isabelle/src/Util"*)
+  imports Main
 begin
 
 definition permut :: "'a list \<Rightarrow> 'a list \<Rightarrow> bool" where

@@ -35,7 +35,7 @@ next
   proof(cases "a = head")
     case True
     hence "a \<notin> set (x#xs)"
-      using 3 by blast
+      using 3 by auto
     hence "a \<notin> fst ` (succ_rel (x#xs))"
       using succ_rel_set_fst by metis
     then show "b1 = b2"
@@ -56,7 +56,7 @@ lemma succ_rel_rem_head:
   shows "{(p, n) \<in> succ_rel (x # xs). p \<noteq> x} = succ_rel xs"
 proof -
   have head_notin: "x \<notin> fst ` succ_rel xs"
-    using assms succ_rel_set_fst by (metis distinct_set_notin)
+    using assms by (simp add: succ_rel_set_fst)
   moreover obtain y where "(x, y) \<in> succ_rel (x # xs)"
     by (cases xs, auto)
   moreover have "succ_rel (x # xs) = {(x, y)} \<union> succ_rel xs"

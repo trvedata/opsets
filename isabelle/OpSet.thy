@@ -1,5 +1,5 @@
 theory OpSet
-  imports Main Permute Util
+  imports Main Permute
 begin
 
 definition spec_ops :: "('oper \<Rightarrow> 'oid set) \<Rightarrow> ('oid::{linorder} \<times> 'oper) list \<Rightarrow> bool" where
@@ -94,8 +94,8 @@ next
   next
     case False
     moreover have "fst a \<notin> fst ` set (remove1 x xs)"
-      by (metis (no_types, lifting) Cons.prems distinct_set_notin imageE image_set
-          list.simps(9) notin_set_remove1 rev_image_eqI)
+      by (metis (no_types, lifting) Cons.prems distinct.simps(2) image_iff
+          list.simps(9) notin_set_remove1 set_map)
     ultimately show ?thesis
       using IH by auto
   qed
@@ -377,6 +377,12 @@ next
     using crdt_ops.cases by force
 qed
 
+lemma distinct_fst_append:
+  assumes "x \<in> set (map fst xs)"
+    and "distinct (map fst (xs @ ys))"
+  shows "x \<notin> set (map fst ys)"
+using assms by (induction ys, force+)
+
 lemma crdt_ops_no_future_ref:
   assumes "crdt_ops deps (xs @ [(oid, oper)] @ ys)"
   shows "\<And>ref. ref \<in> deps oper \<Longrightarrow> ref \<notin> fst ` set ys"
@@ -386,7 +392,7 @@ proof -
   moreover have "distinct (map fst (xs @ [(oid, oper)] @ ys))"
     using assms crdt_ops_distinct_fst by blast
   ultimately have "\<And>ref. ref \<in> deps oper \<Longrightarrow> ref \<notin> set (map fst ([(oid, oper)] @ ys))"
-    using distinct_pair_list_memb by metis
+    using distinct_fst_append by metis
   thus "\<And>ref. ref \<in> deps oper \<Longrightarrow> ref \<notin> fst ` set ys"
     by simp
 qed

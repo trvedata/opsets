@@ -716,6 +716,32 @@ using assms proof(induction rule: measure_induct_rule[where f="\<lambda>x. (leng
   qed
 qed
 
+lemma list_split_two_elems:
+  assumes "distinct xs"
+    and "x \<in> set xs" and "y \<in> set xs"
+    and "x \<noteq> y"
+  shows "\<exists>pre mid suf. xs = pre @ x # mid @ y # suf \<or> xs = pre @ y # mid @ x # suf"
+proof -
+  obtain as bs where as_bs: "xs = as @ [x] @ bs"
+    using assms(2) split_list_first by fastforce
+  show ?thesis
+  proof(cases "y \<in> set as")
+    case True
+    then obtain cs ds where "as = cs @ [y] @ ds"
+      using assms(3) split_list_first by fastforce
+    then show ?thesis
+      by (auto simp add: as_bs)
+  next
+    case False
+    then have "y \<in> set bs"
+      using as_bs assms(3) assms(4) by auto
+    then obtain cs ds where "bs = cs @ [y] @ ds"
+      using assms(3) split_list_first by fastforce
+    then show ?thesis
+      by (auto simp add: as_bs)
+  qed
+qed
+
 lemma insert_spec_nth_oid:
   assumes "distinct xs"
        and "n < length xs"
@@ -774,13 +800,6 @@ next
     by (metis (no_types, lifting) False Suc_pred' \<open>m = Suc nat\<close> insert_ops_rem_last
         interp_list_distinct length_greater_0_conv min_Suc_Suc)
 qed
-
-lemma pre_suf_eq_distinct_list_var:
-  assumes "distinct (pre2@ys@suf2)"
-      and "ys \<noteq> []"
-      and "pre1@ys@suf1 = pre2@ys@suf2"
-    shows "pre1 = pre2 \<and> suf1 = suf2"
-using assms pre_suf_eq_distinct_list by metis
 
 lemma list_order_transp:
   assumes "insert_ops op_list"
@@ -1084,7 +1103,7 @@ proof -
   have "interp_list (ops @ [(oid, Some ref)]) = insert_spec (interp_list ops) (oid, Some ref)"
     by (simp add: interp_list_tail_unfold)
   moreover obtain xs ys where "interp_list ops = xs @ [ref] @ ys"
-    by (meson assms(2) list_set_memb)
+    using assms(2) split_list_first by fastforce
   hence "insert_spec (interp_list ops) (oid, Some ref) = xs @ [ref] @ [] @ [oid] @ ys"
     using assms(1) insert_after_ref interp_list_distinct by fastforce
   ultimately show "list_order (ops @ [(oid, Some ref)]) ref oid"
@@ -1099,7 +1118,7 @@ proof -
   have "interp_list (ops @ [(oid, None)]) = insert_spec (interp_list ops) (oid, None)"
     by (simp add: interp_list_tail_unfold)
   moreover obtain xs ys where "interp_list ops = xs @ [x] @ ys"
-    by (meson assms(2) list_set_memb)
+    using assms(2) split_list_first by fastforce
   hence "insert_spec (interp_list ops) (oid, None) = [] @ [oid] @ xs @ [x] @ ys"
     by simp
   ultimately show "list_order (ops @ [(oid, None)]) oid x"
