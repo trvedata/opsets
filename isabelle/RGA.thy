@@ -20,31 +20,21 @@ fun insert_rga :: "'oid::{linorder} list \<Rightarrow> ('oid \<times> 'oid optio
 definition interp_rga :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> 'oid list" where
   "interp_rga ops \<equiv> foldl insert_rga [] ops"
 
-subsection\<open>Preservation of element indices\<close>
 
-lemma insert_body_preserve_indices [simp]:
-  shows  "set (insert_body xs e) = set xs \<union> {e}"
-by(induction xs, auto)
+subsection\<open>Commutativity of insert_rga\<close>
 
-lemma insert_none_preserve_indices:
-  shows "set (insert_rga xs (oid, None)) = set xs \<union> {oid}"
-by(induction xs, auto)
+lemma insert_body_set_ins [simp]:
+  shows  "set (insert_body xs e) = insert e (set xs)"
+by (induction xs, auto)
 
-lemma insert_some_preserve_indices:
-  assumes "i \<in> set xs"
-  shows "set (insert_rga xs (oid, Some i)) = set xs \<union> {oid}"
-using assms by(induction xs, auto)
-
-lemma insert_some_insert_indices:
+lemma insert_rga_set_ins:
   assumes "i \<in> set xs"
   shows "set (insert_rga xs (oid, Some i)) = insert oid (set xs)"
-using assms insert_some_preserve_indices by auto
-
-subsection\<open>Commutativity of concurrent operations\<close>
+using assms by (induction xs, auto)
 
 lemma insert_body_commutes:
   shows "insert_body (insert_body xs e1) e2 = insert_body (insert_body xs e2) e1"
-by(induction xs, auto)
+by (induction xs, auto)
 
 lemma insert_rga_insert_body_commute:
   assumes "i2 \<noteq> Some e1"
@@ -70,92 +60,109 @@ lemma insert_rga_Some_commutes:
 using assms proof (induction xs, simp)
   case (Cons a xs)
   then show ?case
-    by (cases "a = i1"; cases "a = i2"; auto simp add: insert_body_commutes insert_rga_insert_body_commute)
+    by (cases "a = i1"; cases "a = i2";
+        auto simp add: insert_body_commutes insert_rga_insert_body_commute)
 qed
 
 lemma insert_rga_commutes:
   assumes "i2 \<noteq> Some e1" and "i1 \<noteq> Some e2"
   shows "insert_rga (insert_rga xs (e1, i1)) (e2, i2) =
          insert_rga (insert_rga xs (e2, i2)) (e1, i1)"
-  using assms apply(cases i1; cases i2)
-  using insert_rga_None_commutes apply(blast, blast, force)
-  apply clarsimp
-  apply(case_tac "a \<in> set xs"; case_tac "aa \<in> set xs")
-  apply(simp add: insert_rga_Some_commutes)
-  apply(simp_all add: insert_rga_nonexistent insert_some_preserve_indices)
-  done
+proof(cases i1)
+  case None
+  then show ?thesis
+  using assms(1) insert_rga_None_commutes by (cases i2, fastforce, blast)
+next
+  case some_r1: (Some r1)
+  then show ?thesis
+  proof(cases i2)
+    case None
+    then show ?thesis 
+      using assms(2) insert_rga_None_commutes by fastforce
+  next
+    case some_r2: (Some r2)
+    then show ?thesis
+    proof(cases "r1 \<in> set xs \<and> r2 \<in> set xs")
+      case True
+      then show ?thesis
+        using assms some_r1 some_r2 by (simp add: insert_rga_Some_commutes)
+    next
+      case False
+      then show ?thesis
+        using assms some_r1 some_r2
+        by (metis insert_iff insert_rga_nonexistent insert_rga_set_ins)
+    qed
+  qed
+qed
 
-lemma insert_body_stop_iteration:
-  assumes "e > x"
-  shows "insert_body (x#xs) e = e#x#xs"
-using assms by simp
-
-lemma insert_body_head:
-  assumes "\<And>x. x \<in> set xs \<Longrightarrow> x < e"
-  shows "insert_body xs e = e#xs"
-using assms by(induction xs, auto)
-
-lemma insert_body_contains_new_elem:
+lemma insert_body_split:
   shows "\<exists>p s. xs = p @ s \<and> insert_body xs e = p @ e # s"
-  apply (induction xs)
-  apply force
-  apply clarsimp
-  apply (rule conjI)
-  apply clarsimp
-  apply (rule_tac x="[]" in exI)
-  apply fastforce
-  apply clarsimp
-  apply (rename_tac a p s)
-  apply (rule_tac x="a # p" in exI)
-  apply clarsimp
-  done
+proof(induction xs, force)
+  case (Cons a xs)
+  then obtain p s where IH: "xs = p @ s \<and> insert_body xs e = p @ e # s"
+    by blast
+  then show "\<exists>p s. a # xs = p @ s \<and> insert_body (a # xs) e = p @ e # s"
+  proof(cases "a < e")
+    case True
+    then have "a # xs = [] @ (a # p @ s) \<and> insert_body (a # xs) e = [] @ e # (a # p @ s)"
+      by (simp add: IH)
+    then show ?thesis by blast
+  next
+    case False
+    then have "a # xs = (a # p) @ s \<and> insert_body (a # xs) e = (a # p) @ e # s"
+      using IH by auto
+    then show ?thesis by blast
+  qed
+qed
 
 lemma insert_between_elements:
-  assumes "xs = pre@ref#suf"
-      and "distinct xs"
-      and "\<And>i'. i' \<in> set xs \<Longrightarrow> i' < e"
-    shows "insert_rga xs (e, Some ref) = pre @ ref # e # suf"
-  using assms
-  apply(induction xs arbitrary: pre)
-  apply force
-  apply(clarsimp)
-  apply(case_tac pre)
-  apply(clarsimp)
-  apply(case_tac suf)
-  apply force
-  apply force
-  apply clarsimp
-  done
+  assumes "xs = pre @ ref # suf"
+    and "distinct xs"
+    and "\<And>i. i \<in> set xs \<Longrightarrow> i < e"
+  shows "insert_rga xs (e, Some ref) = pre @ ref # e # suf"
+using assms proof(induction xs arbitrary: pre, force)
+  case (Cons a xs)
+  then show "insert_rga (a # xs) (e, Some ref) = pre @ ref # e # suf"
+  proof(cases pre)
+    case pre_nil: Nil
+    then have "a = ref"
+      using Cons.prems(1) by auto
+    then show ?thesis
+      using Cons.prems pre_nil by (cases suf, auto)
+  next
+    case (Cons b pre')
+    then have "insert_rga xs (e, Some ref) = pre' @ ref # e # suf"
+      using Cons.IH Cons.prems by auto
+    then show ?thesis
+      using Cons.prems(1) Cons.prems(2) local.Cons by auto
+  qed
+qed
 
-lemma insert_position_element_technical:
+lemma insert_rga_after_ref:
   assumes "\<forall>x\<in>set as. a \<noteq> x"
     and "insert_body (cs @ ds) e = cs @ e # ds"
   shows "insert_rga (as @ a # cs @ ds) (e, Some a) = as @ a # cs @ e # ds"
 using assms by (induction as; auto)
 
-lemma insert_preserves_order:
+lemma insert_rga_preserves_order:
   assumes "i = None \<or> (\<exists>i'. i = Some i' \<and> i' \<in> set xs)"
-      and "distinct xs"
-    shows "\<exists>pre suf. xs = pre@suf \<and> insert_rga xs (e, i) = pre @ e # suf"
-  using assms
-  apply -
-  apply(erule disjE)
-  apply clarsimp
-  using insert_body_contains_new_elem apply metis
-  apply(erule exE, clarsimp)
-  apply(rename_tac a)
-  apply(subgoal_tac "\<exists>as bs. xs = as@a#bs \<and> (\<forall>x \<in> set as. x \<noteq> a)")
-  apply clarsimp
-  apply(rename_tac as bs)
-  apply(subgoal_tac "\<exists>cs ds. insert_body bs e = cs@e#ds \<and> cs@ds = bs")
-  apply clarsimp
-  apply(rename_tac cs ds) 
-  apply(rule_tac x="as@a#cs" in exI)
-  apply(rule_tac x="ds" in exI)
-  apply clarsimp
-  apply(metis insert_position_element_technical)
-  apply(metis insert_body_contains_new_elem)
-  using split_list_first apply fastforce
-done
+    and "distinct xs"
+  shows "\<exists>pre suf. xs = pre @ suf \<and> insert_rga xs (e, i) = pre @ e # suf"
+proof(cases i)
+  case None
+  then show "\<exists>pre suf. xs = pre @ suf \<and> insert_rga xs (e, i) = pre @ e # suf"
+    using insert_body_split by auto
+next
+  case (Some r)
+  moreover from this obtain as bs where "xs = as @ r # bs \<and> (\<forall>x \<in> set as. x \<noteq> r)"
+    using assms(1) split_list_first by fastforce
+  moreover have "\<exists>cs ds. bs = cs @ ds \<and> insert_body bs e = cs @ e # ds"
+    by (simp add: insert_body_split)
+  then obtain cs ds where "bs = cs @ ds \<and> insert_body bs e = cs @ e # ds"
+    by blast
+  ultimately have "xs = (as @ r # cs) @ ds \<and> insert_rga xs (e, i) = (as @ r # cs) @ e # ds"
+    using insert_rga_after_ref by fastforce
+  then show ?thesis by blast
+qed
 
 end

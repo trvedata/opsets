@@ -75,7 +75,7 @@ lemma insert_ops_memb_ref_older:
   assumes "insert_ops op_list"
     and "(oid, Some ref) \<in> set op_list"
   shows "ref < oid"
-using assms insert_ops_ref_older list_split_memb by fastforce
+using assms insert_ops_ref_older split_list_first by fastforce
 
 
 subsection \<open>Properties of the insert_spec function\<close>

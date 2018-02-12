@@ -68,7 +68,7 @@ next
     moreover from this have "r \<in> set (interp_rga xs)"
       using IH rga_ops_ref_exists by (metis x_pair list.set_map snoc.prems)
     ultimately have "set (interp_rga (xs @ [(xi, xr)])) = insert xi (set (interp_rga xs))"
-      by (simp add: insert_some_insert_indices interp_rga_tail_unfold)
+      by (simp add: insert_rga_set_ins interp_rga_tail_unfold)
     then show "set (interp_rga (xs @ [x])) = set (map fst (xs @ [x]))"
       using IH x_pair by auto
   qed
@@ -99,7 +99,7 @@ next
     hence "xr = None \<or> (\<exists>r. xr = Some r \<and> r \<in> set (interp_rga xs))"
       using interp_rga_ids rga_ops_rem_last snoc.prems by blast
     thus ?thesis
-      using IH insert_preserves_order by blast
+      using IH insert_rga_preserves_order by blast
   qed
   ultimately show "distinct (interp_rga (xs @ [x]))" 
     by (metis Un_iff disjoint_insert(1) distinct.simps(2) distinct_append 
@@ -213,7 +213,7 @@ next
   hence "x \<in> set ys"
     by (metis last_in_set permut_def snoc_eq_iff_butlast)
   from this obtain pre suf where ys_split: "ys = pre @ [x] @ suf"
-    using list_split_memb by force
+    using split_list_first by fastforce
   have IH: "interp_list xs = interp_rga (pre @ suf)"
   proof -
     have "crdt_ops set_option (pre @ suf)"
