@@ -1,5 +1,5 @@
 theory OpSet
-  imports Main Permute
+  imports Main
 begin
 
 definition spec_ops :: "('oper \<Rightarrow> 'oid set) \<Rightarrow> ('oid::{linorder} \<times> 'oper) list \<Rightarrow> bool" where
@@ -54,12 +54,68 @@ proof -
     using assms opset_subset by blast
 qed
 
+lemma distinct_rem_mid:
+  assumes "distinct (xs @ [x] @ ys)"
+  shows "distinct (xs @ ys)"
+using assms by (induction ys rule: rev_induct, simp_all)
+
+lemma distinct_fst_append:
+  assumes "x \<in> set (map fst xs)"
+    and "distinct (map fst (xs @ ys))"
+  shows "x \<notin> set (map fst ys)"
+using assms by (induction ys, force+)
+
+lemma distinct_set_remove_last:
+  assumes "distinct (xs @ [x])"
+  shows "set xs = set (xs @ [x]) - {x}"
+using assms by force
+
+lemma distinct_set_remove_mid:
+  assumes "distinct (xs @ [x] @ ys)"
+  shows "set (xs @ ys) = set (xs @ [x] @ ys) - {x}"
+using assms by force
+
+lemma append_subset:
+  assumes "set xs = set (ys @ zs)"
+  shows "set ys \<subseteq> set xs" and "set zs \<subseteq> set xs"
+by (metis Un_iff assms set_append subsetI)+
+
+lemma append_set_rem_last:
+  assumes "set (xs @ [x]) = set (ys @ [x] @ zs)"
+    and "distinct (xs @ [x])" and "distinct (ys @ [x] @ zs)"
+  shows "set xs = set (ys @ zs)"
+proof -
+  have "distinct xs"
+    using assms distinct_append by blast
+  moreover from this have "set xs = set (xs @ [x]) - {x}"
+    by (meson assms distinct_set_remove_last)
+  moreover have "distinct (ys @ zs)"
+    using assms distinct_rem_mid by simp
+  ultimately show "set xs = set (ys @ zs)"
+    using assms distinct_set_remove_mid by metis
+qed
+
 
 subsection\<open>Lemmata about the spec_ops predicate\<close>
 
 lemma spec_ops_empty:
   shows "spec_ops deps []"
 by (simp add: spec_ops_def)
+
+lemma spec_ops_distinct:
+  assumes "spec_ops deps ops"
+  shows "distinct ops"
+using assms distinct_map spec_ops_def by blast
+
+lemma spec_ops_distinct_fst:
+  assumes "spec_ops deps ops"
+  shows "distinct (map fst ops)"
+using assms by (simp add: spec_ops_def)
+
+lemma spec_ops_sorted:
+  assumes "spec_ops deps ops"
+  shows "sorted (map fst ops)"
+using assms by (simp add: spec_ops_def)
 
 lemma spec_ops_rem_last:
   assumes "spec_ops deps (xs @ [x])"
@@ -377,12 +433,6 @@ next
     using crdt_ops.cases by force
 qed
 
-lemma distinct_fst_append:
-  assumes "x \<in> set (map fst xs)"
-    and "distinct (map fst (xs @ ys))"
-  shows "x \<notin> set (map fst ys)"
-using assms by (induction ys, force+)
-
 lemma crdt_ops_no_future_ref:
   assumes "crdt_ops deps (xs @ [(oid, oper)] @ ys)"
   shows "\<And>ref. ref \<in> deps oper \<Longrightarrow> ref \<notin> fst ` set ys"
@@ -459,7 +509,7 @@ using assms crdt_ops_rem_last crdt_ops_reorder append_assoc by metis
 lemma crdt_ops_independent_suf:
   assumes "spec_ops deps (xs @ [(oid, oper)])"
     and "crdt_ops deps (ys @ [(oid, oper)] @ zs)"
-    and "permut (xs @ [(oid, oper)]) (ys @ [(oid, oper)] @ zs)"
+    and "set (xs @ [(oid, oper)]) = set (ys @ [(oid, oper)] @ zs)"
   shows "\<And>op2 r. op2 \<in> snd ` set zs \<Longrightarrow> r \<in> deps op2 \<Longrightarrow> r \<noteq> oid"
 proof -
   have "\<And>op2 r. op2 \<in> snd ` set xs \<Longrightarrow> r \<in> deps op2 \<Longrightarrow> r < oid"
@@ -471,8 +521,15 @@ proof -
     ultimately show "\<And>op2 r. op2 \<in> snd ` set xs \<Longrightarrow> r \<in> deps op2 \<Longrightarrow> r < oid"
       by fastforce
   qed
-  moreover from assms(3) have "set zs \<subseteq> set xs"
-    by (metis permut_rem_last permut_subset(2))
+  moreover have "set zs \<subseteq> set xs"
+  proof -
+    have "distinct (xs @ [(oid, oper)])" and "distinct (ys @ [(oid, oper)] @ zs)"
+      using assms spec_ops_distinct crdt_ops_distinct by blast+
+    hence "set xs = set (ys @ zs)"
+      by (meson append_set_rem_last assms(3))
+    then show "set zs \<subseteq> set xs"
+      using append_subset(2) by simp
+  qed
   ultimately show "\<And>op2 r. op2 \<in> snd ` set zs \<Longrightarrow> r \<in> deps op2 \<Longrightarrow> r \<noteq> oid"
     by fastforce
 qed
@@ -480,7 +537,7 @@ qed
 lemma crdt_ops_reorder_spec:
   assumes "spec_ops deps (xs @ [x])"
     and "crdt_ops deps (ys @ [x] @ zs)"
-    and "permut (xs @ [x]) (ys @ [x] @ zs)"
+    and "set (xs @ [x]) = set (ys @ [x] @ zs)"
   shows "crdt_ops deps (ys @ zs @ [x])"
 using assms proof -
   obtain oid oper where x_pair: "x = (oid, oper)" by force
@@ -493,7 +550,7 @@ qed
 lemma crdt_ops_rem_spec:
   assumes "spec_ops deps (xs @ [x])"
     and "crdt_ops deps (ys @ [x] @ zs)"
-    and "permut (xs @ [x]) (ys @ [x] @ zs)"
+    and "set (xs @ [x]) = set (ys @ [x] @ zs)"
   shows "crdt_ops deps (ys @ zs)"
 using assms crdt_ops_rem_last crdt_ops_reorder_spec append_assoc by metis
 

@@ -273,21 +273,23 @@ qed
 subsection\<open>Proof that RGA satisfies the list specification\<close>
 
 lemma final_insert:
-  assumes "permut (xs @ [x]) (ys @ [x])"
+  assumes "set (xs @ [x]) = set (ys @ [x])"
     and "rga_ops (xs @ [x])"
     and "insert_ops (ys @ [x])"
     and "interp_rga xs = interp_list ys"
   shows "interp_rga (xs @ [x]) = interp_list (ys @ [x])"
 proof -
   obtain oid ref where x_pair: "x = (oid, ref)" by force
-  have "permut xs ys"
-    using assms(1) permut_rem_any by fastforce
+  have "distinct (xs @ [x])" and "distinct (ys @ [x])"
+    using assms crdt_ops_distinct spec_ops_distinct rga_ops_def insert_ops_def by blast+
+  then have "set xs = set ys"
+    using assms(1) by force
   have oid_greatest: "\<And>i. i \<in> set (interp_rga xs) \<Longrightarrow> i < oid"
   proof -
     have "\<And>i. i \<in> set (map fst ys) \<Longrightarrow> i < oid"
       using assms(3) by (simp add: spec_ops_id_inc x_pair insert_ops_def)
     hence "\<And>i. i \<in> set (map fst xs) \<Longrightarrow> i < oid"
-      using \<open>permut xs ys\<close> permut_pair_fst by blast
+      using \<open>set xs = set ys\<close> by auto
     thus "\<And>i. i \<in> set (interp_rga xs) \<Longrightarrow> i < oid"
       using assms(2) interp_rga_ids rga_ops_rem_last by blast
   qed
@@ -364,17 +366,17 @@ next
 qed
 
 lemma rga_spec_equal:
-  assumes "permut xs ys"
+  assumes "set xs = set ys"
     and "insert_ops xs"
     and "rga_ops ys"
   shows "interp_list xs = interp_rga ys"
 using assms proof(induction xs arbitrary: ys rule: rev_induct)
   case Nil
-  then show ?case by (simp add: interp_rga_def interp_list_def permut_def)
+  then show ?case by (simp add: interp_rga_def interp_list_def)
 next
   case (snoc x xs)
   hence "x \<in> set ys"
-    by (metis last_in_set permut_def snoc_eq_iff_butlast)
+    by (metis last_in_set snoc_eq_iff_butlast)
   from this obtain pre suf where ys_split: "ys = pre @ [x] @ suf"
     using split_list_first by fastforce
   have IH: "interp_list xs = interp_rga (pre @ suf)"
@@ -388,8 +390,11 @@ next
     qed
     hence "rga_ops (pre @ suf)"
       using rga_ops_def by blast
-    thus ?thesis
-      using permut_rem_last insert_ops_rem_last ys_split snoc by metis
+    moreover have "set xs = set (pre @ suf)"
+      by (metis append_set_rem_last crdt_ops_distinct insert_ops_def rga_ops_def
+          snoc.prems spec_ops_distinct ys_split)
+    ultimately show ?thesis
+      using insert_ops_rem_last ys_split snoc by metis
   qed
   have valid_rga: "rga_ops (pre @ suf @ [x])"
   proof -
@@ -401,11 +406,10 @@ next
   qed
   have "interp_list (xs @ [x]) = interp_rga (pre @ suf @ [x])"
   proof -
-    have "permut (xs @ [x]) (pre @ suf @ [x])"
-      using permut_reorder1 snoc.prems(1) ys_split by fastforce
+    have "set (xs @ [x]) = set (pre @ suf @ [x])"
+      using snoc.prems(1) ys_split by auto
     thus ?thesis
-      using valid_rga final_insert IH
-      by (metis append_assoc permut_commute snoc.prems(2))
+      using IH snoc.prems(2) valid_rga final_insert append_assoc by metis
   qed
   moreover have "... = interp_rga (pre @ [x] @ suf)"
   proof -
@@ -428,17 +432,17 @@ qed
 
 lemma insert_ops_exist:
   assumes "rga_ops xs"
-  shows "\<exists>ys. permut xs ys \<and> insert_ops ys"
+  shows "\<exists>ys. set xs = set ys \<and> insert_ops ys"
 using assms proof(induction xs rule: List.rev_induct)
   case Nil
-  then show "\<exists>ys. permut [] ys \<and> insert_ops ys"
-    by (simp add: permut_def spec_ops_empty insert_ops_def)
+  then show "\<exists>ys. set [] = set ys \<and> insert_ops ys"
+    by (simp add: spec_ops_empty insert_ops_def)
 next
   case (snoc x xs)
-  hence IH: "\<exists>ys. permut xs ys \<and> insert_ops ys"
+  hence IH: "\<exists>ys. set xs = set ys \<and> insert_ops ys"
     using rga_ops_rem_last by blast
   then obtain ys oid ref
-    where "permut xs ys" and "insert_ops ys" and "x = (oid, ref)"
+    where "set xs = set ys" and "insert_ops ys" and "x = (oid, ref)"
     by force
   moreover have "\<exists>pre suf. ys = pre@suf \<and>
                        (\<forall>i \<in> set (map fst pre). i < oid) \<and>
@@ -447,15 +451,15 @@ next
     have "oid \<notin> set (map fst xs)"
       using calculation(3) crdt_ops_unique_last rga_ops_def snoc.prems by fastforce
     hence "oid \<notin> set (map fst ys)"
-      using calculation(1) permut_pair_fst by blast 
+      by (simp add: calculation(1))
     thus ?thesis
       using spec_ops_split \<open>insert_ops ys\<close> insert_ops_def by blast
   qed
   from this obtain pre suf where "ys = pre @ suf" and
                        "\<forall>i \<in> set (map fst pre). i < oid" and
                        "\<forall>i \<in> set (map fst suf). oid < i" by force
-  moreover have "permut (xs @ [(oid, ref)]) (pre @ [(oid, ref)] @ suf)"
-    using permut_append crdt_ops_distinct calculation snoc.prems rga_ops_def by metis
+  moreover have "set (xs @ [(oid, ref)]) = set (pre @ [(oid, ref)] @ suf)"
+    using crdt_ops_distinct calculation snoc.prems rga_ops_def by simp
   moreover have "insert_ops (pre @ [(oid, ref)] @ suf)"
   proof -
     have "\<forall>r \<in> set_option ref. r < oid"
@@ -464,13 +468,13 @@ next
       using spec_ops_add_any calculation insert_ops_def by metis
     thus ?thesis by (simp add: insert_ops_def)
   qed
-  ultimately show "\<exists>ys. permut (xs @ [x]) ys \<and> insert_ops ys"
+  ultimately show "\<exists>ys. set (xs @ [x]) = set ys \<and> insert_ops ys"
     by blast
 qed
 
 theorem rga_meets_spec:
   assumes "rga_ops xs"
-  shows "\<exists>ys. permut ys xs \<and> insert_ops ys \<and> interp_list ys = interp_rga xs"
-  using assms rga_spec_equal insert_ops_exist permut_commute by blast
+  shows "\<exists>ys. set ys = set xs \<and> insert_ops ys \<and> interp_list ys = interp_rga xs"
+  using assms rga_spec_equal insert_ops_exist by metis
 
 end
