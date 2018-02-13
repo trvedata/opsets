@@ -18,6 +18,9 @@
 \usepackage{csquotes}
 \usepackage{tikz}
 \usepackage{mdwlist}
+\usepackage{setspace}
+\usepackage{calc}
+\usepackage{paralist}
 
 \usetikzlibrary{arrows.meta}
 \hyphenation{da-ta-cen-ter da-ta-cen-ters time-stamp time-stamps time-stamped Grish-chen-ko}
@@ -25,6 +28,18 @@
 
 \usepackage{isabelle,isabellesym}
 \isabellestyle{it}
+
+\renewenvironment{isabelle}{%
+  \medbreak\noindent\hspace{\parindent}%
+  \begin{minipage}{\textwidth-\parindent}% use minipage to prevent page breaks
+  \begin{isabellebody}%
+  \begin{tabbing}%
+}{%
+  \end{tabbing}%
+  \end{isabellebody}%
+  \end{minipage}%
+  \medbreak%
+}
 
 \newtheorem{proposition}{Proposition}
 
@@ -139,9 +154,6 @@ We thank KC Sivaramakrishnan and Peter Sewell for their helpful feedback on this
 \section{Introduction to Isabelle/HOL}
 \label{sect:appendix:isabelle}
 
-% cribbed from oopsla paper with some small changes and deletions
-% TODO: further edit down as required
-
 We provide a brief introduction to the key concepts and syntax of Isabelle/HOL so that the unfamiliar reader can understand the material in Appendix~\ref{sect:appendix:statements}.
 A more detailed introduction can be found in the standard tutorial material~\cite{DBLP:books/sp/NipkowK14}.
 
@@ -150,12 +162,12 @@ A more detailed introduction can be found in the standard tutorial material~\cit
 Isabelle/HOL is a logic with a strict, polymorphic, inferred type system.
 \emph{Function types} are written $\tau_1 \Rightarrow \tau_2$, and are inhabited by \emph{total} functions, mapping elements of $\tau_1$ to elements of $\tau_2$.
 We write $\tau_1 \times \tau_2$ for the \emph{product type} of $\tau_1$ and $\tau_2$, inhabited by pairs of elements of type $\tau_1$ and $\tau_2$, respectively.
-In a similar fashion to Standard ML and OCaml, \emph{type operators} are applied to arguments in reverse order, and therefore $\tau\ \isa{list}$ denotes the type of lists of elements of type $\tau$, and $\tau\ \isa{set}$ denotes the type of mathematical (i.e., potentially infinite) sets of type $\tau$.
+\emph{Type operators} are applied to arguments in reverse order: $\tau\ \isa{list}$ denotes the type of lists of elements of type $\tau$, and $\tau\ \isa{set}$ denotes the type of mathematical (i.e., potentially infinite) sets of type $\tau$, for instance.
 Type variables are written in lowercase, and preceded with a prime: ${\isacharprime}a \Rightarrow {\isacharprime}a$ denotes the type of a polymorphic identity function, for example.
-\emph{Tagged union} types are introduced with the $\isacommand{datatype}$ keyword, with constructors of these types usually written with an initial upper case letter.
+\emph{Tagged union} types are introduced with the $\isacommand{datatype}$ keyword, with \emph{constructors} of these types usually written with an initial upper case letter.
 
 In Isabelle/HOL's term language we write $\isa{t} \mathbin{::} \tau$ for a \emph{type ascription}, constraining the type of the term $\isa{t}$ to the type $\tau$.
-We write $\lambda{x}.\: t$ for an anonymous function mapping an argument $\isa{x}$ to $\isa{t(x)}$, and write the application of term $\isa{t}$ with function type to an argument $\isa{u}$ as $\isa{t\ u}$, as usual.
+We write $\lambda{x}.\: t$ for an anonymous function mapping an argument $\isa{x}$ to $\isa{t(x)}$, and write the application of term $\isa{t}$ with function type to an argument $\isa{u}$ as $\isa{t\ u}$.
 Terms of list type are introduced using one of two constructors: the empty list $[\,]$ or `nil', and the infix operator $\isa{\#}$ which is pronounced ``cons'', and which prepends an element to an existing list.
 We use $[t_1, \ldots, t_n]$ as syntactic sugar for a list literal, and $\isa{xs} \mathbin{\isacharat} \isa{ys}$ to express the concatenation (appending) of two lists $\isa{xs}$ and $\isa{ys}$.
 We write $\{\,\}$ for the empty set, and use usual mathematical notation for set union, disjunction, membership tests, and so on: $\isa{t} \cup \isa{u}$, $\isa{t} \cap \isa{u}$, and $\isa{x} \in \isa{t}$.
@@ -168,16 +180,16 @@ We will sometimes use the shorthand ${\isasymlbrakk}\isa{H}_1{\isacharsemicolon}
 \paragraph{Definitions and theorems.}
 
 New non-recursive definitions are entered into Isabelle's global context using the $\mathbf{definition}$ keyword.
-Recursive functions are defined using the $\mathbf{fun}$ keyword, and support pattern matching on their arguments.
+Recursive functions are defined using the $\mathbf{fun}$ keyword, and support \emph{pattern matching} on their arguments.
 All functions are total, and therefore every recursive function must be provably terminating.
 All termination proofs in this work are generated automatically by Isabelle itself.
 
-Inductive relations are defined with the $\mathbf{inductive}$ keyword.
+\emph{Inductive relations} are defined with the $\mathbf{inductive}$ keyword.
 For example, the definition
 \begin{isabelle}
-\isacommand{inductive} only-fives\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}nat\ list\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where}\\
-{\isachardoublequoteopen}only-fives\ {\isacharbrackleft}{\isacharbrackright}{\isachardoublequoteclose}\ {\isacharbar}\\
-{\isachardoublequoteopen}{\isasymlbrakk}\ only-fives\ xs\ {\isasymrbrakk}\ {\isasymLongrightarrow}\ only-fives {\isacharparenleft}5\#xs{\isacharparenright}{\isachardoublequoteclose}
+\isacommand{inductive} only-fives\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}nat\ list\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where} \\
+~~~~{\isachardoublequoteopen}only-fives\ {\isacharbrackleft}{\isacharbrackright}{\isachardoublequoteclose}\ {\isacharbar}\\
+~~~~{\isachardoublequoteopen}{\isasymlbrakk}\ only-fives\ xs\ {\isasymrbrakk}\ {\isasymLongrightarrow}\ only-fives {\isacharparenleft}5\#xs{\isacharparenright}{\isachardoublequoteclose}
 \end{isabelle}
 \noindent %dpm: spacing above
 introduces a new constant $\isa{only-fives}$ of type $\isa{nat list} \Rightarrow \isa{bool}$.
@@ -189,9 +201,9 @@ Lemmas, theorems, and corollaries can be asserted using the $\isacommand{lemma}$
 There is no semantic difference between these keywords in Isabelle.
 For example,
 \begin{isabelle}
-\isacommand{theorem} only-fives-concat{\isacharcolon}\\
-\isakeyword{assumes}\ only-fives\ xs \isakeyword{and}\ only-fives\ ys\\
-\isakeyword{shows}\ only-fives\ (xs \isacharat ys)
+\isacommand{theorem} only-fives-concat{\isacharcolon} \\
+~~~~\isakeyword{assumes}\ only-fives\ xs \isakeyword{and}\ only-fives\ ys\\
+~~~~\isakeyword{shows}\ only-fives\ (xs \isacharat ys)
 \end{isabelle}
 \noindent %dpm: spacing above
 conjectures that if $\isa{xs}$ and $\isa{ys}$ are both lists of fives, then their concatenation $xs \mathbin{\isacharat} ys$ is also a list of fives.
