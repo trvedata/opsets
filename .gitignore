@@ -3,10 +3,12 @@
 *.out
 *.bbl
 *.blg
+*.toc
 *.dvi
 *.ps
 *.pdf
 *-arxiv.tex
 *~
 .DS_Store
-/isabelle/output
+/isabelle/output/document
+/isabelle/output/outline/*.sty
