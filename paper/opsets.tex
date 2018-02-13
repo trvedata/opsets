@@ -58,11 +58,11 @@
 \maketitle
 
 \begin{center}
-Regular Paper
+Regular Paper (not eligible for best student paper award)
 \end{center}
 
 \begin{abstract}
-We introduce OpSets, a framework for specifying and reasoning about the semantics of replicated datatypes that provide eventual consistency in a distributed system, and formally verifying algorithms that implement these datatypes.
+We introduce OpSets, a framework for specifying and reasoning about the semantics of replicated datatypes that provide eventual consistency in a distributed system, and for formally verifying algorithms that implement these datatypes.
 Our approach is simple but expressive, allowing us to succinctly specify a variety of abstract datatypes, including maps, sets, lists, text, graphs, trees, and registers.
 Our datatypes are also composable, enabling the construction of complex data structures.
 To demonstrate the utility of OpSets for analysing replication algorithms, we highlight an important correctness property for collaborative text editing that has traditionally been overlooked; algorithms that do not satisfy this property can exhibit awkward interleaving of text.
@@ -89,7 +89,7 @@ Conflict-free Replicated Data Types, or CRDTs \cite{Shapiro:2011wy,Shapiro:2011u
 The primary correctness property for CRDTs is \emph{convergence} \cite{Shapiro:2011un,Gomes:2017gy}, defined as: \emph{``whenever any two replicas have applied the same set of updates, they are in the same state''}, even if each replica applies the updates in a different order.
 Convergence is a stronger property than eventual consistency, but it also fails to define what the converged state should be.
 
-In this work we introduce \emph{Operation Sets} (or \emph{OpSets} for short), a novel approach for specifying the semantics of replicated datatypes, and reasoning about algorithms for concurrent data access and manipulation.
+In this work we introduce \emph{Operation Sets} (or \emph{OpSets} for short), a novel approach for specifying the semantics of replicated datatypes, and for reasoning about algorithms for concurrent data access and manipulation.
 We go beyond merely ensuring replica convergence: the OpSets approach is a form of executable specification that precisely defines the permitted states of a replica after some set of updates has been applied.
 Our contributions in this paper are as follows:
 
