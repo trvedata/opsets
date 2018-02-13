@@ -50,7 +50,7 @@ If $\mathit{val}$ does not currently exist in the tree (e.g.\ because it has jus
 
 \subsection{Discussion: Subtree Move Conflicts}
 
-In a replicated tree datatype that supports move operations, concurrent moves may conflict in various ways \cite{Najafzadeh:2017vk,AhmedNacer:2012us,Tao:2015gd}.
+In a replicated tree datatype with move operations, concurrent moves may conflict in various ways \cite{Najafzadeh:2017vk,AhmedNacer:2012us,Tao:2015gd}.
 For example, two different operations may concurrently move the same object to different positions; we resolve this conflict by letting the operation with the greatest identifier ``win''.
 Intuitively, we can think of the location of an object in the tree as being determined by a last-writer-wins register, and a move operation overwrites that register.
 
@@ -93,5 +93,5 @@ Our interpretation function for $\mathsf{Assign}$ handles this situation based o
 Since operations are interpreted in order of ascending identifier, one of the two (say, $\mathit{id}_1$) is interpreted first.
 When the second ($\mathit{id}_2$) is subsequently interpreted, $a$ is already an ancestor of $b$, and thus the second operation has no effect.
 
-Note that on some nodes, operation $\mathit{id}_2$ may be applied first, and $\mathit{id}_1$ applied later.
-In this case, the user will observe first $b$ becoming a child of $a$, and then later observe their positions being swapped (with the effect of $\mathit{id}_2$ being undone).
+On some nodes, operation $\mathit{id}_2$ may be applied first, and $\mathit{id}_1$ applied later.
+In this case, the user will first observe $b$ becoming a child of $a$, and later observe their positions being swapped (with the effect of $\mathit{id}_2$ being undone).

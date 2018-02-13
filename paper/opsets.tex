@@ -109,6 +109,7 @@ The OpSets approach enables a simple definition of this operation that had previ
 \item Using the Isabelle/HOL proof assistant~\cite{DBLP:conf/tphol/WenzelPN08} we formalise the OpSets approach, producing mechanised proofs of correctness of the main claims in this paper.
 In particular, we prove that our list specification is strictly stronger than the recent specification of collaborative text editing by Attiya et al. \cite{Attiya:2016kh}.
 By using mechanised proofs we eliminate the ambiguity of previous informal approaches, and rule out reasoning errors that could occur in handwritten proofs.
+Moreover, the proof framework we have developed is reusable and can be leveraged to verify other datatypes in the future.
 \end{itemize*}
 
 \input{approach}
@@ -121,13 +122,13 @@ By using mechanised proofs we eliminate the ambiguity of previous informal appro
 
 In this work we have introduced Operation Sets (OpSets), a simple but expressive approach for specifying the semantics of replicated datatypes.
 We specified a variety of common, composable replicated datatypes in the OpSets model, and used Isabelle/HOL to formally reason about their properties.
-We have also shown how the OpSet abstraction can be used to reason about existing replication algorithms, and developed a new specification to highlighted an interleaving anomaly that affects some existing collaborative text editing algorithms.
+We have also shown how the OpSet abstraction can be used to reason about existing replication algorithms, and developed a new specification to highlight an interleaving anomaly that affects some existing collaborative text editing algorithms.
 Finally we demonstrated how the OpSet model to can be used to develop new specifications to support algorithm design, and developed a specification for an atomic move operation in a tree CRDT.
 
 The OpSets approach is a form of executable specification that precisely defines the permitted states of a replica after some set of updates have been applied.
 The simplicity of our approach builds on sequential OpSet interpretation: operations are applied in strict ascending order of ID.
-This property is very useful as it simplifies reasoning when writing new specifications and allows CRDT designers to quickly write new specifications or invariants for CRDTs.
-This contrasts with the traditional approach, where analysis or design must deal with the complexities of concurrent modification and allow operations to be applied in any causal order due to commutativity.
+This property is very useful as it trivially ensures convergence, and it simplifies reasoning about specifications and invariants for CRDTs.
+In contrast, the traditional approach requires operations to be defined in a way that is commutative, increasing their complexity.
 We took advantage of the ease of specification to demonstrate the correspondence between sequential specification and commutative implementation, proving that the RGA CRDT satisfies our OpSet specification of lists.
 For future work it will be interesting to further explore this correspondence for other datatypes; in particular, we hypothesise that it is possible to derive a tree CRDT with a commutative move operation from the specification in \S~\ref{sec:tree}.
 

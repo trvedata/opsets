@@ -24,11 +24,12 @@ We circumvent this limitation, and hence allow nodes to make progress while offl
 
 Bieniusa et al.~\cite{Bieniusa:2012gt} articulate a \emph{principle of permutation equivalence} that partially specifies the expected semantics of replicated datatypes, but which leaves some combinations of operations unspecified.
 Zeller et al.~\cite{Zeller:2014fl} formalise counters, registers, and sets using Isabelle/HOL and provide mechanised proofs of their correctness.
-Gomes et al.~\cite{Gomes:2017gy} establish a formal verification framework for CRDTs in Isabelle/HOL, and verify the strong eventual consistency properties (in particular, convergence) of a list, set, and counter datatype.
-However, the work does not specify the datatype semantics beyond the convergence property.
-
 Attiya et al.~\cite{Attiya:2016kh} give two specifications of collaborative text editing ($\mathcal{A}_\textsf{strong}$ and $\mathcal{A}_\textsf{weak}$), prove that the RGA CRDT \cite{Roh:2011dw} satisfies $\mathcal{A}_\textsf{strong}$, and conjecture that the Operational Transformation algorithm Jupiter \cite{Nichols:1995fd} satisfies $\mathcal{A}_\textsf{weak}$.
 Wei et al.~\cite{Wei:2017tg} complete the proof that Jupiter satisfies $\mathcal{A}_\textsf{weak}$.
+
+In our prior work \cite{Gomes:2017gy} we establish a formal verification framework for CRDTs in Isabelle/HOL, and verify the strong eventual consistency properties (in particular, convergence) of a list, set, and counter datatype.
+The Isabelle implementation of RGA we use in \S~\ref{sec:datatypes} is based on this work \cite{Gomes:2017vo}.
+However, this work does not specify the datatype semantics beyond the convergence property.
 
 Gaducci et al.~\cite{DBLP:conf/coordination/GadducciMR17} develop a semantics for replicated datatypes, placing a focus on compositionality, where a replicated datatype is modelled as a function from labelled directed acyclic graphs of events to sets of values, with each value in this set potentially observable at a node under different ordering of events observed at that node.
 A notion of behavioural \emph{refinement} for replicated datatypes induced by set inclusion is also defined, along with a generalisation of their relational semantics to a categorical one.
