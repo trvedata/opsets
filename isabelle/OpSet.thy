@@ -16,7 +16,7 @@ inductive crdt_ops :: "('oper \<Rightarrow> 'oid set) \<Rightarrow> ('oid::{lino
 locale opset =
   fixes opset :: "('oid::{linorder} \<times> 'oper) set"
     and deps  :: "'oper \<Rightarrow> 'oid set"
-  assumes unique_oid: "(i1, op1) \<in> opset \<Longrightarrow> (i2, op2) \<in> opset \<Longrightarrow> op1 = op2"
+  assumes unique_oid: "(oid, op1) \<in> opset \<Longrightarrow> (oid, op2) \<in> opset \<Longrightarrow> op1 = op2"
     and ref_older: "(oid, oper) \<in> opset \<Longrightarrow> ref \<in> deps oper \<Longrightarrow> ref < oid"
     and finite_opset: "finite opset"
 
@@ -25,8 +25,8 @@ lemma opset_subset:
     and "X \<subseteq> Y"
   shows "opset X deps"
 proof
-  fix i1 op1 i2 op2
-  assume "(i1, op1) \<in> X" and "(i2, op2) \<in> X"
+  fix oid op1 op2
+  assume "(oid, op1) \<in> X" and "(oid, op2) \<in> X"
   thus "op1 = op2"
     using assms by (meson opset.unique_oid set_mp)
 next
@@ -312,7 +312,7 @@ qed
 
 lemma spec_ops_exists_base:
   assumes "finite ops"
-    and "\<And>i1 i2 op1 op2. (i1, op1) \<in> ops \<Longrightarrow> (i2, op2) \<in> ops \<Longrightarrow> op1 = op2"
+    and "\<And>oid op1 op2. (oid, op1) \<in> ops \<Longrightarrow> (oid, op2) \<in> ops \<Longrightarrow> op1 = op2"
     and "\<And>oid oper ref. (oid, oper) \<in> ops \<Longrightarrow> ref \<in> deps oper \<Longrightarrow> ref < oid"
   shows "\<exists>op_list. set op_list = ops \<and> spec_ops deps op_list"
 using assms proof(induct ops rule: Finite_Set.finite_induct_select)
@@ -347,7 +347,7 @@ lemma spec_ops_exists:
 proof -
   have "finite ops"
     using assms opset.finite_opset by force
-  moreover have "\<And>i1 i2 op1 op2. (i1, op1) \<in> ops \<Longrightarrow> (i2, op2) \<in> ops \<Longrightarrow> op1 = op2"
+  moreover have "\<And>oid op1 op2. (oid, op1) \<in> ops \<Longrightarrow> (oid, op2) \<in> ops \<Longrightarrow> op1 = op2"
     using assms opset.unique_oid by force
   moreover have "\<And>oid oper ref. (oid, oper) \<in> ops \<Longrightarrow> ref \<in> deps oper \<Longrightarrow> ref < oid"
     using assms opset.ref_older by force
