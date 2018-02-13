@@ -1,17 +1,35 @@
+(* Martin Kleppmann, University of Cambridge
+   Victor B. F. Gomes, University of Cambridge
+   Dominic P. Mulligan, Arm Research, Cambridge
+*)
+
+section\<open>Abstract OpSet\<close>
+
+text\<open>In this section, we define a general-purpose OpSet abstraction that is not
+specific to any one particular datatype. We develop a library of useful lemmas
+that we can build upon later when reasoning about a specific datatype.\<close>
+
 theory OpSet
   imports Main
 begin
 
-definition spec_ops :: "('oper \<Rightarrow> 'oid set) \<Rightarrow> ('oid::{linorder} \<times> 'oper) list \<Rightarrow> bool" where
-  "spec_ops deps ops \<equiv> (sorted (map fst ops) \<and> distinct (map fst ops) \<and>
-           (\<forall>oid oper ref. (oid, oper) \<in> set ops \<and> ref \<in> deps oper \<longrightarrow> ref < oid))"
+subsection\<open>OpSet definition\<close>
 
-inductive crdt_ops :: "('oper \<Rightarrow> 'oid set) \<Rightarrow> ('oid::{linorder} \<times> 'oper) list \<Rightarrow> bool" where
-  "crdt_ops deps []" |
-  "\<lbrakk>crdt_ops deps xs;
-    oid \<notin> set (map fst xs);
-    \<forall>ref \<in> deps oper. ref \<in> set (map fst xs) \<and> ref < oid
-   \<rbrakk> \<Longrightarrow> crdt_ops deps (xs @ [(oid, oper)])"
+text\<open>An OpSet is a set of (ID, operation) pairs with an associated total order
+on IDs (represented here with the ``linorder'' typeclass), and satisfying the
+following properties:
+\begin{enumerate}
+\item The ID is unique (that is, if any two pairs in the set have the same ID,
+then their operation is also the same).
+\item If the operation references the IDs of any other operations, those
+referenced IDs are less than that of the operation itself, according to the
+total order on IDs. To avoid assuming anything about the structure of operations
+here, we use a function ``deps'' that returns the set of dependent IDs for a given
+operation. This requirement is a weak expression of causality: an operation can
+only depend on causally prior operations, and by making the total order on IDs
+a linear extension of the causal order, this requirement is easily satisfied.
+\item The OpSet is finite (but we do not assume any particular maximum size).
+\end{enumerate}\<close>
 
 locale opset =
   fixes opset :: "('oid::{linorder} \<times> 'oper) set"
@@ -19,6 +37,12 @@ locale opset =
   assumes unique_oid: "(oid, op1) \<in> opset \<Longrightarrow> (oid, op2) \<in> opset \<Longrightarrow> op1 = op2"
     and ref_older: "(oid, oper) \<in> opset \<Longrightarrow> ref \<in> deps oper \<Longrightarrow> ref < oid"
     and finite_opset: "finite opset"
+
+text\<open>We prove some lemmas about OpSets. In particular, any subset of an OpSet
+is also a valid OpSet. This is the case because although an operation can
+depend on causally prior operations, the OpSet does not require those prior
+operations to actually exist. This weak assumption makes the OpSet model
+more general and simplifies reasoning about OpSets.\<close>
 
 lemma opset_subset:
   assumes "opset Y deps"
@@ -54,6 +78,12 @@ proof -
     using assms opset_subset by blast
 qed
 
+
+subsection\<open>Helper lemmas about lists\<close>
+
+text\<open>Some general-purpose lemas about lists and sets that are helpful for
+subsequent proofs.\<close>
+
 lemma distinct_rem_mid:
   assumes "distinct (xs @ [x] @ ys)"
   shows "distinct (xs @ ys)"
@@ -75,6 +105,24 @@ lemma distinct_set_remove_mid:
   shows "set (xs @ ys) = set (xs @ [x] @ ys) - {x}"
 using assms by force
 
+lemma distinct_list_split:
+  assumes "distinct xs"
+    and "xs = xa @ x # ya"
+    and "xs = xb @ x # yb"
+  shows "xa = xb \<and> ya = yb"
+using assms proof(induction xs arbitrary: xa xb x)
+  fix xa xb x
+  assume "[] = xa @ x # ya"
+  thus "xa = xb \<and> ya = yb"
+    by auto
+next
+  fix a xs xa xb x
+  assume IH: "\<And>xa xb x. distinct xs \<Longrightarrow> xs = xa @ x # ya \<Longrightarrow> xs = xb @ x # yb \<Longrightarrow> xa = xb \<and> ya = yb"
+    and "distinct (a # xs)" and "a # xs = xa @ x # ya" and "a # xs = xb @ x # yb"
+  thus "xa = xb \<and> ya = yb"
+    by(case_tac xa; case_tac xb) auto
+qed
+
 lemma append_subset:
   assumes "set xs = set (ys @ zs)"
   shows "set ys \<subseteq> set xs" and "set zs \<subseteq> set xs"
@@ -93,42 +141,6 @@ proof -
     using assms distinct_rem_mid by simp
   ultimately show "set xs = set (ys @ zs)"
     using assms distinct_set_remove_mid by metis
-qed
-
-
-subsection\<open>Lemmata about the spec_ops predicate\<close>
-
-lemma spec_ops_empty:
-  shows "spec_ops deps []"
-by (simp add: spec_ops_def)
-
-lemma spec_ops_distinct:
-  assumes "spec_ops deps ops"
-  shows "distinct ops"
-using assms distinct_map spec_ops_def by blast
-
-lemma spec_ops_distinct_fst:
-  assumes "spec_ops deps ops"
-  shows "distinct (map fst ops)"
-using assms by (simp add: spec_ops_def)
-
-lemma spec_ops_sorted:
-  assumes "spec_ops deps ops"
-  shows "sorted (map fst ops)"
-using assms by (simp add: spec_ops_def)
-
-lemma spec_ops_rem_last:
-  assumes "spec_ops deps (xs @ [x])"
-  shows "spec_ops deps xs"
-proof -
-  have "sorted (map fst (xs @ [x]))" and "distinct (map fst (xs @ [x]))"
-    using assms spec_ops_def by blast+
-  moreover from this have "sorted (map fst xs)" and "distinct xs"
-    by (auto simp add: sorted_append distinct_butlast distinct_map)
-  moreover have "\<forall>oid oper ref. (oid, oper) \<in> set xs \<and> ref \<in> deps oper \<longrightarrow> ref < oid"
-    by (metis assms butlast_snoc in_set_butlastD spec_ops_def)
-  ultimately show "spec_ops deps xs"
-    by (simp add: spec_ops_def)
 qed
 
 lemma distinct_map_fst_remove1:
@@ -155,6 +167,68 @@ next
     ultimately show ?thesis
       using IH by auto
   qed
+qed
+
+
+subsection\<open>The spec\_ops predicate\<close>
+
+text\<open>The spec\_ops predicate describes a list of (ID, operation) pairs that
+corresponds to the linearisation of an OpSet, and which we use for sequentially
+interpreting the OpSet. A list satisfies spec\_ops iff it is sorted in ascending
+order of IDs, if the IDs are unique, and if every operation's dependencies have
+lower IDs than the operation itself. A list is implicitly finite in Isabelle/HOL.
+These requirements correspond to the OpSet definition above, and indeed we prove
+later that every OpSet has a linearisation that satisfies spec\_ops.\<close>
+
+definition spec_ops :: "('oper \<Rightarrow> 'oid set) \<Rightarrow> ('oid::{linorder} \<times> 'oper) list \<Rightarrow> bool" where
+  "spec_ops deps ops \<equiv> (sorted (map fst ops) \<and> distinct (map fst ops) \<and>
+           (\<forall>oid oper ref. (oid, oper) \<in> set ops \<and> ref \<in> deps oper \<longrightarrow> ref < oid))"
+
+lemma spec_ops_empty:
+  shows "spec_ops deps []"
+by (simp add: spec_ops_def)
+
+lemma spec_ops_distinct:
+  assumes "spec_ops deps ops"
+  shows "distinct ops"
+using assms distinct_map spec_ops_def by blast
+
+lemma spec_ops_distinct_fst:
+  assumes "spec_ops deps ops"
+  shows "distinct (map fst ops)"
+using assms by (simp add: spec_ops_def)
+
+lemma spec_ops_sorted:
+  assumes "spec_ops deps ops"
+  shows "sorted (map fst ops)"
+using assms by (simp add: spec_ops_def)
+
+lemma spec_ops_rem_cons:
+  assumes "spec_ops deps (x # xs)"
+  shows "spec_ops deps xs"
+proof -
+  have "sorted (map fst (x # xs))" and "distinct (map fst (x # xs))"
+    using assms spec_ops_def by blast+
+  moreover from this have "sorted (map fst xs)"
+    by (simp add: sorted_Cons)
+  moreover have "\<forall>oid oper ref. (oid, oper) \<in> set xs \<and> ref \<in> deps oper \<longrightarrow> ref < oid"
+    by (meson assms set_subset_Cons spec_ops_def subsetCE)
+  ultimately show "spec_ops deps xs"
+    by (simp add: spec_ops_def)
+qed
+
+lemma spec_ops_rem_last:
+  assumes "spec_ops deps (xs @ [x])"
+  shows "spec_ops deps xs"
+proof -
+  have "sorted (map fst (xs @ [x]))" and "distinct (map fst (xs @ [x]))"
+    using assms spec_ops_def by blast+
+  moreover from this have "sorted (map fst xs)" and "distinct xs"
+    by (auto simp add: sorted_append distinct_butlast distinct_map)
+  moreover have "\<forall>oid oper ref. (oid, oper) \<in> set xs \<and> ref \<in> deps oper \<longrightarrow> ref < oid"
+    by (metis assms butlast_snoc in_set_butlastD spec_ops_def)
+  ultimately show "spec_ops deps xs"
+    by (simp add: spec_ops_def)
 qed
 
 lemma spec_ops_remove1:
@@ -341,6 +415,9 @@ next
   ultimately show ?case by blast
 qed
 
+text\<open>Proof that for any given OpSet, a spec\_ops linearisation exists;
+and, conversely, for any given spec\_ops list, the set of pairs is an OpSet.\<close>
+
 lemma spec_ops_exists:
   assumes "opset ops deps"
   shows "\<exists>op_list. set op_list = ops \<and> spec_ops deps op_list"
@@ -355,8 +432,73 @@ proof -
     by (simp add: spec_ops_exists_base)
 qed
 
+lemma spec_ops_oid_unique:
+  assumes "spec_ops deps op_list"
+    and "(oid, op1) \<in> set op_list"
+    and "(oid, op2) \<in> set op_list"
+  shows "op1 = op2"
+using assms proof(induction op_list, simp)
+  case (Cons x op_list)
+  have "distinct (map fst (x # op_list))"
+    using Cons.prems(1) spec_ops_def by blast
+  hence notin: "fst x \<notin> set (map fst op_list)"
+    by simp
+  then show "op1 = op2"
+  proof(cases "fst x = oid")
+    case True
+    then show "op1 = op2"
+      using Cons.prems notin by (metis Pair_inject in_set_zipE set_ConsD zip_map_fst_snd)
+  next
+    case False
+    then have "(oid, op1) \<in> set op_list" and "(oid, op2) \<in> set op_list"
+      using Cons.prems by auto
+    then show "op1 = op2"
+      using Cons.IH Cons.prems(1) spec_ops_rem_cons by blast
+  qed
+qed
 
-subsection\<open>Lemmata about the crdt_ops predicate\<close>
+lemma spec_ops_is_opset:
+  assumes "spec_ops deps op_list"
+  shows "opset (set op_list) deps"
+proof -
+  have "\<And>oid op1 op2. (oid, op1) \<in> set op_list \<Longrightarrow> (oid, op2) \<in> set op_list \<Longrightarrow> op1 = op2"
+    using assms spec_ops_oid_unique by fastforce
+  moreover have "\<And>oid oper ref. (oid, oper) \<in> set op_list \<Longrightarrow> ref \<in> deps oper \<Longrightarrow> ref < oid"
+    by (meson assms spec_ops_ref_less)
+  moreover have "finite (set op_list)"
+    by simp
+  ultimately show "opset (set op_list) deps"
+    by (simp add: opset_def)
+qed
+
+
+subsection\<open>The crdt\_ops predicate\<close>
+
+text\<open>Like spec\_ops, the crdt\_ops predicate describes the linearisation of
+an OpSet into a list. Like spec\_ops, it requires IDs to be unique. However,
+its other properties are different: crdt\_ops does not require operations to
+appear in sorted order, but instead, whenever any operation references the
+ID of a prior operation, that prior operation must appear previously in the
+crdt\_ops list. Thus, the order of operations is partially constrained:
+operations must appear in causal order, but concurrent operations can be
+ordered arbitrarily.
+
+This list describes the operation sequence as it is typically applied to an
+operation-based CRDT. Applying operations in the order they appear in
+crdt\_ops requires that concurrent operations commute. For any crdt\_ops
+operation sequence, there is a permutation that satisfies the spec\_ops
+predicate. Thus, to check whether a CRDT satisfies its sequential specification,
+we can prove that interpreting any crdt\_ops operation sequence with the
+commutative operation interpretation results in the same end result as
+interpreting the spec\_ops permutation of that operation sequence with the
+sequential operation interpretation.\<close>
+
+inductive crdt_ops :: "('oper \<Rightarrow> 'oid set) \<Rightarrow> ('oid::{linorder} \<times> 'oper) list \<Rightarrow> bool" where
+  "crdt_ops deps []" |
+  "\<lbrakk>crdt_ops deps xs;
+    oid \<notin> set (map fst xs);
+    \<forall>ref \<in> deps oper. ref \<in> set (map fst xs) \<and> ref < oid
+   \<rbrakk> \<Longrightarrow> crdt_ops deps (xs @ [(oid, oper)])"
 
 inductive_cases crdt_ops_last: "crdt_ops deps (xs @ [x])"
 

@@ -1,8 +1,9 @@
 session "OpSets" = "HOL" +
-  options [document = pdf, document_output = "output"]
+  options [document = pdf, document_output = "output", document_variants = "document:outline=/proof,/ML"]
   theories [document = false]
     "~~/src/HOL/Library/Product_Lexorder"
   theories
-    List_Spec
+    Interleaving
+    RGA
   document_files
     "root.tex"

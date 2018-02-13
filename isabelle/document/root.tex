@@ -1,42 +1,27 @@
 \documentclass[11pt,a4paper]{article}
+\usepackage{authblk}
+\usepackage[a4paper,margin=1.8cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx} % times roman, including math
 \usepackage{isabelle,isabellesym}
-
-% further packages required for unusual symbols (see also
-% isabellesym.sty), use only when needed
-
 \usepackage{amssymb}
-  %for \<leadsto>, \<box>, \<diamond>, \<sqsupset>, \<mho>, \<Join>,
-  %\<lhd>, \<lesssim>, \<greatersim>, \<lessapprox>, \<greaterapprox>,
-  %\<triangleq>, \<yen>, \<lozenge>
+\usepackage{pdfsetup} % this should be the last package used
 
-%\usepackage{eurosym}
-  %for \<euro>
-
-%\usepackage[only,bigsqcap]{stmaryrd}
-  %for \<Sqinter>
-
-%\usepackage{eufrak}
-  %for \<AA> ... \<ZZ>, \<aa> ... \<zz> (also included in amssymb)
-
-%\usepackage{textcomp}
-  %for \<onequarter>, \<onehalf>, \<threequarters>, \<degree>, \<cent>,
-  %\<currency>
-
-% this should be the last package used
-\usepackage{pdfsetup}
-
-% urls in roman style, theory text in math-similar italics
-\urlstyle{rm}
-\isabellestyle{it}
+\urlstyle{rm} % urls in roman style
+\isabellestyle{it} % theory text in math-similar italics
 
 % for uniform font size
 %\renewcommand{\isastyle}{\isastyleminor}
 
-
 \begin{document}
-
-\title{OpSets}
-\author{}
+\title{OpSets: Sequential Specifications for Replicated Datatypes\\Proof Document}
+\author[1]{Martin Kleppmann}
+\author[1]{Victor B.\ F.\ Gomes}
+\author[2]{Dominic P.\ Mulligan}
+\author[1]{Alastair R.\ Beresford}
+\date{}
+\affil[1]{Department of Computer Science and Technology, University of Cambridge, UK}
+\affil[2]{Security Research Group, Arm Research, Cambridge, UK}
 \maketitle
 
 \tableofcontents
@@ -50,10 +35,4 @@
 % optional bibliography
 %\bibliographystyle{abbrv}
 %\bibliography{root}
-
 \end{document}
-
-%%% Local Variables:
-%%% mode: latex
-%%% TeX-master: t
-%%% End:

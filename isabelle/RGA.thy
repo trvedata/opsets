@@ -1,30 +1,40 @@
+(* Martin Kleppmann, University of Cambridge
+   Victor B. F. Gomes, University of Cambridge
+   Dominic P. Mulligan, Arm Research, Cambridge
+*)
+
+section\<open>The Replicated Growable Array (RGA)\<close>
+
+text\<open>The RGA algorithm \cite{Roh:2011dw} is a replicated list (or
+collaborative text-editing) algorithm. In this section we prove that
+RGA satisfies our list specification. The Isabelle/HOL definition of
+RGA in this section is based on our prior work on formally verifying
+CRDTs \cite{Gomes:2017gy,Gomes:2017vo}.\<close>
+
 theory RGA
   imports Insert_Spec
 begin
 
-locale insert_opset = opset opset set_option
-  for opset :: "('oid::{linorder} \<times> 'oid option) set"
-
 fun insert_body :: "'oid::{linorder} list \<Rightarrow> 'oid \<Rightarrow> 'oid list" where
-  "insert_body []     e = [e]" |
-  "insert_body (x#xs) e =
-     (if x < e then e#x#xs
-               else x#insert_body xs e)"
+  "insert_body []       e = [e]" |
+  "insert_body (x # xs) e =
+     (if x < e then e # x # xs
+               else x # insert_body xs e)"
 
 fun insert_rga :: "'oid::{linorder} list \<Rightarrow> ('oid \<times> 'oid option) \<Rightarrow> 'oid list" where
-  "insert_rga  xs    (e, None)   = insert_body xs e" |
-  "insert_rga  []    (e, Some i) = []" |
-  "insert_rga (x#xs) (e, Some i) =
+  "insert_rga  xs      (e, None)   = insert_body xs e" |
+  "insert_rga  []      (e, Some i) = []" |
+  "insert_rga (x # xs) (e, Some i) =
      (if x = i then
-        x#insert_body xs e
+        x # insert_body xs e
       else
-        x#insert_rga xs (e, Some i))"
+        x # insert_rga xs (e, Some i))"
 
 definition interp_rga :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> 'oid list" where
   "interp_rga ops \<equiv> foldl insert_rga [] ops"
 
 
-subsection\<open>Commutativity of insert_rga\<close>
+subsection\<open>Commutativity of insert\_rga\<close>
 
 lemma insert_body_set_ins [simp]:
   shows  "set (insert_body xs e) = insert e (set xs)"
@@ -169,7 +179,7 @@ next
 qed
 
 
-subsection\<open>Lemmata about the rga_ops predicate\<close>
+subsection\<open>Lemmata about the rga\_ops predicate\<close>
 
 definition rga_ops :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> bool" where
   "rga_ops list \<equiv> crdt_ops set_option list"
@@ -203,7 +213,7 @@ proof -
 qed
 
 
-subsection\<open>Lemmata about the interp_rga function\<close>
+subsection\<open>Lemmata about the interp\_rga function\<close>
 
 lemma interp_rga_tail_unfold:
   shows "interp_rga (xs@[x]) = insert_rga (interp_rga (xs)) x"
