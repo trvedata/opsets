@@ -1,0 +1,723 @@
+%
+\begin{isabellebody}%
+\setisabellecontext{List{\isacharunderscore}Spec}%
+%
+\isadelimtheory
+%
+\endisadelimtheory
+%
+\isatagtheory
+\isacommand{theory}\isamarkupfalse%
+\ List{\isacharunderscore}Spec\isanewline
+\ \ \isakeyword{imports}\ Insert{\isacharunderscore}Spec\isanewline
+\isakeyword{begin}%
+\endisatagtheory
+{\isafoldtheory}%
+%
+\isadelimtheory
+\isanewline
+%
+\endisadelimtheory
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ succ{\isacharunderscore}rel\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharbrackleft}{\isacharbrackright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharbraceright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharbrackleft}head{\isacharbrackright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}head{\isacharcomma}\ None{\isacharparenright}{\isacharbraceright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}head{\isacharhash}x{\isacharhash}xs{\isacharparenright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}head{\isacharcomma}\ Some\ x{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ succ{\isacharunderscore}rel\ {\isacharparenleft}x{\isacharhash}xs{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ insert{\isacharunderscore}alt\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}alt\ list{\isacharunderscore}rel\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}\ {\isacharequal}\ {\isacharparenleft}\isanewline
+\ \ \ \ \ \ if\ {\isasymexists}n{\isachardot}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ list{\isacharunderscore}rel\isanewline
+\ \ \ \ \ \ then\ {\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ list{\isacharunderscore}rel{\isachardot}\ p\ {\isasymnoteq}\ ref{\isacharbraceright}\ {\isasymunion}\ {\isacharbraceleft}{\isacharparenleft}ref{\isacharcomma}\ Some\ oid{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}i{\isacharcomma}\ n{\isacharparenright}{\isachardot}\ i\ {\isacharequal}\ oid\ {\isasymand}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ list{\isacharunderscore}rel{\isacharbraceright}\isanewline
+\ \ \ \ \ \ else\ list{\isacharunderscore}rel{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ succ{\isacharunderscore}rel{\isacharunderscore}set{\isacharunderscore}fst{\isacharcolon}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}fst\ {\isacharbackquote}\ {\isacharparenleft}succ{\isacharunderscore}rel\ xs{\isacharparenright}\ {\isacharequal}\ set\ xs{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}induction\ xs\ rule{\isacharcolon}\ succ{\isacharunderscore}rel{\isachardot}induct{\isacharcomma}\ auto{\isacharparenright}%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ succ{\isacharunderscore}rel{\isacharunderscore}functional{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}{\isacharparenleft}a{\isacharcomma}\ b{\isadigit{1}}{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ xs{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}{\isacharparenleft}a{\isacharcomma}\ b{\isadigit{2}}{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ xs{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}distinct\ xs{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}b{\isadigit{1}}\ {\isacharequal}\ b{\isadigit{2}}{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\ \isacommand{proof}\isamarkupfalse%
+{\isacharparenleft}induction\ xs\ rule{\isacharcolon}\ succ{\isacharunderscore}rel{\isachardot}induct{\isacharparenright}\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ {\isadigit{1}}\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}case\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\isacommand{next}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ {\isacharparenleft}{\isadigit{2}}\ head{\isacharparenright}\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}case\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\isacommand{next}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ {\isacharparenleft}{\isadigit{3}}\ head\ x\ xs{\isacharparenright}\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}case\isanewline
+\ \ \isacommand{proof}\isamarkupfalse%
+{\isacharparenleft}cases\ {\isachardoublequoteopen}a\ {\isacharequal}\ head{\isachardoublequoteclose}{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{case}\isamarkupfalse%
+\ True\isanewline
+\ \ \ \ \isacommand{hence}\isamarkupfalse%
+\ {\isachardoublequoteopen}a\ {\isasymnotin}\ set\ {\isacharparenleft}x{\isacharhash}xs{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ {\isadigit{3}}\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \ \ \isacommand{hence}\isamarkupfalse%
+\ {\isachardoublequoteopen}a\ {\isasymnotin}\ fst\ {\isacharbackquote}\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}x{\isacharhash}xs{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ succ{\isacharunderscore}rel{\isacharunderscore}set{\isacharunderscore}fst\ \isacommand{by}\isamarkupfalse%
+\ metis\isanewline
+\ \ \ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}b{\isadigit{1}}\ {\isacharequal}\ b{\isadigit{2}}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ {\isadigit{3}}\ image{\isacharunderscore}iff\ \isacommand{by}\isamarkupfalse%
+\ fastforce\isanewline
+\ \ \isacommand{next}\isamarkupfalse%
+\isanewline
+\ \ \ \ \isacommand{case}\isamarkupfalse%
+\ False\isanewline
+\ \ \ \ \isacommand{hence}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharparenleft}a{\isacharcomma}\ b{\isadigit{1}}{\isacharparenright}{\isacharcomma}\ {\isacharparenleft}a{\isacharcomma}\ b{\isadigit{2}}{\isacharparenright}{\isacharbraceright}\ {\isasymsubseteq}\ succ{\isacharunderscore}rel\ {\isacharparenleft}x{\isacharhash}xs{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ {\isadigit{3}}\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}distinct\ {\isacharparenleft}x{\isacharhash}xs{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ {\isadigit{3}}\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}b{\isadigit{1}}\ {\isacharequal}\ b{\isadigit{2}}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isadigit{3}}{\isachardot}IH{\isachardoublequoteclose}\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \isacommand{qed}\isamarkupfalse%
+\isanewline
+\isacommand{qed}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ succ{\isacharunderscore}rel{\isacharunderscore}rem{\isacharunderscore}head{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}distinct\ {\isacharparenleft}x\ {\isacharhash}\ xs{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}x\ {\isacharhash}\ xs{\isacharparenright}{\isachardot}\ p\ {\isasymnoteq}\ x{\isacharbraceright}\ {\isacharequal}\ succ{\isacharunderscore}rel\ xs{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{proof}\isamarkupfalse%
+\ {\isacharminus}\isanewline
+\ \ \isacommand{have}\isamarkupfalse%
+\ head{\isacharunderscore}notin{\isacharcolon}\ {\isachardoublequoteopen}x\ {\isasymnotin}\ fst\ {\isacharbackquote}\ succ{\isacharunderscore}rel\ xs{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ assms\ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}simp\ add{\isacharcolon}\ succ{\isacharunderscore}rel{\isacharunderscore}set{\isacharunderscore}fst{\isacharparenright}\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{obtain}\isamarkupfalse%
+\ y\ \isakeyword{where}\ {\isachardoublequoteopen}{\isacharparenleft}x{\isacharcomma}\ y{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}x\ {\isacharhash}\ xs{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}cases\ xs{\isacharcomma}\ auto{\isacharparenright}\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}x\ {\isacharhash}\ xs{\isacharparenright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}x{\isacharcomma}\ y{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ succ{\isacharunderscore}rel\ xs{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ calculation\ head{\isacharunderscore}notin\ image{\isacharunderscore}iff\ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}cases\ xs{\isacharcomma}\ fastforce{\isacharplus}{\isacharparenright}\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{from}\isamarkupfalse%
+\ this\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isasymAnd}n{\isachardot}\ {\isacharparenleft}x{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}x\ {\isacharhash}\ xs{\isacharparenright}\ {\isasymLongrightarrow}\ n\ {\isacharequal}\ y{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}metis\ Pair{\isacharunderscore}inject\ fst{\isacharunderscore}conv\ head{\isacharunderscore}notin\ image{\isacharunderscore}eqI\ insertE\ insert{\isacharunderscore}is{\isacharunderscore}Un{\isacharparenright}\isanewline
+\ \ \isacommand{hence}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}x\ {\isacharhash}\ xs{\isacharparenright}{\isachardot}\ p\ {\isasymnoteq}\ x{\isacharbraceright}\ {\isacharequal}\ succ{\isacharunderscore}rel\ {\isacharparenleft}x\ {\isacharhash}\ xs{\isacharparenright}\ {\isacharminus}\ {\isacharbraceleft}{\isacharparenleft}x{\isacharcomma}\ y{\isacharparenright}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ blast\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}x\ {\isacharhash}\ xs{\isacharparenright}\ {\isacharminus}\ {\isacharbraceleft}{\isacharparenleft}x{\isacharcomma}\ y{\isacharparenright}{\isacharbraceright}\ {\isacharequal}\ succ{\isacharunderscore}rel\ xs{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ image{\isacharunderscore}iff\ calculation\ \isacommand{by}\isamarkupfalse%
+\ fastforce\isanewline
+\ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}x\ {\isacharhash}\ xs{\isacharparenright}{\isachardot}\ p\ {\isasymnoteq}\ x{\isacharbraceright}\ {\isacharequal}\ succ{\isacharunderscore}rel\ xs{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\isacommand{qed}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ succ{\isacharunderscore}rel{\isacharunderscore}swap{\isacharunderscore}head{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}distinct\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}{\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}oid\ {\isacharhash}\ list{\isacharparenright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}oid{\isacharcomma}\ n{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ succ{\isacharunderscore}rel\ list{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{proof}\isamarkupfalse%
+{\isacharparenleft}cases\ list{\isacharparenright}\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ Nil\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}thesis\ \isacommand{using}\isamarkupfalse%
+\ assms\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\isacommand{next}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ {\isacharparenleft}Cons\ a\ list{\isacharparenright}\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{from}\isamarkupfalse%
+\ this\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}n\ {\isacharequal}\ Some\ a{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}metis\ Un{\isacharunderscore}iff\ assms\ singletonI\ succ{\isacharunderscore}rel{\isachardot}simps{\isacharparenleft}{\isadigit{3}}{\isacharparenright}\ succ{\isacharunderscore}rel{\isacharunderscore}functional{\isacharparenright}\isanewline
+\ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}thesis\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\isacommand{qed}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ succ{\isacharunderscore}rel{\isacharunderscore}insert{\isacharunderscore}alt{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}a\ {\isasymnoteq}\ ref{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}distinct\ {\isacharparenleft}oid\ {\isacharhash}\ a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}a{\isacharcomma}\ Some\ b{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{proof}\isamarkupfalse%
+{\isacharparenleft}cases\ {\isachardoublequoteopen}{\isasymexists}n{\isachardot}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}{\isachardoublequoteclose}{\isacharparenright}\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ True\isanewline
+\ \ \isacommand{hence}\isamarkupfalse%
+\ {\isachardoublequoteopen}insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}{\isachardot}\ p\ {\isasymnoteq}\ ref{\isacharbraceright}\ {\isasymunion}\ {\isacharbraceleft}{\isacharparenleft}ref{\isacharcomma}\ Some\ oid{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}i{\isacharcomma}\ n{\isacharparenright}{\isachardot}\ i\ {\isacharequal}\ oid\ {\isasymand}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}{\isachardot}\ p\ {\isasymnoteq}\ ref{\isacharbraceright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}a{\isacharcomma}\ Some\ b{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ {\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}{\isachardot}\ p\ {\isasymnoteq}\ ref{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ assms{\isacharparenleft}{\isadigit{1}}{\isacharparenright}\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}{\isachardot}\ p\ {\isasymnoteq}\ ref{\isacharbraceright}\ {\isasymunion}\ {\isacharbraceleft}{\isacharparenleft}ref{\isacharcomma}\ Some\ oid{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}i{\isacharcomma}\ n{\isacharparenright}{\isachardot}\ i\ {\isacharequal}\ oid\ {\isasymand}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\ \ \isacommand{proof}\isamarkupfalse%
+\ {\isacharminus}\isanewline
+\ \ \ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isasymexists}n{\isachardot}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ assms{\isacharparenleft}{\isadigit{1}}{\isacharparenright}\ True\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \ \ \isacommand{thus}\isamarkupfalse%
+\ {\isacharquery}thesis\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\ \ \isacommand{qed}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharparenleft}i{\isacharcomma}\ n{\isacharparenright}{\isachardot}\ i\ {\isacharequal}\ oid\ {\isasymand}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}{\isacharbraceright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}i{\isacharcomma}\ n{\isacharparenright}{\isachardot}\ i\ {\isacharequal}\ oid\ {\isasymand}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ assms{\isacharparenleft}{\isadigit{1}}{\isacharparenright}\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}thesis\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\isacommand{next}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ False\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}thesis\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\isacommand{qed}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ succ{\isacharunderscore}rel{\isacharunderscore}insert{\isacharunderscore}head{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}distinct\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{proof}\isamarkupfalse%
+\ {\isacharminus}\isanewline
+\ \ \isacommand{obtain}\isamarkupfalse%
+\ n\ \isakeyword{where}\ ref{\isacharunderscore}in{\isacharunderscore}rel{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}cases\ list{\isacharcomma}\ auto{\isacharparenright}\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{from}\isamarkupfalse%
+\ this\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isachardot}\ p\ {\isasymnoteq}\ ref{\isacharbraceright}\ {\isacharequal}\ succ{\isacharunderscore}rel\ list{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ assms\ succ{\isacharunderscore}rel{\isacharunderscore}rem{\isacharunderscore}head\ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}metis\ {\isacharparenleft}mono{\isacharunderscore}tags{\isacharcomma}\ lifting{\isacharparenright}{\isacharparenright}\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharparenleft}i{\isacharcomma}\ n{\isacharparenright}{\isachardot}\ i\ {\isacharequal}\ oid\ {\isasymand}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isacharbraceright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}oid{\isacharcomma}\ n{\isacharparenright}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\ \ \isacommand{proof}\isamarkupfalse%
+\ {\isacharminus}\isanewline
+\ \ \ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isasymAnd}nx{\isachardot}\ {\isacharparenleft}ref{\isacharcomma}\ nx{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}\ {\isasymLongrightarrow}\ nx\ {\isacharequal}\ n{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ assms\ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}simp\ add{\isacharcolon}\ succ{\isacharunderscore}rel{\isacharunderscore}functional\ ref{\isacharunderscore}in{\isacharunderscore}rel{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{hence}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharparenleft}i{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isachardot}\ i\ {\isacharequal}\ ref{\isacharbraceright}\ {\isasymsubseteq}\ {\isacharbraceleft}{\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ blast\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isacharbraceleft}{\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}{\isacharbraceright}\ {\isasymsubseteq}\ {\isacharbraceleft}{\isacharparenleft}i{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isachardot}\ i\ {\isacharequal}\ ref{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}simp\ add{\isacharcolon}\ ref{\isacharunderscore}in{\isacharunderscore}rel{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}thesis\ \isacommand{by}\isamarkupfalse%
+\ blast\isanewline
+\ \ \isacommand{qed}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isachardot}\ p\ {\isasymnoteq}\ ref{\isacharbraceright}\ {\isasymunion}\ {\isacharbraceleft}{\isacharparenleft}ref{\isacharcomma}\ Some\ oid{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}i{\isacharcomma}\ n{\isacharparenright}{\isachardot}\ i\ {\isacharequal}\ oid\ {\isasymand}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\ \ \isacommand{proof}\isamarkupfalse%
+\ {\isacharminus}\isanewline
+\ \ \ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isasymexists}n{\isachardot}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ ref{\isacharunderscore}in{\isacharunderscore}rel\ \isacommand{by}\isamarkupfalse%
+\ blast\isanewline
+\ \ \ \ \isacommand{thus}\isamarkupfalse%
+\ {\isacharquery}thesis\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\ \ \isacommand{qed}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ succ{\isacharunderscore}rel\ list\ {\isasymunion}\ {\isacharbraceleft}{\isacharparenleft}ref{\isacharcomma}\ Some\ oid{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ {\isacharbraceleft}{\isacharparenleft}oid{\isacharcomma}\ n{\isacharparenright}{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}oid\ {\isacharhash}\ list{\isacharparenright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}oid{\isacharcomma}\ n{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ succ{\isacharunderscore}rel\ list{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ assms\ ref{\isacharunderscore}in{\isacharunderscore}rel\ succ{\isacharunderscore}rel{\isacharunderscore}swap{\isacharunderscore}head\ \isacommand{by}\isamarkupfalse%
+\ metis\isanewline
+\ \ \isacommand{hence}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ oid\ {\isacharhash}\ list{\isacharparenright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}ref{\isacharcomma}\ Some\ oid{\isacharparenright}{\isacharcomma}\ {\isacharparenleft}oid{\isacharcomma}\ n{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ succ{\isacharunderscore}rel\ list{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}ref\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\isacommand{qed}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ succ{\isacharunderscore}rel{\isacharunderscore}insert{\isacharunderscore}later{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}a\ {\isasymnoteq}\ ref{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}distinct\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{proof}\isamarkupfalse%
+\ {\isacharminus}\isanewline
+\ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}a{\isacharcomma}\ Some\ b{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ succ{\isacharunderscore}rel\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}insert{\isacharunderscore}spec\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ a\ {\isacharhash}\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ assms{\isacharparenleft}{\isadigit{2}}{\isacharparenright}\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\ \ \isacommand{hence}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}a{\isacharcomma}\ Some\ b{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \isacommand{hence}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}a{\isacharcomma}\ Some\ b{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ assms{\isacharparenleft}{\isadigit{1}}{\isacharparenright}\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ b\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}a{\isacharcomma}\ Some\ b{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}b\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ succ{\isacharunderscore}rel{\isacharunderscore}insert{\isacharunderscore}alt\ assms{\isacharparenleft}{\isadigit{2}}{\isacharparenright}\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}thesis\ \isacommand{by}\isamarkupfalse%
+\ blast\isanewline
+\isacommand{qed}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ succ{\isacharunderscore}rel{\isacharunderscore}insert{\isacharunderscore}Some{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}distinct\ list{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ list\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}\ {\isacharequal}\ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\ \isacommand{proof}\isamarkupfalse%
+{\isacharparenleft}induction\ list{\isacharparenright}\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ Nil\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharbrackleft}{\isacharbrackright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}\ {\isacharequal}\ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharbrackleft}{\isacharbrackright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\isacommand{next}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ {\isacharparenleft}Cons\ a\ list{\isacharparenright}\isanewline
+\ \ \isacommand{hence}\isamarkupfalse%
+\ {\isachardoublequoteopen}distinct\ {\isacharparenleft}a\ {\isacharhash}\ list{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}a\ {\isacharhash}\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isacommand{proof}\isamarkupfalse%
+{\isacharparenleft}cases\ {\isachardoublequoteopen}a\ {\isacharequal}\ ref{\isachardoublequoteclose}{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{case}\isamarkupfalse%
+\ True\isanewline
+\ \ \ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}thesis\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ succ{\isacharunderscore}rel{\isacharunderscore}insert{\isacharunderscore}head\ {\isacartoucheopen}distinct\ {\isacharparenleft}a\ {\isacharhash}\ list{\isacharparenright}{\isacartoucheclose}\ \isacommand{by}\isamarkupfalse%
+\ metis\isanewline
+\ \ \isacommand{next}\isamarkupfalse%
+\isanewline
+\ \ \ \ \isacommand{case}\isamarkupfalse%
+\ False\isanewline
+\ \ \ \ \isacommand{hence}\isamarkupfalse%
+\ {\isachardoublequoteopen}a\ {\isasymnoteq}\ ref{\isachardoublequoteclose}\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ list\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ Cons{\isachardot}IH\ Cons{\isachardot}prems\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}a\ {\isacharhash}\ list{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}a\ {\isacharhash}\ list{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}cases\ list{\isacharcomma}\ force{\isacharcomma}\ metis\ Cons{\isachardot}prems\ succ{\isacharunderscore}rel{\isacharunderscore}insert{\isacharunderscore}later{\isacharparenright}\isanewline
+\ \ \isacommand{qed}\isamarkupfalse%
+\isanewline
+\isacommand{qed}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{definition}\isamarkupfalse%
+\ interp{\isacharunderscore}alt\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}interp{\isacharunderscore}alt\ head\ ops\ {\isasymequiv}\ foldl\ insert{\isacharunderscore}alt\ {\isacharbraceleft}{\isacharparenleft}head{\isacharcomma}\ None{\isacharparenright}{\isacharbraceright}\isanewline
+\ \ \ \ \ {\isacharparenleft}map\ {\isacharparenleft}{\isasymlambda}x{\isachardot}\ case\ x\ of\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ {\isacharparenleft}oid{\isacharcomma}\ None{\isacharparenright}\ \ \ \ \ {\isasymRightarrow}\ {\isacharparenleft}oid{\isacharcomma}\ head{\isacharparenright}\ {\isacharbar}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isacharparenright}\ \isanewline
+\ \ \ \ \ \ ops{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{theorem}\isamarkupfalse%
+\ insert{\isacharunderscore}alt{\isacharunderscore}equivalent{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}insert{\isacharunderscore}ops\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}head\ {\isasymnotin}\ fst\ {\isacharbackquote}\ set\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}{\isasymAnd}r{\isachardot}\ Some\ r\ {\isasymin}\ snd\ {\isacharbackquote}\ set\ ops\ {\isasymLongrightarrow}\ r\ {\isasymnoteq}\ head{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}list\ ops{\isacharparenright}\ {\isacharequal}\ interp{\isacharunderscore}alt\ head\ ops{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\ \isacommand{proof}\isamarkupfalse%
+{\isacharparenleft}induction\ ops\ rule{\isacharcolon}\ List{\isachardot}rev{\isacharunderscore}induct{\isacharparenright}\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ Nil\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}list\ {\isacharbrackleft}{\isacharbrackright}{\isacharparenright}\ {\isacharequal}\ interp{\isacharunderscore}alt\ head\ {\isacharbrackleft}{\isacharbrackright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}simp\ add{\isacharcolon}\ interp{\isacharunderscore}list{\isacharunderscore}def\ interp{\isacharunderscore}alt{\isacharunderscore}def{\isacharparenright}\isanewline
+\isacommand{next}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ {\isacharparenleft}snoc\ x\ xs{\isacharparenright}\isanewline
+\ \ \isacommand{have}\isamarkupfalse%
+\ IH{\isacharcolon}\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}list\ xs{\isacharparenright}\ {\isacharequal}\ interp{\isacharunderscore}alt\ head\ xs{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ snoc\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \isacommand{have}\isamarkupfalse%
+\ distinct{\isacharunderscore}list{\isacharcolon}\ {\isachardoublequoteopen}distinct\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}list\ xs{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isacommand{proof}\isamarkupfalse%
+\ {\isacharminus}\isanewline
+\ \ \ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}distinct\ {\isacharparenleft}interp{\isacharunderscore}list\ xs{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ interp{\isacharunderscore}list{\isacharunderscore}distinct\ snoc{\isachardot}prems{\isacharparenleft}{\isadigit{1}}{\isacharparenright}\ \isacommand{by}\isamarkupfalse%
+\ blast\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}set\ {\isacharparenleft}interp{\isacharunderscore}list\ xs{\isacharparenright}\ {\isasymsubseteq}\ fst\ {\isacharbackquote}\ set\ xs{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ interp{\isacharunderscore}list{\isacharunderscore}subset\ snoc{\isachardot}prems{\isacharparenleft}{\isadigit{1}}{\isacharparenright}\ \isacommand{by}\isamarkupfalse%
+\ fastforce\isanewline
+\ \ \ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}distinct\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}list\ xs{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ snoc{\isachardot}prems{\isacharparenleft}{\isadigit{2}}{\isacharparenright}\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \isacommand{qed}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{obtain}\isamarkupfalse%
+\ oid\ r\ \isakeyword{where}\ x{\isacharunderscore}pair{\isacharcolon}\ {\isachardoublequoteopen}x\ {\isacharequal}\ {\isacharparenleft}oid{\isacharcomma}\ r{\isacharparenright}{\isachardoublequoteclose}\ \isacommand{by}\isamarkupfalse%
+\ force\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}list\ {\isacharparenleft}xs\ {\isacharat}\ {\isacharbrackleft}x{\isacharbrackright}{\isacharparenright}{\isacharparenright}\ {\isacharequal}\ interp{\isacharunderscore}alt\ head\ {\isacharparenleft}xs\ {\isacharat}\ {\isacharbrackleft}x{\isacharbrackright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isacommand{proof}\isamarkupfalse%
+{\isacharparenleft}cases\ r{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{case}\isamarkupfalse%
+\ None\isanewline
+\ \ \ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}interp{\isacharunderscore}alt\ head\ {\isacharparenleft}xs\ {\isacharat}\ {\isacharbrackleft}x{\isacharbrackright}{\isacharparenright}\ {\isacharequal}\ insert{\isacharunderscore}alt\ {\isacharparenleft}interp{\isacharunderscore}alt\ head\ xs{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ head{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}simp\ add{\isacharcolon}\ interp{\isacharunderscore}alt{\isacharunderscore}def\ None\ x{\isacharunderscore}pair{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isachardot}{\isachardot}{\isachardot}\ {\isacharequal}\ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}list\ xs{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ head{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}simp\ add{\isacharcolon}\ IH{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isachardot}{\isachardot}{\isachardot}\ {\isacharequal}\ succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}list\ xs{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ head{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ distinct{\isacharunderscore}list\ succ{\isacharunderscore}rel{\isacharunderscore}insert{\isacharunderscore}Some\ \isacommand{by}\isamarkupfalse%
+\ metis\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isachardot}{\isachardot}{\isachardot}\ {\isacharequal}\ succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}interp{\isacharunderscore}list\ xs{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ None{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isachardot}{\isachardot}{\isachardot}\ {\isacharequal}\ succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ {\isacharparenleft}interp{\isacharunderscore}list\ {\isacharparenleft}xs\ {\isacharat}\ {\isacharbrackleft}x{\isacharbrackright}{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}simp\ add{\isacharcolon}\ interp{\isacharunderscore}list{\isacharunderscore}tail{\isacharunderscore}unfold\ None\ x{\isacharunderscore}pair{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}thesis\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\ \ \isacommand{next}\isamarkupfalse%
+\isanewline
+\ \ \ \ \isacommand{case}\isamarkupfalse%
+\ {\isacharparenleft}Some\ ref{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}ref\ {\isasymnoteq}\ head{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}simp\ add{\isacharcolon}\ Some\ snoc{\isachardot}prems{\isacharparenleft}{\isadigit{3}}{\isacharparenright}\ x{\isacharunderscore}pair{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}interp{\isacharunderscore}alt\ head\ {\isacharparenleft}xs\ {\isacharat}\ {\isacharbrackleft}x{\isacharbrackright}{\isacharparenright}\ {\isacharequal}\ insert{\isacharunderscore}alt\ {\isacharparenleft}interp{\isacharunderscore}alt\ head\ xs{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}simp\ add{\isacharcolon}\ interp{\isacharunderscore}alt{\isacharunderscore}def\ Some\ x{\isacharunderscore}pair{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isachardot}{\isachardot}{\isachardot}\ {\isacharequal}\ insert{\isacharunderscore}alt\ {\isacharparenleft}succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}list\ xs{\isacharparenright}{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}simp\ add{\isacharcolon}\ IH{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isachardot}{\isachardot}{\isachardot}\ {\isacharequal}\ succ{\isacharunderscore}rel\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}list\ xs{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ distinct{\isacharunderscore}list\ succ{\isacharunderscore}rel{\isacharunderscore}insert{\isacharunderscore}Some\ \isacommand{by}\isamarkupfalse%
+\ metis\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isachardot}{\isachardot}{\isachardot}\ {\isacharequal}\ succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ {\isacharparenleft}insert{\isacharunderscore}spec\ {\isacharparenleft}interp{\isacharunderscore}list\ xs{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ {\isacartoucheopen}ref\ {\isasymnoteq}\ head{\isacartoucheclose}\ \isacommand{by}\isamarkupfalse%
+\ auto\isanewline
+\ \ \ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isachardot}{\isachardot}{\isachardot}\ {\isacharequal}\ succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ {\isacharparenleft}interp{\isacharunderscore}list\ {\isacharparenleft}xs\ {\isacharat}\ {\isacharbrackleft}x{\isacharbrackright}{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}simp\ add{\isacharcolon}\ interp{\isacharunderscore}list{\isacharunderscore}tail{\isacharunderscore}unfold\ Some\ x{\isacharunderscore}pair{\isacharparenright}\isanewline
+\ \ \ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}thesis\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\ \ \isacommand{qed}\isamarkupfalse%
+\isanewline
+\isacommand{qed}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+%
+\isadelimtheory
+\isanewline
+%
+\endisadelimtheory
+%
+\isatagtheory
+\isacommand{end}\isamarkupfalse%
+%
+\endisatagtheory
+{\isafoldtheory}%
+%
+\isadelimtheory
+%
+\endisadelimtheory
+%
+\end{isabellebody}%
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "root"
+%%% End:

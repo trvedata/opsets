@@ -1,0 +1,38 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{authblk}
+\usepackage[a4paper,margin=1.8cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx} % times roman, including math
+\usepackage{isabelle,isabellesym}
+\usepackage{amssymb}
+\usepackage{pdfsetup} % this should be the last package used
+
+\urlstyle{rm} % urls in roman style
+\isabellestyle{it} % theory text in math-similar italics
+
+% for uniform font size
+%\renewcommand{\isastyle}{\isastyleminor}
+
+\begin{document}
+\title{OpSets: Sequential Specifications for Replicated Datatypes\\Proof Document}
+\author[1]{Martin Kleppmann}
+\author[1]{Victor B.\ F.\ Gomes}
+\author[2]{Dominic P.\ Mulligan}
+\author[1]{Alastair R.\ Beresford}
+\date{}
+\affil[1]{Department of Computer Science and Technology, University of Cambridge, UK}
+\affil[2]{Security Research Group, Arm Research, Cambridge, UK}
+\maketitle
+
+\tableofcontents
+
+% sane default for proof documents
+\parindent 0pt\parskip 0.5ex
+
+% generated text of all theories
+\input{session}
+
+% optional bibliography
+%\bibliographystyle{abbrv}
+%\bibliography{root}
+\end{document}
