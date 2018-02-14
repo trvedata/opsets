@@ -330,6 +330,350 @@ proof -
     using assms(1) list_orderI by metis
 qed
 
+inductive insert_seq :: "'oid option \<Rightarrow> ('oid \<times> 'oid option) list \<Rightarrow> bool" where
+  "insert_seq start [(oid, start)]" |
+  "\<lbrakk>insert_seq start (list @ [(prev, ref)])\<rbrakk>
+      \<Longrightarrow> insert_seq start (list @ [(prev, ref), (oid, Some prev)])"
+
+lemma insert_seq_nonempty:
+  assumes "insert_seq start xs"
+  shows "xs \<noteq> []"
+using assms by (induction rule: insert_seq.induct, auto)
+
+lemma insert_seq_hd:
+  assumes "insert_seq start xs"
+  shows "\<exists>oid. hd xs = (oid, start)"
+using assms by (induction rule: insert_seq.induct, simp,
+  metis append_self_conv2 hd_append2 list.sel(1))
+
+lemma insert_seq_rem_last:
+  assumes "insert_seq start (xs @ [x])"
+    and "xs \<noteq> []"
+  shows "insert_seq start xs"
+using assms insert_seq.cases by fastforce
+
+lemma insert_seq_butlast:
+  assumes "insert_seq start xs"
+    and "xs \<noteq> []" and "xs \<noteq> [last xs]"
+  shows "insert_seq start (butlast xs)"
+proof -
+  have "length xs > 1"
+    by (metis One_nat_def Suc_lessI add_0_left append_butlast_last_id append_eq_append_conv
+        append_self_conv2 assms(2) assms(3) length_greater_0_conv list.size(3) list.size(4))
+  hence "butlast xs \<noteq> []"
+    by (metis length_butlast less_numeral_extra(3) list.size(3) zero_less_diff)
+  then show "insert_seq start (butlast xs)"
+    using assms by (metis append_butlast_last_id insert_seq_rem_last)
+qed
+
+lemma insert_seq_last_ref:
+  assumes "insert_seq start (xs @ [(xi, xr), (yi, yr)])"
+  shows "yr = Some xi"
+using assms insert_seq.cases by fastforce
+
+lemma insert_seq_ref_missing:
+  assumes "insert_seq (Some r) xs"
+    and "insert_ops ops" and "insert_ops xs"
+    and "set xs \<subseteq> set ops"
+    and "ops = as @ [hd xs] @ bs"
+    and "r \<notin> set (interp_list as)"
+  shows "\<forall>x \<in> set (map fst xs). x \<notin> set (interp_list ops)"
+using assms proof(induction xs rule: List.rev_induct, simp)
+  case snoc_x: (snoc x xs)
+  then show "\<forall>x \<in> set (map fst (xs @ [x])). x \<notin> set (interp_list ops)"
+  proof(cases "xs = []")
+    case True
+    moreover from this have "fst x \<notin> set (interp_list ops)"
+      using interp_list_ref_nonex insert_seq_hd snoc_x.prems by fastforce
+    ultimately show "\<forall>x \<in> set (map fst (xs @ [x])). x \<notin> set (interp_list ops)"
+      by auto 
+  next
+    case xs_nonempty: False
+    then obtain rest y where snoc_y: "xs = rest @ [y]"
+      using append_butlast_last_id by metis
+    obtain yi yr xi xr where yx_pairs: "y = (yi, yr) \<and> x = (xi, xr)"
+      by force
+    then have "xr = Some yi"
+      using insert_seq_last_ref snoc_x.prems(1) snoc_y by force
+    have IH: "\<forall>x \<in> set (map fst xs). x \<notin> set (interp_list ops)"
+    proof -
+      have "insert_seq (Some r) xs"
+        using snoc_x.prems(1) insert_seq_rem_last xs_nonempty by blast
+      moreover have "insert_ops xs"
+        using snoc_x.prems(3) insert_ops_rem_last by blast
+      moreover have "set xs \<subseteq> set ops"
+        using snoc_x.prems(4) by auto
+      ultimately show ?thesis
+        using snoc_x.IH snoc_x.prems snoc_y hd_append2 by blast
+    qed
+    moreover have "x \<in> set ops"
+      using snoc_x.prems(4) by auto
+    then obtain as bs where "ops = as @ x # bs"
+      by (meson split_list)
+    have "yi \<notin> set (interp_list ops)"
+      using IH by (simp add: yx_pairs snoc_y)
+    hence "yi \<notin> set (interp_list as)"
+      using \<open>ops = as @ x # bs\<close> interp_list_monotonic snoc_x.prems(2) by blast
+    hence "xi \<notin> set (interp_list ops)"
+      using interp_list_ref_nonex \<open>ops = as @ x # bs\<close> \<open>xr = Some yi\<close>
+        append.simps(2) snoc_x.prems(2) yx_pairs by fastforce
+    moreover have "set (map fst (xs @ [x])) = set (map fst xs) \<union> {xi}"
+      using yx_pairs by auto
+    ultimately show "\<forall>x \<in> set (map fst (xs @ [x])). x \<notin> set (interp_list ops)"
+      by simp
+  qed
+qed
+
+lemma insert_ops_hd_less:
+  assumes "insert_ops ((id1, ref1) # (id2, ref2) # ops)"
+  shows "id1 < id2"
+using assms by (auto simp add: insert_ops_def spec_ops_def)
+
+lemma insert_ops_subset_last:
+  assumes "insert_ops (xs @ [x])"
+    and "insert_ops ys"
+    and "set ys \<subseteq> set (xs @ [x])"
+    and "x \<in> set ys"
+  shows "x = last ys"
+using assms proof(induction ys, simp)
+  case (Cons y ys)
+  then show "x = last (y # ys)"
+  proof(cases "ys = []")
+    case True
+    then show "x = last (y # ys)"
+      using Cons.prems(4) by auto
+  next
+    case ys_nonempty: False
+    have "x \<noteq> y"
+    proof -
+      obtain mid l where "ys = mid @ [l]"
+        using append_butlast_last_id ys_nonempty by metis
+      moreover obtain li lr where "l = (li, lr)"
+        by force
+      moreover have "\<And>i. i \<in> set (map fst (y # mid)) \<Longrightarrow> i < li"
+        by (metis last_op_greatest Cons.prems(2) calculation append_Cons)
+      hence "fst y < li"
+        by simp
+      moreover have "\<And>i. i \<in> set (map fst xs) \<Longrightarrow> i < fst x"
+        using assms(1) last_op_greatest by (metis prod.collapse)
+      hence "\<And>i. i \<in> set (map fst (y # ys)) \<Longrightarrow> i \<le> fst x"
+        using Cons.prems(3) by fastforce
+      ultimately show "x \<noteq> y"
+        by fastforce
+    qed
+    then show "x = last (y # ys)"
+      using Cons.IH Cons.prems insert_ops_rem_cons ys_nonempty
+      by (metis dual_order.trans last_ConsR set_ConsD set_subset_Cons)
+  qed
+qed
+
+lemma subset_butlast:
+  assumes "set xs \<subseteq> set (ys @ [y])"
+    and "last xs = y"
+    and "distinct xs"
+  shows "set (butlast xs) \<subseteq> set ys"
+using assms by (induction xs, auto)
+
+lemma distinct_append_butlast1:
+  assumes "distinct (map fst xs @ map fst ys)"
+  shows "distinct (map fst (butlast xs) @ map fst ys)"
+using assms proof(induction xs, simp)
+  case (Cons a xs)
+  have "fst a \<notin> set (map fst xs @ map fst ys)"
+    using Cons.prems by auto
+  moreover have "set (map fst (butlast xs)) \<subseteq> set (map fst xs)"
+    by (metis in_set_butlastD map_butlast subsetI)
+  hence "set (map fst (butlast xs) @ map fst ys) \<subseteq> set (map fst xs @ map fst ys)"
+    by auto
+  ultimately have "fst a \<notin> set (map fst (butlast xs) @ map fst ys)"
+    by blast
+  then show "distinct (map fst (butlast (a # xs)) @ map fst ys)"
+    using Cons.IH Cons.prems by auto
+qed
+
+lemma distinct_append_butlast2:
+  assumes "distinct (map fst xs @ map fst ys)"
+  shows "distinct (map fst xs @ map fst (butlast ys))"
+using assms proof(induction xs)
+  case Nil
+  then show "distinct (map fst [] @ map fst (butlast ys))"
+    by (simp add: distinct_butlast map_butlast)
+next
+  case (Cons a xs)
+  have "fst a \<notin> set (map fst xs @ map fst ys)"
+    using Cons.prems by auto
+  moreover have "set (map fst (butlast ys)) \<subseteq> set (map fst ys)"
+    by (metis in_set_butlastD map_butlast subsetI)
+  hence "set (map fst xs @ map fst (butlast ys)) \<subseteq> set (map fst xs @ map fst ys)"
+    by auto
+  ultimately have "fst a \<notin> set (map fst xs @ map fst (butlast ys))"
+    by blast
+  then show ?case
+    using Cons.IH Cons.prems by auto
+qed
+
+theorem no_interleaving_general:
+  assumes "insert_ops ops"
+    and "insert_seq start xs" and "insert_ops xs"
+    and "insert_seq start ys" and "insert_ops ys"
+    and "set xs \<subseteq> set ops" and "set ys \<subseteq> set ops"
+    and "distinct (map fst xs @ map fst ys)"
+  shows "(\<forall>x \<in> set (map fst xs). \<forall>y \<in> set (map fst ys). list_order ops x y) \<or>
+         (\<forall>x \<in> set (map fst xs). \<forall>y \<in> set (map fst ys). list_order ops y x) \<or>
+         (\<forall>x \<in> set (map fst xs) \<union> set (map fst ys). x \<notin> set (interp_list ops))"
+using assms proof(induction ops arbitrary: xs ys rule: List.rev_induct, simp)
+  case (snoc a ops)
+  then have "insert_ops ops"
+    by blast
+  consider (a_in_xs) "a \<in> set xs" | (a_in_ys) "a \<in> set ys" | (neither) "a \<notin> set xs \<and> a \<notin> set ys"
+    by blast
+  then show ?case
+  proof(cases)
+    case a_in_xs
+    then have "a \<notin> set ys"
+      using snoc.prems(8) by auto
+    have IH: "(\<forall>x \<in> set (map fst (butlast xs)). \<forall>y \<in> set (map fst ys). list_order ops x y) \<or>
+              (\<forall>x \<in> set (map fst (butlast xs)). \<forall>y \<in> set (map fst ys). list_order ops y x) \<or>
+              (\<forall>x \<in> set (map fst (butlast xs)) \<union> set (map fst ys). x \<notin> set (interp_list ops))"
+    proof(cases "xs = [a]")
+      case True
+      then show ?thesis by simp
+    next
+      case xs_longer: False
+      from a_in_xs have "a = last xs"
+        using insert_ops_subset_last snoc.prems by blast
+      hence "set (butlast xs) \<subseteq> set ops"
+        using distinct_fst snoc.prems subset_butlast by fastforce
+      moreover have "insert_seq start (butlast xs)"
+        using insert_seq_butlast insert_seq_nonempty xs_longer \<open>a = last xs\<close> snoc.prems(2) by blast
+      moreover have "insert_ops (butlast xs)"
+        by (metis append_butlast_last_id insert_ops_appendD insert_seq_nonempty
+            snoc.prems(2) snoc.prems(3))
+      moreover have "distinct (map fst (butlast xs) @ map fst ys)"
+        using distinct_append_butlast1 snoc.prems(8) by blast
+      moreover have "set ys \<subseteq> set ops"
+        using \<open>a \<notin> set ys\<close> DiffE snoc.prems(7) by auto
+      ultimately show ?thesis
+        using \<open>insert_ops ops\<close> snoc.IH snoc.prems(4) snoc.prems(5) by auto
+    qed
+    then show ?thesis sorry
+  next
+    case a_in_ys
+    then have "a \<notin> set xs"
+      using snoc.prems(8) by auto
+    have IH: "(\<forall>x \<in> set (map fst xs). \<forall>y \<in> set (map fst (butlast ys)). list_order ops x y) \<or>
+              (\<forall>x \<in> set (map fst xs). \<forall>y \<in> set (map fst (butlast ys)). list_order ops y x) \<or>
+              (\<forall>x \<in> set (map fst xs) \<union> set (map fst (butlast ys)). x \<notin> set (interp_list ops))"
+    proof(cases "ys = [a]")
+      case True
+      then show ?thesis by simp
+    next
+      case ys_longer: False
+      from a_in_ys have "a = last ys"
+        using insert_ops_subset_last snoc.prems by blast
+      hence "set (butlast ys) \<subseteq> set ops"
+        using snoc.prems by (simp add: distinct_fst subset_butlast)
+      moreover have "insert_seq start (butlast ys)"
+        using insert_seq_butlast insert_seq_nonempty ys_longer \<open>a = last ys\<close> snoc.prems(4) by blast
+      moreover have "insert_ops (butlast ys)"
+        by (metis append_butlast_last_id insert_ops_appendD insert_seq_nonempty
+            snoc.prems(4) snoc.prems(5))
+      moreover have "distinct (map fst xs @ map fst (butlast ys))"
+        using distinct_append_butlast2 snoc.prems(8) by blast
+      moreover have "set xs \<subseteq> set ops"
+        using \<open>a \<notin> set xs\<close> DiffE snoc.prems(6) by auto
+      ultimately show ?thesis
+        using \<open>insert_ops ops\<close> snoc.IH snoc.prems(2) snoc.prems(3) by auto
+    qed
+    then show ?thesis sorry
+  next
+    case neither
+    then show ?thesis sorry
+  qed
+qed
+(*
+  obtain x1 y1 where x1_def: "(x1, start) = hd xs" and y1_def: "(y1, start) = hd ys"
+    by (metis insert_seq_hd snoc.prems(2) snoc.prems(4))
+  hence x1_memb: "x1 \<in> set (map fst xs)" and y1_memb: "y1 \<in> set (map fst ys)"
+    using insert_seq_nonempty snoc.prems(2) snoc.prems(4)
+    by (metis fst_conv hd_map list.set_sel(1) map_is_Nil_conv)+
+  hence "x1 \<noteq> y1"
+    using snoc.prems(8) by auto
+  have oid_greatest: "\<And>i. i \<in> set (map fst ops) \<Longrightarrow> i < oid"
+    using snoc.prems(1) a_pair last_op_greatest by blast
+  then show ?case
+  proof(cases "x1 < y1")
+    case True
+    consider (before_y1) "oid < y1" | (is_y1) "oid = y1" | (after_y1) "y1 < oid"
+      using linorder_cases by blast
+    then show ?thesis
+    proof(cases)
+      case before_y1
+      moreover from this have "y1 < oid"
+        using y1_memb oid_greatest snoc.prems(7) a_pair hd_in_set by fastforce
+      ultimately show ?thesis
+        by force
+    next
+      case is_y1
+      then have "(x1, start) \<in> set (ops @ [a])"
+        using snoc.prems(2) snoc.prems(6) x1_def insert_seq_nonempty list.set_sel(1) by auto
+      hence "(x1, start) \<in> set ops"
+        by (simp add: \<open>x1 \<noteq> y1\<close> a_pair is_y1)
+      then obtain as bs where "ops = as @ [(x1, start)] @ bs"
+        using insert_ops_split snoc.prems(1) by blast
+      consider (ref_missing) "\<exists>r. start = Some r \<and> r \<notin> set (interp_list as)"
+        | (ref_exists) "start = None \<or> (\<exists>r. start = Some r \<and> r \<in> set (interp_list as))"
+        by fastforce
+      then show ?thesis
+      proof(cases)
+        case ref_missing
+        then obtain r where "start = Some r"
+          by force
+        then have "\<forall>x \<in> set (map fst xs). x \<notin> set (interp_list ops)"
+        proof -
+          have "insert_seq (Some r) xs"
+            using snoc.prems(2) \<open>start = Some r\<close> by blast
+          moreover have "insert_ops xs"
+            by (simp add: snoc.prems(3))
+          moreover have "ops = as @ [hd xs] @ bs"
+            by (simp add: \<open>ops = as @ [(x1, start)] @ bs\<close> x1_def)
+          moreover have "r \<notin> set (interp_list as)"
+            using \<open>start = Some r\<close> ref_missing by blast
+          ultimately show ?thesis
+            using insert_seq_ref_missing sorry
+        qed
+        then show ?thesis sorry
+      next
+        case ref_exists
+        then show ?thesis sorry
+      qed
+    next
+      case after_y1
+      then show ?thesis sorry
+    qed
+  next
+    case False
+    then have "y1 < x1"
+      using \<open>x1 \<noteq> y1\<close> by auto
+    consider (before_x1) "oid < x1" | (is_x1) "oid = x1" | (after_x1) "x1 < oid"
+      using linorder_cases by blast
+    then show ?thesis
+    proof(cases)
+      case before_x1
+      moreover from this have "x1 < oid"
+        using x1_memb oid_greatest snoc.prems(6) a_pair hd_in_set by fastforce
+      ultimately show ?thesis
+        by force
+    next
+      case is_x1
+      then show ?thesis sorry
+    next
+      case after_x1
+      then show ?thesis sorry
+    qed
+  qed
+qed *)
+
 theorem no_interleaving:
   assumes "insert_ops ops"
     and "(xid, ref) \<in> set ops"

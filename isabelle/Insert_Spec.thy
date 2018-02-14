@@ -73,6 +73,11 @@ lemma insert_ops_rem_last [dest]:
   shows "insert_ops xs"
 using assms insert_ops_def spec_ops_rem_last by blast
 
+lemma insert_ops_rem_cons:
+  assumes "insert_ops (x # xs)"
+  shows "insert_ops xs"
+using assms insert_ops_def spec_ops_rem_cons by blast
+
 lemma insert_ops_appendD:
   assumes "insert_ops (xs @ ys)"
   shows "insert_ops xs"
