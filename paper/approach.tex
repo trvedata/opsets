@@ -55,7 +55,7 @@ Formally, we can define the interpretation $\llbracket O \rrbracket$ of the OpSe
     \mathrm{interp}\big[\llbracket O \rrbracket,\, (\mathit{id},\, \mathit{op})\big]
     \qquad\text{ provided that } \forall\,(\mathit{id}',\, \mathit{op}') \in O.\; \mathit{id}' < \mathit{id}
 \end{align*}
-where $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the operation $(\mathit{id},\, \mathit{op})$ in the state $S$.
+where $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the operation $(\mathit{id},\, \mathit{op})$ in the state $S$, and $\mathit{InitialState}$ is a fixed minimal element (e.g. the empty tree, or list) of the replicated type described, agreed upon by all nodes.
 In other words, if $S$ is the result of interpreting all operations with identifiers less than $\mathit{id}$, then
 $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the OpSet to which $(\mathit{id},\, \mathit{op})$ has been added.
 For example, if $\mathit{id}_1 < \mathit{id}_2 < \mathit{id}_3$, we have:
