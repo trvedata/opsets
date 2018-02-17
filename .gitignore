@@ -12,3 +12,4 @@
 .DS_Store
 /isabelle/output/document
 /isabelle/output/outline/*.sty
+/isabelle/output/outline/*.bib

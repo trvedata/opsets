@@ -5,5 +5,7 @@ session "OpSets" = "HOL" +
   theories
     Interleaving
     RGA
+    List_Spec
   document_files
     "root.tex"
+    "references.bib"
