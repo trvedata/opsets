@@ -267,6 +267,24 @@ proof -
     using assms(2) le_neq_trans by auto
 qed
 
+lemma spec_ops_add_last:
+  assumes "spec_ops deps xs"
+    and "\<forall>i \<in> set (map fst xs). i < oid"
+    and "\<forall>ref \<in> deps oper. ref < oid"
+  shows "spec_ops deps (xs @ [(oid, oper)])"
+proof -
+  have "sorted ((map fst xs) @ [oid])"
+    using assms sorted_append spec_ops_sorted by fastforce
+  moreover have "distinct ((map fst xs) @ [oid])"
+    using assms spec_ops_distinct_fst by fastforce
+  moreover have "\<forall>oid oper ref. (oid, oper) \<in> set xs \<and> ref \<in> deps oper \<longrightarrow> ref < oid"
+    using assms(1) spec_ops_def by fastforce
+  hence "\<forall>i opr r. (i, opr) \<in> set (xs @ [(oid, oper)]) \<and> r \<in> deps opr \<longrightarrow> r < i"
+    using assms(3) by auto
+  ultimately show "spec_ops deps (xs @ [(oid, oper)])"
+    by (simp add: spec_ops_def)
+qed
+
 lemma spec_ops_add_any:
   assumes "spec_ops deps (xs @ ys)"
     and "\<forall>i \<in> set (map fst xs). i < oid"
@@ -274,17 +292,9 @@ lemma spec_ops_add_any:
     and "\<forall>ref \<in> deps oper. ref < oid"
   shows "spec_ops deps (xs @ [(oid, oper)] @ ys)"
 using assms proof(induction ys rule: rev_induct)
-  case empty_ys: Nil
-  hence "sorted ((map fst xs) @ [oid])"
-    using assms(2) sorted_append spec_ops_def by fastforce
-  moreover have "distinct ((map fst xs) @ [oid])"
-    using empty_ys spec_ops_def by auto
-  moreover have "\<forall>oid oper ref. (oid, oper) \<in> set xs \<and> ref \<in> deps oper \<longrightarrow> ref < oid"
-    using empty_ys.prems(1) spec_ops_def by fastforce
-  hence "\<forall>i opr r. (i, opr) \<in> set (xs @ [(oid, oper)]) \<and> r \<in> deps opr \<longrightarrow> r < i"
-    using empty_ys.prems(4) by auto
-  ultimately show "spec_ops deps (xs @ [(oid, oper)] @ [])"
-    by (simp add: spec_ops_def)
+  case Nil
+  then show "spec_ops deps (xs @ [(oid, oper)] @ [])"
+    by (simp add: spec_ops_add_last)
 next
   case (snoc y ys)
   have IH: "spec_ops deps (xs @ [(oid, oper)] @ ys)"
