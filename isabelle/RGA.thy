@@ -179,7 +179,7 @@ next
 qed
 
 
-subsection\<open>Lemmata about the \isa{rga-ops} predicate\<close>
+subsection\<open>Lemmas about the \isa{rga-ops} predicate\<close>
 
 definition rga_ops :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> bool" where
   "rga_ops list \<equiv> crdt_ops list set_option"
@@ -213,7 +213,7 @@ proof -
 qed
 
 
-subsection\<open>Lemmata about the \isa{interp-rga} function\<close>
+subsection\<open>Lemmas about the \isa{interp-rga} function\<close>
 
 lemma interp_rga_tail_unfold:
   shows "interp_rga (xs@[x]) = insert_rga (interp_rga (xs)) x"
