@@ -10,10 +10,10 @@ theory Insert_Spec
 begin
 
 text\<open>In this section we consider only list insertion. We model an insertion
-operation as a pair (ID, ref), where ref is either ``None'' (signifying an
-insertion at the head of the list) or ``Some r'' (an insertion immediately
-after a reference element with ID ``r''). If the reference element does not
-exist, the operation does nothing.
+operation as a pair (\isa{ID, ref}), where \isa{ref} is either \isa{None}
+(signifying an insertion at the head of the list) or \isa{Some r}
+(an insertion immediately after a reference element with ID \isa{r}).
+If the reference element does not exist, the operation does nothing.
 
 We provide two different definitions of the interpretation function for list
 insertion: \isa{insert-spec} and \isa{insert-alt}. The \isa{insert-alt} definition

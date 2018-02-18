@@ -43,11 +43,13 @@ theory List_Spec
   imports Insert_Spec
 begin
 
-text\<open>For insertion, the first argument is the ID of the existing element after
-which we want to insert, or None to insert at the head of the list. The second
-argument is an arbitrary value to associate with the list element.
-
-For deletion, the argument is the ID of the existing list element to delete.\<close>
+text\<open>We first define a datatype for list operations, with two constructors:
+\isa{Insert ref val}, and \isa{Delete ref}. For insertion, the \isa{ref} argument
+is the ID of the existing element after which we want to insert, or \isa{None}
+to insert at the head of the list.
+The \isa{val} argument is an arbitrary value to associate with the list element.
+For deletion, the \isa{ref} argument is the ID of the existing list element
+to delete.\<close>
 
 datatype ('oid, 'val) list_op =
   Insert "'oid option" "'val" |
@@ -56,7 +58,7 @@ datatype ('oid, 'val) list_op =
 text\<open>When interpreting operations, the result is a pair (\isa{list, vals}).
 The \isa{list} contains the IDs of list elements in the correct order
 (equivalent to the list relation in the paper), and \isa{vals} is a mapping
-from list element IDs to values (like the element relation in the paper).
+from list element IDs to values (equivalent to the element relation in the paper).
 
 Insertion delegates to the previously defined \isa{insert-spec} interpretation
 function. Deleting a list element removes it from \isa{vals}.\<close>
@@ -77,7 +79,8 @@ definition list_order :: "('oid \<times> ('oid, 'val) list_op) list \<Rightarrow
   "list_order ops x y \<equiv> \<exists>xs ys zs. fst (interp_ops ops) = xs @ [x] @ ys @ [y] @ zs"
 
 text\<open>The \isa{make-insert} function generates a new operation for insertion into
-a given index in a given list.\<close>
+a given index in a given list.
+The exclamation mark is Isabelle's list subscript operator.\<close>
 
 fun make_insert :: "'oid list \<Rightarrow> 'val \<Rightarrow> nat \<Rightarrow> ('oid, 'val) list_op" where
   "make_insert list val 0       = Insert None val" |
@@ -618,8 +621,7 @@ using assms list_order_monotonic list_ops_insertions insertions_subset list_orde
 text\<open>Part 1(c) states that inserted elements appear at the specified position:
 that is, immediately after an insertion of \isa{oid} at index \isa{k}, the list
 index \isa{k} does indeed contain \isa{oid} (provided that \isa{k} is less than the
-length of the list). We prove this property below. (The exclamation mark is
-Isabelle's list subscript operator.)\<close>
+length of the list). We prove this property below.\<close>
 
 theorem correct_position_insert:
   assumes "list_ops (ops @ [(oid, ins)])"

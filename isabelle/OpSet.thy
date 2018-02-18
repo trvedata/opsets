@@ -16,7 +16,7 @@ begin
 subsection\<open>OpSet definition\<close>
 
 text\<open>An OpSet is a set of (ID, operation) pairs with an associated total order
-on IDs (represented here with the ``linorder'' typeclass), and satisfying the
+on IDs (represented here with the \isa{linorder} typeclass), and satisfying the
 following properties:
 \begin{enumerate}
 \item The ID is unique (that is, if any two pairs in the set have the same ID,
@@ -24,10 +24,11 @@ then their operation is also the same).
 \item If the operation references the IDs of any other operations, those
 referenced IDs are less than that of the operation itself, according to the
 total order on IDs. To avoid assuming anything about the structure of operations
-here, we use a function ``deps'' that returns the set of dependent IDs for a given
-operation. This requirement is a weak expression of causality: an operation can
-only depend on causally prior operations, and by making the total order on IDs
-a linear extension of the causal order, this requirement is easily satisfied.
+here, we use a function \isa{deps} that returns the set of dependent IDs for a
+given operation. This requirement is a weak expression of causality: an operation
+can only depend on causally prior operations, and by making the total order on
+IDs a linear extension of the causal order, we can easily ensure that any
+referenced IDs are less than that of the operation itself.
 \item The OpSet is finite (but we do not assume any particular maximum size).
 \end{enumerate}\<close>
 
@@ -38,11 +39,11 @@ locale opset =
     and ref_older: "(oid, oper) \<in> opset \<Longrightarrow> ref \<in> deps oper \<Longrightarrow> ref < oid"
     and finite_opset: "finite opset"
 
-text\<open>We prove some lemmas about OpSets. In particular, any subset of an OpSet
-is also a valid OpSet. This is the case because although an operation can
-depend on causally prior operations, the OpSet does not require those prior
-operations to actually exist. This weak assumption makes the OpSet model
-more general and simplifies reasoning about OpSets.\<close>
+text\<open>We prove that any subset of an OpSet is also a valid OpSet. This is the
+case because, although an operation can depend on causally prior operations,
+the OpSet does not require those prior operations to actually exist. This weak
+assumption makes the OpSet model more general and simplifies reasoning about
+OpSets.\<close>
 
 lemma opset_subset:
   assumes "opset Y deps"
@@ -425,8 +426,7 @@ next
   ultimately show ?case by blast
 qed
 
-text\<open>Proof that for any given OpSet, a \isa{spec-ops} linearisation exists;
-and, conversely, for any given \isa{spec-ops} list, the set of pairs is an OpSet.\<close>
+text\<open>We prove that for any given OpSet, a \isa{spec-ops} linearisation exists:\<close>
 
 lemma spec_ops_exists:
   assumes "opset ops deps"
@@ -467,6 +467,9 @@ using assms proof(induction op_list, simp)
   qed
 qed
 
+text\<open>Conversely, for any given \isa{spec-ops} list, the set of pairs in the
+list is an OpSet:\<close>
+
 lemma spec_ops_is_opset:
   assumes "spec_ops op_list deps"
   shows "opset (set op_list) deps"
@@ -493,8 +496,8 @@ ID of a prior operation, that prior operation must appear previously in the
 operations must appear in causal order, but concurrent operations can be
 ordered arbitrarily.
 
-This list describes the operation sequence as it is typically applied to an
-operation-based CRDT. Applying operations in the order they appear in
+This list describes the operation sequence in the order it is typically applied to
+an operation-based CRDT. Applying operations in the order they appear in
 \isa{crdt-ops} requires that concurrent operations commute. For any \isa{crdt-ops}
 operation sequence, there is a permutation that satisfies the \isa{spec-ops}
 predicate. Thus, to check whether a CRDT satisfies its sequential specification,
