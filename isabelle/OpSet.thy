@@ -124,6 +124,11 @@ next
     by(case_tac xa; case_tac xb) auto
 qed
 
+lemma distinct_append_swap:
+  assumes "distinct (xs @ ys)"
+  shows "distinct (ys @ xs)"
+using assms by (induction ys, auto)
+  
 lemma append_subset:
   assumes "set xs = set (ys @ zs)"
   shows "set ys \<subseteq> set xs" and "set zs \<subseteq> set xs"
