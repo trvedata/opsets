@@ -16,10 +16,10 @@ after a reference element with ID ``r''). If the reference element does not
 exist, the operation does nothing.
 
 We provide two different definitions of the interpretation function for list
-insertion: insert\_spec and insert\_alt. The insert\_alt definition matches
-the paper, while insert\_spec uses the Isabelle/HOL list datatype, making it
-more suitable for formal reasoning. In a later subsection we prove that the
-two definitions are in fact equivalent.\<close>
+insertion: \isa{insert-spec} and \isa{insert-alt}. The \isa{insert-alt} definition
+matches the paper, while \isa{insert-spec} uses the Isabelle/HOL list datatype,
+making it more suitable for formal reasoning. In a later subsection we prove
+that the two definitions are in fact equivalent.\<close>
 
 fun insert_spec :: "'oid list \<Rightarrow> ('oid \<times> 'oid option) \<Rightarrow> 'oid list" where
   "insert_spec xs     (oid, None)     = oid#xs" |
@@ -35,26 +35,26 @@ fun insert_alt :: "('oid \<times> 'oid option) set \<Rightarrow> ('oid \<times> 
            {(i, n). i = oid \<and> (ref, n) \<in> list_rel}
       else list_rel)"
 
-text\<open>interp\_list is the sequential interpretation of a set of insertion
+text\<open>\isa{interp-ins} is the sequential interpretation of a set of insertion
 operations. It starts with an empty list as initial state, and then applies
 the operations from left to right.\<close>
 
-definition interp_list :: "('oid \<times> 'oid option) list \<Rightarrow> 'oid list" where
-  "interp_list ops \<equiv> foldl insert_spec [] ops"
+definition interp_ins :: "('oid \<times> 'oid option) list \<Rightarrow> 'oid list" where
+  "interp_ins ops \<equiv> foldl insert_spec [] ops"
 
 
-subsection \<open>The insert\_ops predicate\<close>
+subsection \<open>The \isa{insert-ops} predicate\<close>
 
 text\<open>We now specialise the definitions from the abstract OpSet section for list
-insertion. insert\_opset is an opset consisting only of insertion operations,
-and insert\_ops is the specialisation of the spec\_ops predicate for
-insertion operations. We prove several useful lemmas about insert\_ops.\<close>
+insertion. \isa{insert-opset} is an opset consisting only of insertion operations,
+and \isa{insert-ops} is the specialisation of the \isa{spec-ops} predicate for
+insertion operations. We prove several useful lemmas about \isa{insert-ops}.\<close>
 
 locale insert_opset = opset opset set_option
   for opset :: "('oid::{linorder} \<times> 'oid option) set"
 
 definition insert_ops :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> bool" where
-  "insert_ops list \<equiv> spec_ops set_option list"
+  "insert_ops list \<equiv> spec_ops list set_option"
 
 lemma insert_ops_NilI [intro!]:
   shows "insert_ops []"
@@ -116,7 +116,7 @@ lemma insert_ops_memb_ref_older:
 using assms insert_ops_ref_older split_list_first by fastforce
 
 
-subsection \<open>Properties of the insert\_spec function\<close>
+subsection \<open>Properties of the \isa{insert-spec} function\<close>
 
 lemma insert_spec_none [simp]:
   shows "set (insert_spec xs (oid, None)) = set xs \<union> {oid}"
@@ -333,83 +333,83 @@ next
 qed
 
 
-subsection \<open>Properties of the interp\_list function\<close>
+subsection \<open>Properties of the \isa{interp-ins} function\<close>
 
-lemma interp_list_empty [simp]:
-  shows "interp_list [] = []"
-by (simp add: interp_list_def)
+lemma interp_ins_empty [simp]:
+  shows "interp_ins [] = []"
+by (simp add: interp_ins_def)
 
-lemma interp_list_tail_unfold:
-  shows "interp_list (xs @ [x]) = insert_spec (interp_list xs) x"
-by (clarsimp simp add: interp_list_def)
+lemma interp_ins_tail_unfold:
+  shows "interp_ins (xs @ [x]) = insert_spec (interp_ins xs) x"
+by (clarsimp simp add: interp_ins_def)
 
-lemma interp_list_subset [simp]:
-  shows "set (interp_list op_list) \<subseteq> set (map fst op_list)"
+lemma interp_ins_subset [simp]:
+  shows "set (interp_ins op_list) \<subseteq> set (map fst op_list)"
 proof(induction op_list rule: List.rev_induct)
   case Nil
-  then show "set (interp_list []) \<subseteq> set (map fst [])"
-    by (simp add: interp_list_def)
+  then show "set (interp_ins []) \<subseteq> set (map fst [])"
+    by (simp add: interp_ins_def)
 next
   case (snoc x xs)
-  hence IH: "set (interp_list xs) \<subseteq> set (map fst xs)"
-    using interp_list_def by blast
+  hence IH: "set (interp_ins xs) \<subseteq> set (map fst xs)"
+    using interp_ins_def by blast
   obtain oid ref where x_pair: "x = (oid, ref)"
     by fastforce
-  hence spec: "interp_list (xs @ [x]) = insert_spec (interp_list xs) (oid, ref)"
-    by (simp add: interp_list_def)
-  then show "set (interp_list (xs @ [x])) \<subseteq> set (map fst (xs @ [x]))"
+  hence spec: "interp_ins (xs @ [x]) = insert_spec (interp_ins xs) (oid, ref)"
+    by (simp add: interp_ins_def)
+  then show "set (interp_ins (xs @ [x])) \<subseteq> set (map fst (xs @ [x]))"
   proof(cases ref)
     case None
-    then show "set (interp_list (xs @ [x])) \<subseteq> set (map fst (xs @ [x]))"
+    then show "set (interp_ins (xs @ [x])) \<subseteq> set (map fst (xs @ [x]))"
       using IH spec x_pair by auto
   next
     case (Some a)
-    then show "set (interp_list (xs @ [x])) \<subseteq> set (map fst (xs @ [x]))"
-      using IH spec x_pair by (cases "a \<in> set (interp_list xs)", auto)
+    then show "set (interp_ins (xs @ [x])) \<subseteq> set (map fst (xs @ [x]))"
+      using IH spec x_pair by (cases "a \<in> set (interp_ins xs)", auto)
   qed
 qed
 
-lemma interp_list_distinct:
+lemma interp_ins_distinct:
   assumes "insert_ops op_list"
-  shows "distinct (interp_list op_list)"
+  shows "distinct (interp_ins op_list)"
 using assms proof(induction op_list rule: rev_induct)
   case Nil
-  then show "distinct (interp_list [])"
-    by (simp add: interp_list_def)
+  then show "distinct (interp_ins [])"
+    by (simp add: interp_ins_def)
 next
   case (snoc x xs)
-  hence IH: "distinct (interp_list xs)" by blast
+  hence IH: "distinct (interp_ins xs)" by blast
   obtain oid ref where x_pair: "x = (oid, ref)" by force
   hence "\<forall>x \<in> set (map fst xs). x < oid"
     using last_op_greatest snoc.prems by blast
-  hence "\<forall>x \<in> set (interp_list xs). x < oid"
-    using interp_list_subset by fastforce
-  hence "distinct (insert_spec (interp_list xs) (oid, ref))"
+  hence "\<forall>x \<in> set (interp_ins xs). x < oid"
+    using interp_ins_subset by fastforce
+  hence "distinct (insert_spec (interp_ins xs) (oid, ref))"
     using IH insert_spec_distinct insert_spec_nonex by metis
-  then show "distinct (interp_list (xs @ [x]))"
-    by (simp add: x_pair interp_list_tail_unfold)
+  then show "distinct (interp_ins (xs @ [x]))"
+    by (simp add: x_pair interp_ins_tail_unfold)
 qed
 
 
 subsection \<open>Equivalence of the two definitions of insertion\<close>
 
 text\<open>At the beginning of this section we gave two different definitions of
-interpretation functions for list insertion: insert\_spec and insert\_alt.
-In this section we prove that the two are equivalent.
+interpretation functions for list insertion: \isa{insert-spec} and
+\isa{insert-alt}. In this section we prove that the two are equivalent.
 
 We first define how to derive the successor relation from an Isabelle list.
-This relation contains (\emph{id}, None) if \emph{id} is the last element
-of the list, and (\emph{id1}, \emph{id2}) if \emph{id1} is immediately
-followed by \emph{id2} in the list.\<close>
+This relation contains (\isa{id}, \isa{None}) if \isa{id} is the last element
+of the list, and (\isa{id1}, \isa{id2}) if \isa{id1} is immediately
+followed by \isa{id2} in the list.\<close>
 
 fun succ_rel :: "'oid list \<Rightarrow> ('oid \<times> 'oid option) set" where
   "succ_rel [] = {}" |
   "succ_rel [head] = {(head, None)}" |
   "succ_rel (head#x#xs) = {(head, Some x)} \<union> succ_rel (x#xs)"
 
-text\<open>interp\_alt is the equivalent of interp\_list, but using insert\_alt
-instead of insert\_spec. To match the paper, it uses a distinct head element
-to refer to the beginning of the list.\<close>
+text\<open>\isa{interp-alt} is the equivalent of \isa{interp-ins}, but using
+\isa{insert-alt} instead of \isa{insert-spec}. To match the paper, it uses a
+distinct head element to refer to the beginning of the list.\<close>
 
 definition interp_alt :: "'oid \<Rightarrow> ('oid \<times> 'oid option) list \<Rightarrow> ('oid \<times> 'oid option) set" where
   "interp_alt head ops \<equiv> foldl insert_alt {(head, None)}
@@ -613,45 +613,45 @@ next
   qed
 qed
 
-text\<open>The main result of this section, that insert\_spec and insert\_alt
+text\<open>The main result of this section, that \isa{insert-spec} and \isa{insert-alt}
 are equivalent.\<close>
 
 theorem insert_alt_equivalent:
   assumes "insert_ops ops"
     and "head \<notin> fst ` set ops"
     and "\<And>r. Some r \<in> snd ` set ops \<Longrightarrow> r \<noteq> head"
-  shows "succ_rel (head # interp_list ops) = interp_alt head ops"
+  shows "succ_rel (head # interp_ins ops) = interp_alt head ops"
 using assms proof(induction ops rule: List.rev_induct)
   case Nil
-  then show "succ_rel (head # interp_list []) = interp_alt head []"
-    by (simp add: interp_list_def interp_alt_def)
+  then show "succ_rel (head # interp_ins []) = interp_alt head []"
+    by (simp add: interp_ins_def interp_alt_def)
 next
   case (snoc x xs)
-  have IH: "succ_rel (head # interp_list xs) = interp_alt head xs"
+  have IH: "succ_rel (head # interp_ins xs) = interp_alt head xs"
     using snoc by auto
-  have distinct_list: "distinct (head # interp_list xs)"
+  have distinct_list: "distinct (head # interp_ins xs)"
   proof -
-    have "distinct (interp_list xs)"
-      using interp_list_distinct snoc.prems(1) by blast
-    moreover have "set (interp_list xs) \<subseteq> fst ` set xs"
-      using interp_list_subset snoc.prems(1) by fastforce
-    ultimately show "distinct (head # interp_list xs)"
+    have "distinct (interp_ins xs)"
+      using interp_ins_distinct snoc.prems(1) by blast
+    moreover have "set (interp_ins xs) \<subseteq> fst ` set xs"
+      using interp_ins_subset snoc.prems(1) by fastforce
+    ultimately show "distinct (head # interp_ins xs)"
       using snoc.prems(2) by auto
   qed
   obtain oid r where x_pair: "x = (oid, r)" by force
-  then show "succ_rel (head # interp_list (xs @ [x])) = interp_alt head (xs @ [x])"
+  then show "succ_rel (head # interp_ins (xs @ [x])) = interp_alt head (xs @ [x])"
   proof(cases r)
     case None
     have "interp_alt head (xs @ [x]) = insert_alt (interp_alt head xs) (oid, head)"
       by (simp add: interp_alt_def None x_pair)
-    moreover have "... = insert_alt (succ_rel (head # interp_list xs)) (oid, head)"
+    moreover have "... = insert_alt (succ_rel (head # interp_ins xs)) (oid, head)"
       by (simp add: IH)
-    moreover have "... = succ_rel (insert_spec (head # interp_list xs) (oid, Some head))"
+    moreover have "... = succ_rel (insert_spec (head # interp_ins xs) (oid, Some head))"
       using distinct_list succ_rel_insert_Some by metis
-    moreover have "... = succ_rel (head # (insert_spec (interp_list xs) (oid, None)))"
+    moreover have "... = succ_rel (head # (insert_spec (interp_ins xs) (oid, None)))"
       by auto
-    moreover have "... = succ_rel (head # (interp_list (xs @ [x])))"
-      by (simp add: interp_list_tail_unfold None x_pair)
+    moreover have "... = succ_rel (head # (interp_ins (xs @ [x])))"
+      by (simp add: interp_ins_tail_unfold None x_pair)
     ultimately show ?thesis by simp
   next
     case (Some ref)
@@ -659,48 +659,48 @@ next
       by (simp add: Some snoc.prems(3) x_pair)
     have "interp_alt head (xs @ [x]) = insert_alt (interp_alt head xs) (oid, ref)"
       by (simp add: interp_alt_def Some x_pair)
-    moreover have "... = insert_alt (succ_rel (head # interp_list xs)) (oid, ref)"
+    moreover have "... = insert_alt (succ_rel (head # interp_ins xs)) (oid, ref)"
       by (simp add: IH)
-    moreover have "... = succ_rel (insert_spec (head # interp_list xs) (oid, Some ref))"
+    moreover have "... = succ_rel (insert_spec (head # interp_ins xs) (oid, Some ref))"
       using distinct_list succ_rel_insert_Some by metis
-    moreover have "... = succ_rel (head # (insert_spec (interp_list xs) (oid, Some ref)))"
+    moreover have "... = succ_rel (head # (insert_spec (interp_ins xs) (oid, Some ref)))"
       using \<open>ref \<noteq> head\<close> by auto
-    moreover have "... = succ_rel (head # (interp_list (xs @ [x])))"
-      by (simp add: interp_list_tail_unfold Some x_pair)
+    moreover have "... = succ_rel (head # (interp_ins (xs @ [x])))"
+      by (simp add: interp_ins_tail_unfold Some x_pair)
     ultimately show ?thesis by simp
   qed
 qed
 
 
-subsection \<open>The list\_order predicate\<close>
+subsection \<open>The \isa{list-order} predicate\<close>
 
-text\<open>``list\_order \emph{ops x y}'' holds iff, after interpreting the list of
-insertion operations \emph{ops}, the list element with ID \emph{x} appears
-before the list element with ID \emph{y} in the resulting list. We prove several
+text\<open>\isa{list-order ops x y} holds iff, after interpreting the list of
+insertion operations \isa{ops}, the list element with ID \isa{x} appears
+before the list element with ID \isa{y} in the resulting list. We prove several
 lemmas about this predicate; in particular, that executing additional insertion
 operations does not change the relative ordering of existing list elements.\<close>
 
 definition list_order :: "('oid::{linorder} \<times> 'oid option) list \<Rightarrow> 'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
-  "list_order ops x y \<equiv> \<exists>xs ys zs. interp_list ops = xs @ [x] @ ys @ [y] @ zs"
+  "list_order ops x y \<equiv> \<exists>xs ys zs. interp_ins ops = xs @ [x] @ ys @ [y] @ zs"
 
 lemma list_orderI:
-  assumes "interp_list ops = xs @ [x] @ ys @ [y] @ zs"
+  assumes "interp_ins ops = xs @ [x] @ ys @ [y] @ zs"
   shows "list_order ops x y"
 using assms by (auto simp add: list_order_def)
 
 lemma list_orderE:
   assumes "list_order ops x y"
-  shows "\<exists>xs ys zs. interp_list ops = xs @ [x] @ ys @ [y] @ zs"
+  shows "\<exists>xs ys zs. interp_ins ops = xs @ [x] @ ys @ [y] @ zs"
 using assms by (auto simp add: list_order_def)
 
 lemma list_order_memb1:
   assumes "list_order ops x y"
-  shows "x \<in> set (interp_list ops)"
+  shows "x \<in> set (interp_ins ops)"
 using assms by (auto simp add: list_order_def)
 
 lemma list_order_memb2:
   assumes "list_order ops x y"
-  shows "y \<in> set (interp_list ops)"
+  shows "y \<in> set (interp_ins ops)"
 using assms by (auto simp add: list_order_def)
 
 lemma list_order_trans:
@@ -709,15 +709,15 @@ lemma list_order_trans:
     and "list_order op_list y z"
   shows "list_order op_list x z"
 proof -
-  obtain xxs xys xzs where 1: "interp_list op_list = (xxs@[x]@xys)@(y#xzs)"
-    using assms by (auto simp add: list_order_def interp_list_def)
-  obtain yxs yys yzs where 2: "interp_list op_list = yxs@y#(yys@[z]@yzs)"
-    using assms by (auto simp add: list_order_def interp_list_def)
-  have 3: "distinct (interp_list op_list)"
-    using assms interp_list_distinct by blast
+  obtain xxs xys xzs where 1: "interp_ins op_list = (xxs@[x]@xys)@(y#xzs)"
+    using assms by (auto simp add: list_order_def interp_ins_def)
+  obtain yxs yys yzs where 2: "interp_ins op_list = yxs@y#(yys@[z]@yzs)"
+    using assms by (auto simp add: list_order_def interp_ins_def)
+  have 3: "distinct (interp_ins op_list)"
+    using assms interp_ins_distinct by blast
   hence "xzs = yys@[z]@yzs"
     using distinct_list_split[OF 3, OF 2, OF 1] by auto
-  hence "interp_list op_list = xxs@[x]@xys@[y]@yys@[z]@yzs"
+  hence "interp_ins op_list = xxs@[x]@xys@[y]@yys@[z]@yzs"
     using 1 2 3 by clarsimp
   thus "list_order op_list x z"
     using assms by (metis append.assoc list_orderI)
@@ -727,32 +727,32 @@ lemma insert_preserves_order:
   assumes "insert_ops ops" and "insert_ops rest"
     and "rest = before @ after"
     and "ops  = before @ (oid, ref) # after"
-  shows "\<exists>xs ys zs. interp_list rest = xs @ zs \<and> interp_list ops = xs @ ys @ zs"
+  shows "\<exists>xs ys zs. interp_ins rest = xs @ zs \<and> interp_ins ops = xs @ ys @ zs"
 using assms proof(induction after arbitrary: rest ops rule: List.rev_induct)
   case Nil
-  then have 1: "interp_list ops = insert_spec (interp_list before) (oid, ref)"
-    by (simp add: interp_list_tail_unfold)
-  then show "\<exists>xs ys zs. interp_list rest = xs @ zs \<and> interp_list ops = xs @ ys @ zs"
+  then have 1: "interp_ins ops = insert_spec (interp_ins before) (oid, ref)"
+    by (simp add: interp_ins_tail_unfold)
+  then show "\<exists>xs ys zs. interp_ins rest = xs @ zs \<and> interp_ins ops = xs @ ys @ zs"
   proof(cases ref)
     case None
-    hence "interp_list rest = [] @ (interp_list before) \<and>
-           interp_list ops = [] @ [oid] @ (interp_list before)"
+    hence "interp_ins rest = [] @ (interp_ins before) \<and>
+           interp_ins ops = [] @ [oid] @ (interp_ins before)"
       using 1 Nil.prems(3) by simp
     then show ?thesis by blast
   next
     case (Some a)
     then show ?thesis
-    proof(cases "a \<in> set (interp_list before)")
+    proof(cases "a \<in> set (interp_ins before)")
       case True
-      then obtain xs ys where "interp_list before = xs @ ys \<and>
-          insert_spec (interp_list before) (oid, ref) = xs @ oid # ys"
+      then obtain xs ys where "interp_ins before = xs @ ys \<and>
+          insert_spec (interp_ins before) (oid, ref) = xs @ oid # ys"
         using insert_somewhere Some by metis
-      hence "interp_list rest = xs @ ys \<and> interp_list ops = xs @ [oid] @ ys"
+      hence "interp_ins rest = xs @ ys \<and> interp_ins ops = xs @ [oid] @ ys"
         using 1 Nil.prems(3) by auto
       then show ?thesis by blast
     next
       case False
-      hence "interp_list ops = (interp_list rest) @ [] @ []"
+      hence "interp_ins ops = (interp_ins rest) @ [] @ []"
         using insert_spec_nonex 1 Nil.prems(3) Some by simp
       then show ?thesis by blast
     qed
@@ -765,32 +765,32 @@ next
   then have ops1: "insert_ops (before @ op_list)"
     and ops2: "insert_ops (before @ (oid, ref) # op_list)"
     using insert_ops_appendD by blast+
-  then obtain xs ys zs where IH1: "interp_list (before @ op_list) = xs @ zs"
-    and IH2: "interp_list (before @ (oid, ref) # op_list) = xs @ ys @ zs"
+  then obtain xs ys zs where IH1: "interp_ins (before @ op_list) = xs @ zs"
+    and IH2: "interp_ins (before @ (oid, ref) # op_list) = xs @ ys @ zs"
     using snoc.IH by blast
   obtain i2 r2 where "oper = (i2, r2)" by force
-  then show "\<exists>xs ys zs. interp_list rest = xs @ zs \<and> interp_list ops = xs @ ys @ zs"
+  then show "\<exists>xs ys zs. interp_ins rest = xs @ zs \<and> interp_ins ops = xs @ ys @ zs"
   proof(cases r2)
     case None
-    hence "interp_list (before @ op_list @ [oper]) = (i2 # xs) @ zs"
+    hence "interp_ins (before @ op_list @ [oper]) = (i2 # xs) @ zs"
       by (metis IH1 \<open>oper = (i2, r2)\<close> append.assoc append_Cons insert_spec.simps(1)
-          interp_list_tail_unfold)
-    moreover have "interp_list (before @ (oid, ref) # op_list @ [oper]) = (i2 # xs) @ ys @ zs"
+          interp_ins_tail_unfold)
+    moreover have "interp_ins (before @ (oid, ref) # op_list @ [oper]) = (i2 # xs) @ ys @ zs"
       by (metis IH2 None \<open>oper = (i2, r2)\<close> append.assoc append_Cons insert_spec.simps(1)
-          interp_list_tail_unfold)
+          interp_ins_tail_unfold)
     ultimately show ?thesis
       using snoc.prems(3) snoc.prems(4) by blast
   next
     case (Some r)
-    then have 1: "interp_list (before @ (oid, ref) # op_list @ [(i2, r2)]) =
+    then have 1: "interp_ins (before @ (oid, ref) # op_list @ [(i2, r2)]) =
                   insert_spec (xs @ ys @ zs) (i2, Some r)"
-      by (metis IH2 append.assoc append_Cons interp_list_tail_unfold)
-    have 2: "interp_list (before @ op_list @ [(i2, r2)]) = insert_spec (xs @ zs) (i2, Some r)"
-      by (metis IH1 append.assoc interp_list_tail_unfold Some)
+      by (metis IH2 append.assoc append_Cons interp_ins_tail_unfold)
+    have 2: "interp_ins (before @ op_list @ [(i2, r2)]) = insert_spec (xs @ zs) (i2, Some r)"
+      by (metis IH1 append.assoc interp_ins_tail_unfold Some)
     consider (r_xs) "r \<in> set xs" | (r_ys) "r \<in> set ys" | (r_zs) "r \<in> set zs" |
              (r_nonex) "r \<notin> set (xs @ ys @ zs)"
       by auto
-    then show "\<exists>xs ys zs. interp_list rest = xs @ zs \<and> interp_list ops = xs @ ys @ zs"
+    then show "\<exists>xs ys zs. interp_ins rest = xs @ zs \<and> interp_ins ops = xs @ ys @ zs"
     proof(cases)
       case r_xs
       from this have "insert_spec (xs @ ys @ zs) (i2, Some r) =
@@ -803,7 +803,7 @@ next
     next
       case r_ys
       hence "r \<notin> set xs" and "r \<notin> set zs"
-        using IH2 ops2 interp_list_distinct by force+
+        using IH2 ops2 interp_ins_distinct by force+
       moreover from this have "insert_spec (xs @ ys @ zs) (i2, Some r) =
                                xs @ (insert_spec ys (i2, Some r)) @ zs"
         using insert_first_part insert_second_part insert_spec_nonex
@@ -815,7 +815,7 @@ next
     next
       case r_zs
       hence "r \<notin> set xs" and "r \<notin> set ys"
-        using IH2 ops2 interp_list_distinct by force+
+        using IH2 ops2 interp_ins_distinct by force+
       moreover from this have "insert_spec (xs @ ys @ zs) (i2, Some r) =
                                xs @ ys @ (insert_spec zs (i2, Some r))"
         by (metis Some UnE insert_second_part insert_spec_nonex set_append)
@@ -961,7 +961,7 @@ using assms proof(induction rule: measure_induct_rule[where f="\<lambda>x. (leng
       ultimately show ?thesis
         by (simp add: Suc less.IH less.prems(1) less.prems(4))
     qed
-    then obtain xs ys zs where "interp_list (remove1 e xa) = xs @ x # ys @ y # zs"
+    then obtain xs ys zs where "interp_ins (remove1 e xa) = xs @ x # ys @ y # zs"
       using list_order_def by fastforce
     moreover obtain oid ref where e_pair: "e = (oid, ref)"
       by fastforce
@@ -971,17 +971,17 @@ using assms proof(induction rule: measure_induct_rule[where f="\<lambda>x. (leng
       by (simp add: remove1_append)
     moreover from this have "insert_ops (ps @ ss)" and "insert_ops (ps @ e # ss)"
       using xa_split less.prems(2) by (metis append_Cons append_Nil insert_ops_remove1, auto)
-    then obtain xsa ysa zsa where "interp_list (ps @ ss) = xsa @ zsa"
-      and interp_xa: "interp_list (ps @ (oid, ref) # ss) = xsa @ ysa @ zsa"
+    then obtain xsa ysa zsa where "interp_ins (ps @ ss) = xsa @ zsa"
+      and interp_xa: "interp_ins (ps @ (oid, ref) # ss) = xsa @ ysa @ zsa"
       using insert_preserves_order e_pair by metis
     moreover have xsa_zsa: "xsa @ zsa = xs @ x # ys @ y # zs"
-      using interp_list_def remove1_append calculation xa_split by auto
+      using interp_ins_def remove1_append calculation xa_split by auto
     then show "list_order xa x y"
     proof(cases "length xsa \<le> length xs")
       case True
       then obtain ts where "xsa@ts = xs"
         using app_length_lt_exists xsa_zsa by blast
-      hence "interp_list xa = (xsa @ ysa @ ts) @ [x] @ ys @ [y] @ zs"
+      hence "interp_ins xa = (xsa @ ysa @ ts) @ [x] @ ys @ [y] @ zs"
         using calculation xa_split by auto
       then show "list_order xa x y"
         using list_order_def by blast
@@ -999,7 +999,7 @@ using assms proof(induction rule: measure_induct_rule[where f="\<lambda>x. (leng
             nth_append nth_append_length False by metis
         moreover have "us @ y # zs = zsa"
           by (metis True xsa_zsa1 append_eq_append_conv_if append_eq_conv_conj calculation(1))
-        ultimately have "interp_list xa = xs @ [x] @
+        ultimately have "interp_ins xa = xs @ [x] @
               ((drop (Suc (length xs)) xsa) @ ysa @ us) @ [y] @ zs"
           by (simp add: e_pair interp_xa xa_split)
         then show "list_order xa x y"
@@ -1016,7 +1016,7 @@ using assms proof(induction rule: measure_induct_rule[where f="\<lambda>x. (leng
           using app_length_lt_exists by blast
         hence "xsa @ ysa @ zsa = xs @ [x] @ ys @ [y] @ vs @ ysa @ zsa"
           by simp
-        hence "interp_list xa = xs @ [x] @ ys @ [y] @ (vs @ ysa @ zsa)"
+        hence "interp_ins xa = xs @ [x] @ ys @ [y] @ (vs @ ysa @ zsa)"
           using e_pair interp_xa xa_split by auto
         then show "list_order xa x y"
           using list_order_def by blast

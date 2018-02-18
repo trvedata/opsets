@@ -10,11 +10,17 @@ specification.
 Attiya et al.'s specification is as follows~\cite{Attiya:2016kh}:
 
 \begin{displayquote}
-An abstract execution $A = (H, \textsf{vis})$ belongs to the \emph{strong list specification} $\mathcal{A}_\textsf{strong}$ if and only if there is a relation $\textsf{lo} \subseteq \textsf{elems}(A) \times \textsf{elems}(A)$, called the \emph{list order}, such that:
+An abstract execution $A = (H, \textsf{vis})$ belongs to the
+\emph{strong list specification} $\mathcal{A}_\textsf{strong}$ if and only if
+there is a relation
+$\textsf{lo} \subseteq \textsf{elems}(A) \times \textsf{elems}(A)$, called the
+\emph{list order}, such that:
 \begin{enumerate}
-\item Each event $e = \mathit{do}(\mathit{op}, w) \in H$ returns a sequence of elements $w=a_0 \dots a_{n-1}$, where $a_i \in \textsf{elems}(A)$, such that
+\item Each event $e = \mathit{do}(\mathit{op}, w) \in H$ returns a sequence of
+elements $w=a_0 \dots a_{n-1}$, where $a_i \in \textsf{elems}(A)$, such that
 \begin{enumerate}
-\item $w$ contains exactly the elements visible to $e$ that have been inserted, but not deleted:
+\item $w$ contains exactly the elements visible to $e$ that have been inserted,
+but not deleted:
 \[ \forall a.\; a \in w \quad\Longleftrightarrow\quad (\mathit{do}(\textsf{ins}(a, \_), \_) \le_\textsf{vis} e)
 \;\wedge\; \neg(\mathit{do}(\textsf{del}(a), \_) \le_\textsf{vis} e). \]
 \item The order of the elements is consistent with the list order:
@@ -22,7 +28,8 @@ An abstract execution $A = (H, \textsf{vis})$ belongs to the \emph{strong list s
 \item Elements are inserted at the specified position:
 if $\mathit{op} = \textsf{ins}(a, k)$, then $a = a_{\mathrm{min} \{k,\; n-1\}}$.
 \end{enumerate}
-\item The list order $\textsf{lo}$ is transitive, irreflexive and total, and thus determines the order of all insert operations in the execution.
+\item The list order $\textsf{lo}$ is transitive, irreflexive and total, and
+thus determines the order of all insert operations in the execution.
 \end{enumerate}
 \end{displayquote}
 
@@ -46,13 +53,13 @@ datatype ('oid, 'val) list_op =
   Insert "'oid option" "'val" |
   Delete "'oid"
 
-text\<open>When interpreting operations, the result is a pair (\emph{list, vals}).
-The \emph{list} contains the IDs of list elements in the correct order
-(equivalent to the list relation in the paper), and \emph{vals} is a mapping
+text\<open>When interpreting operations, the result is a pair (\isa{list, vals}).
+The \isa{list} contains the IDs of list elements in the correct order
+(equivalent to the list relation in the paper), and \isa{vals} is a mapping
 from list element IDs to values (like the element relation in the paper).
 
-Insertion delegates to the previously defined \emph{insert-spec} interpretation
-function. Deleting a list element removes it from \emph{vals}.\<close>
+Insertion delegates to the previously defined \isa{insert-spec} interpretation
+function. Deleting a list element removes it from \isa{vals}.\<close>
 
 fun interp_op :: "('oid list \<times> ('oid \<rightharpoonup> 'val)) \<Rightarrow> ('oid \<times> ('oid, 'val) list_op)
                \<Rightarrow> ('oid list \<times> ('oid \<rightharpoonup> 'val))" where
@@ -62,14 +69,14 @@ fun interp_op :: "('oid list \<times> ('oid \<rightharpoonup> 'val)) \<Rightarro
 definition interp_ops :: "('oid \<times> ('oid, 'val) list_op) list \<Rightarrow> ('oid list \<times> ('oid \<rightharpoonup> 'val))" where
   "interp_ops ops \<equiv> foldl interp_op ([], Map.empty) ops"
 
-text\<open>\emph{list-order ops x y} holds iff, after interpreting the list of
-operations \emph{ops}, the list element with ID $x$ appears before the list
-element with ID $y$ in the resulting list.\<close>
+text\<open>\isa{list-order ops x y} holds iff, after interpreting the list of
+operations \isa{ops}, the list element with ID \isa{x} appears before the
+list element with ID \isa{y} in the resulting list.\<close>
 
 definition list_order :: "('oid \<times> ('oid, 'val) list_op) list \<Rightarrow> 'oid \<Rightarrow> 'oid \<Rightarrow> bool" where
   "list_order ops x y \<equiv> \<exists>xs ys zs. fst (interp_ops ops) = xs @ [x] @ ys @ [y] @ zs"
 
-text\<open>The make\_insert function generates a new operation for insertion into
+text\<open>The \isa{make-insert} function generates a new operation for insertion into
 a given index in a given list.\<close>
 
 fun make_insert :: "'oid list \<Rightarrow> 'val \<Rightarrow> nat \<Rightarrow> ('oid, 'val) list_op" where
@@ -77,8 +84,8 @@ fun make_insert :: "'oid list \<Rightarrow> 'val \<Rightarrow> nat \<Rightarrow>
   "make_insert []   val k       = Insert None val" |
   "make_insert list val (Suc k) = Insert (Some (list ! (min k (length list - 1)))) val"
 
-text\<open>The \emph{list-ops} predicate is a specialisation of \emph{spec-ops} to
-the \emph{list-op} datatype: it describes a list of (ID, operation) pairs that
+text\<open>The \isa{list-ops} predicate is a specialisation of \isa{spec-ops} to
+the \isa{list-op} datatype: it describes a list of (ID, operation) pairs that
 is sorted by ID, and can thus be used for the sequential interpretation of
 the OpSet.\<close>
 
@@ -91,7 +98,7 @@ locale list_opset = opset opset list_op_deps
   for opset :: "('oid::{linorder} \<times> ('oid, 'val) list_op) set"
 
 definition list_ops :: "('oid::{linorder} \<times> ('oid, 'val) list_op) list \<Rightarrow> bool" where
-  "list_ops ops \<equiv> spec_ops list_op_deps ops"
+  "list_ops ops \<equiv> spec_ops ops list_op_deps"
 
 
 subsection\<open>Lemmas about insertion and deletion\<close>
@@ -379,26 +386,26 @@ qed
 subsection\<open>Lemmas about interpreting operations\<close>
 
 lemma interp_ops_list_equiv:
-  shows "fst (interp_ops ops) = interp_list (insertions ops)"
+  shows "fst (interp_ops ops) = interp_ins (insertions ops)"
 proof(induction ops rule: List.rev_induct)
   case Nil
   have 1: "fst (interp_ops []) = []"
     by (simp add: interp_ops_def)
-  have 2: "interp_list (insertions []) = []"
-    by (simp add: insertions_def map_filter_def interp_list_def)
-  show "fst (interp_ops []) = interp_list (insertions [])"
+  have 2: "interp_ins (insertions []) = []"
+    by (simp add: insertions_def map_filter_def interp_ins_def)
+  show "fst (interp_ops []) = interp_ins (insertions [])"
     by (simp add: 1 2)
 next
   case (snoc a ops)
   obtain oid oper where a_pair: "a = (oid, oper)"
     by fastforce
-  then show "fst (interp_ops (ops @ [a])) = interp_list (insertions (ops @ [a]))"
+  then show "fst (interp_ops (ops @ [a])) = interp_ins (insertions (ops @ [a]))"
   proof(cases oper)
     case (Insert ref val)
     hence "insertions (ops @ [a]) = insertions ops @ [(oid, ref)]"
       by (simp add: a_pair insertions_last_ins)
-    hence "interp_list (insertions (ops @ [a])) = insert_spec (interp_list (insertions ops)) (oid, ref)"
-      by (simp add: interp_list_tail_unfold)
+    hence "interp_ins (insertions (ops @ [a])) = insert_spec (interp_ins (insertions ops)) (oid, ref)"
+      by (simp add: interp_ins_tail_unfold)
     moreover have "fst (interp_ops (ops @ [a])) = insert_spec (fst (interp_ops ops)) (oid, ref)"
       by (metis Insert a_pair fst_conv interp_op.simps(1) interp_ops_unfold_last prod.collapse)
     ultimately show ?thesis
@@ -417,7 +424,7 @@ qed
 lemma interp_ops_distinct:
   assumes "list_ops ops"
   shows "distinct (fst (interp_ops ops))"
-by (simp add: assms interp_list_distinct interp_ops_list_equiv list_ops_insertions)
+by (simp add: assms interp_ins_distinct interp_ops_list_equiv list_ops_insertions)
 
 lemma list_order_equiv:
   shows "list_order ops x y \<longleftrightarrow> Insert_Spec.list_order (insertions ops) x y"
@@ -566,7 +573,7 @@ proof -
 qed
 
 
-subsection\<open>Part 1 of $\mathcal{A}_\textsf{strong}$\<close>
+subsection\<open>Satisfying all conditions of $\mathcal{A}_\textsf{strong}$\<close>
 
 text\<open>Part 1(a) of Attiya et al.'s specification states that whenever the
 list is observed, the elements of the list are exactly those that have
@@ -593,10 +600,10 @@ the OpSet containing all operations in the entire execution. Then, at any
 point in the execution, the OpSet is some subset of the set of all
 operations.
 
-We can then rephrase condition 1(b) as follows: whenever list element $x$
-appears before list element $y$ in the interpretation of \emph{some-ops},
-then for any OpSet \emph{all-ops} that is a superset of \emph{some-ops},
-$x$ must also appear before $y$ in the interpretation of \emph{all-ops}.
+We can then rephrase condition 1(b) as follows: whenever list element \isa{x}
+appears before list element \isa{y} in the interpretation of \isa{some-ops},
+then for any OpSet \isa{all-ops} that is a superset of \isa{some-ops},
+\isa{x} must also appear before \isa{y} in the interpretation of \isa{all-ops}.
 In other words, adding more operations to the OpSet does not change the
 relative order of any existing list elements.\<close>
 
@@ -609,8 +616,8 @@ using assms list_order_monotonic list_ops_insertions insertions_subset list_orde
 
 
 text\<open>Part 1(c) states that inserted elements appear at the specified position:
-that is, immediately after an insertion of \emph{oid} at index $k$, the list
-index $k$ does indeed contain \emph{oid} (provided that $k$ is less than the
+that is, immediately after an insertion of \isa{oid} at index \isa{k}, the list
+index \isa{k} does indeed contain \isa{oid} (provided that \isa{k} is less than the
 length of the list). We prove this property below. (The exclamation mark is
 Isabelle's list subscript operator.)\<close>
 
@@ -656,7 +663,7 @@ qed
 
 text\<open>Part 2 states that the list order relation must be transitive, irreflexive,
 and total. These three properties are straightforward to prove, using our
-definition of the \emph{list-order} predicate.\<close>
+definition of the \isa{list-order} predicate.\<close>
 
 theorem list_order_trans:
   assumes "list_ops ops"
