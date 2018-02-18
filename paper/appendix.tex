@@ -1,0 +1,460 @@
+\section{Introduction to Isabelle/HOL}
+\label{sect:appendix:isabelle}
+
+To help any readers who are not familiar with Isabelle/HOL, this appendix provides a brief introduction to the key concepts and syntax, taken from our previous work \cite{Gomes:2017gy}.
+A more detailed introduction can be found in the standard tutorial material~\cite{DBLP:books/sp/NipkowK14}.
+
+\paragraph{Syntax of expressions.}
+
+Isabelle/HOL is a logic with a strict, polymorphic, inferred type system.
+\emph{Function types} are written $\tau_1 \Rightarrow \tau_2$, and are inhabited by \emph{total} functions, mapping elements of $\tau_1$ to elements of $\tau_2$.
+We write $\tau_1 \times \tau_2$ for the \emph{product type} of $\tau_1$ and $\tau_2$, inhabited by pairs of elements of type $\tau_1$ and $\tau_2$, respectively.
+\emph{Type operators} are applied to arguments in reverse order: $\tau\ \isa{list}$ denotes the type of lists of elements of type $\tau$, and $\tau\ \isa{set}$ denotes the type of mathematical (i.e., potentially infinite) sets of type $\tau$, for instance.
+Type variables are written in lowercase, and preceded with a prime: ${\isacharprime}a \Rightarrow {\isacharprime}a$ denotes the type of a polymorphic identity function, for example.
+\emph{Tagged union} types are introduced with the $\isacommand{datatype}$ keyword, with \emph{constructors} of these types usually written with an initial upper case letter.
+
+In Isabelle/HOL's term language we write $\isa{t} \mathbin{::} \tau$ for a \emph{type ascription}, constraining the type of the term $\isa{t}$ to the type $\tau$.
+We write $\lambda{x}.\: t$ for an anonymous function mapping an argument $\isa{x}$ to $\isa{t(x)}$, and write the application of term $\isa{t}$ with function type to an argument $\isa{u}$ as $\isa{t\ u}$.
+Terms of list type are introduced using one of two constructors: the empty list $[\,]$ or `nil', and the infix operator $\isa{\#}$ which is pronounced ``cons'', and which prepends an element to an existing list.
+We use $[t_1, \ldots, t_n]$ as syntactic sugar for a list literal, and $\isa{xs} \mathbin{\isacharat} \isa{ys}$ to express the concatenation (appending) of two lists $\isa{xs}$ and $\isa{ys}$.
+We write $\{\,\}$ for the empty set, and use usual mathematical notation for set union, disjunction, membership tests, and so on: $\isa{t} \cup \isa{u}$, $\isa{t} \cap \isa{u}$, and $\isa{x} \in \isa{t}$.
+We write $t \longrightarrow s$ for logical implication between formulae (terms of type $\isa{bool}$).
+Strictly speaking Isabelle is a logical framework, providing a weak meta-logic within which object logics are embedded, including the Isabelle/HOL object logic that we use in this work.
+Accordingly, the implication arrow of Isabelle's meta-logic, $\isa{t} \Longrightarrow \isa{u}$, is required in certain contexts over the object-logic implication arrow, $t \longrightarrow s$, already introduced.
+However, for purposes of an intuitive understanding, the two forms of implication can be regarded as equivalent by the reader, with the requirement to use one over the other merely being an implementation detail of Isabelle itself.
+We will sometimes use the shorthand ${\isasymlbrakk}\isa{H}_1{\isacharsemicolon}\ \ldots{\isacharsemicolon}\ \isa{H}_n{\isasymrbrakk}\ {\isasymLongrightarrow}\ C$ instead of iterated meta-logic implications, i.e., $H_1\ {\isasymLongrightarrow}\ \ldots\ {\isasymLongrightarrow}\ H_n\ {\isasymLongrightarrow}\ C$.
+
+\paragraph{Definitions and theorems.}
+
+New non-recursive definitions are entered into Isabelle's global context using the $\mathbf{definition}$ keyword.
+Recursive functions are defined using the $\mathbf{fun}$ keyword, and support \emph{pattern matching} on their arguments.
+All functions are total, and therefore every recursive function must be provably terminating.
+All termination proofs in this work are generated automatically by Isabelle itself.
+
+\emph{Inductive relations} are defined with the $\mathbf{inductive}$ keyword.
+For example, the definition
+\begin{isabelle}
+\isacommand{inductive} only-fives\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}nat\ list\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where} \\
+~~~~{\isachardoublequoteopen}only-fives\ {\isacharbrackleft}{\isacharbrackright}{\isachardoublequoteclose}\ {\isacharbar}\\
+~~~~{\isachardoublequoteopen}{\isasymlbrakk}\ only-fives\ xs\ {\isasymrbrakk}\ {\isasymLongrightarrow}\ only-fives {\isacharparenleft}5\#xs{\isacharparenright}{\isachardoublequoteclose}
+\end{isabelle}
+\noindent %dpm: spacing above
+introduces a new constant $\isa{only-fives}$ of type $\isa{nat list} \Rightarrow \isa{bool}$.
+The two clauses in the body of the definition enumerate the conditions under which $\isa{only-fives}\ \isa{xs}$ is true, for arbitrary $\isa{xs}$: firstly, $\isa{only-fives}$ is true for the empty list; and secondly, if you know that $\isa{only-fives}\ \isa{xs}$ is true for some $\isa{xs}$, then you can deduce that $\isa{only-fives}\ (5\#\isa{xs})$ (i.e., $\isa{xs}$ prefixed with the number 5) is also true.
+Moreover, $\isa{only-fives}\ \isa{xs}$ is true in no other circumstances---it is the \emph{smallest} relation closed under the rules defining it.
+In short, the clauses above state that $\isa{only-fives}\ \isa{xs}$ holds exactly in the case where $\isa{xs}$ is a (potentially empty) list containing only repeated copies of the natural number $5$.
+
+Lemmas, theorems, and corollaries can be asserted using the $\isacommand{lemma}$, $\isacommand{theorem}$, and $\isacommand{corollary}$ keywords, respectively.
+There is no semantic difference between these keywords in Isabelle.
+For example,
+\begin{isabelle}
+\isacommand{theorem} only-fives-concat{\isacharcolon} \\
+~~~~\isakeyword{assumes}\ only-fives\ xs \isakeyword{and}\ only-fives\ ys\\
+~~~~\isakeyword{shows}\ only-fives\ (xs \isacharat ys)
+\end{isabelle}
+\noindent %dpm: spacing above
+conjectures that if $\isa{xs}$ and $\isa{ys}$ are both lists of fives, then their concatenation $xs \mathbin{\isacharat} ys$ is also a list of fives.
+Isabelle then requires that this claim be proved by using one of its proof methods, for example by induction.
+Some proofs can be automated, whilst others require the user to provide explicit reasoning steps.
+The theorem is assigned a name, here $\isa{only-fives-concat}$, so that it may be referenced in later proofs.
+
+\section{Statements of Mechanised Proofs}
+\label{sect:appendix:statements}
+
+In this appendix we provide a copy of the Isabelle/HOL definitions and proof statements that support the central claims in the paper.
+For space reasons, the actual proofs are omitted; the full formal proof development can be found online at \url{https://github.com/trvedata/opsets}.
+
+\subsection{Abstract OpSet}\label{sec:abstract-opset}
+
+In this section, we define a general-purpose OpSet abstraction that is not specific to any one particular datatype.
+An OpSet is a set of (ID, operation) pairs with an associated total order on IDs (represented here with the \isa{linorder} typeclass), and satisfying the following properties:
+\begin{enumerate}
+\item The ID is unique (that is, if any two pairs in the set have the same ID, then their operation is also the same).
+\item If the operation references the IDs of any other operations, those referenced IDs are less than that of the operation itself, according to the total order on IDs.
+To avoid assuming anything about the structure of operations here, we use a function \isa{deps} that returns the set of dependent IDs for a given operation.
+This requirement is a weak expression of causality: an operation can only depend on causally prior operations, and by making the total order on IDs a linear extension of the causal order, we can easily ensure that any referenced IDs are less than that of the operation itself.
+\item The OpSet is finite (but we do not assume any particular maximum size).
+\end{enumerate}
+We define it as follows in Isabelle:
+\begin{isabelle}
+\isacommand{locale}\isamarkupfalse%
+\ opset\ {\isacharequal}\isanewline
+\ \ \isakeyword{fixes}\ opset\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharprime}oper{\isacharparenright}\ set{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ deps\ \ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oper\ {\isasymRightarrow}\ {\isacharprime}oid\ set{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{assumes}\ unique{\isacharunderscore}oid{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}oid{\isacharcomma}\ op{\isadigit{1}}{\isacharparenright}\ {\isasymin}\ opset\ {\isasymLongrightarrow}\ {\isacharparenleft}oid{\isacharcomma}\ op{\isadigit{2}}{\isacharparenright}\ {\isasymin}\ opset\ {\isasymLongrightarrow}\ op{\isadigit{1}}\ {\isacharequal}\ op{\isadigit{2}}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ ref{\isacharunderscore}older{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}oid{\isacharcomma}\ oper{\isacharparenright}\ {\isasymin}\ opset\ {\isasymLongrightarrow}\ ref\ {\isasymin}\ deps\ oper\ {\isasymLongrightarrow}\ ref\ {\isacharless}\ oid{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ finite{\isacharunderscore}opset{\isacharcolon}\ {\isachardoublequoteopen}finite\ opset{\isachardoublequoteclose}%
+\end{isabelle}
+
+We prove that any subset of an OpSet is also a valid OpSet.
+This is the case because, although an operation can depend on causally prior operations, the OpSet does not require those prior operations to actually exist.
+This weak assumption makes the OpSet model more general and simplifies reasoning about OpSets.
+\begin{isabelle}
+\isacommand{lemma}\isamarkupfalse%
+\ opset{\isacharunderscore}subset{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}opset\ Y\ deps{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}X\ {\isasymsubseteq}\ Y{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}opset\ X\ deps{\isachardoublequoteclose}
+\end{isabelle}
+
+\subsubsection{The \isa{spec-ops} predicate}
+
+The \isa{spec-ops} predicate describes a list of (ID, operation) pairs that corresponds to the linearisation of an OpSet, and which we use for sequentially interpreting the OpSet.
+A list satisfies \isa{spec-ops} iff it is sorted in ascending order of IDs, if the IDs are unique, and if every operation's dependencies have lower IDs than the operation itself.
+A list is implicitly finite in Isabelle/HOL.
+
+\begin{isabelle}
+\isacommand{definition}\isamarkupfalse%
+\ spec{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharprime}oper{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oper\ {\isasymRightarrow}\ {\isacharprime}oid\ set{\isacharparenright}\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}spec{\isacharunderscore}ops\ ops\ deps\ {\isasymequiv}\ {\isacharparenleft}sorted\ {\isacharparenleft}map\ fst\ ops{\isacharparenright}\ {\isasymand}\ distinct\ {\isacharparenleft}map\ fst\ ops{\isacharparenright}\ {\isasymand}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ {\isacharparenleft}{\isasymforall}oid\ oper\ ref{\isachardot}\ {\isacharparenleft}oid{\isacharcomma}\ oper{\isacharparenright}\ {\isasymin}\ set\ ops\ {\isasymand}\ ref\ {\isasymin}\ deps\ oper\ {\isasymlongrightarrow}\ ref\ {\isacharless}\ oid{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}
+\end{isabelle}
+\noindent We prove that for any given OpSet, a \isa{spec-ops} linearisation exists:
+\begin{isabelle}
+\isacommand{lemma}\isamarkupfalse%
+\ spec{\isacharunderscore}ops{\isacharunderscore}exists{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}opset\ ops\ deps{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}{\isasymexists}op{\isacharunderscore}list{\isachardot}\ set\ op{\isacharunderscore}list\ {\isacharequal}\ ops\ {\isasymand}\ spec{\isacharunderscore}ops\ op{\isacharunderscore}list\ deps{\isachardoublequoteclose}
+\end{isabelle}
+\noindent Conversely, for any given \isa{spec-ops} list, the set of pairs in the list is an OpSet:
+\begin{isabelle}
+\isacommand{lemma}\isamarkupfalse%
+\ spec{\isacharunderscore}ops{\isacharunderscore}is{\isacharunderscore}opset{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}spec{\isacharunderscore}ops\ op{\isacharunderscore}list\ deps{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}opset\ {\isacharparenleft}set\ op{\isacharunderscore}list{\isacharparenright}\ deps{\isachardoublequoteclose}
+\end{isabelle}
+
+\subsubsection{The \isa{crdt-ops} predicate}
+
+Like \isa{spec-ops}, the \isa{crdt-ops} predicate describes the linearisation of an OpSet into a list.
+Like \isa{spec-ops}, it requires IDs to be unique.
+However, its other properties are different: \isa{crdt-ops} does not require operations to appear in sorted order, but instead, whenever any operation references the ID of a prior operation, that prior operation must appear previously in the \isa{crdt-ops} list.
+Thus, the order of operations is partially constrained: operations must appear in causal order, but concurrent operations can be ordered arbitrarily.
+
+This list describes the operation sequence in the order it is typically applied to an operation-based CRDT.
+Applying operations in the order they appear in \isa{crdt-ops} requires that concurrent operations commute.
+For any \isa{crdt-ops} operation sequence, there is a permutation that satisfies the \isa{spec-ops} predicate.
+Thus, to check whether a CRDT satisfies its sequential specification, we can prove that interpreting any \isa{crdt-ops} operation sequence with the commutative operation interpretation results in the same end result as interpreting the \isa{spec-ops} permutation of that operation sequence with the sequential operation interpretation.
+
+\begin{isabelle}
+\isacommand{inductive}\isamarkupfalse%
+\ crdt{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharprime}oper{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oper\ {\isasymRightarrow}\ {\isacharprime}oid\ set{\isacharparenright}\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}crdt{\isacharunderscore}ops\ {\isacharbrackleft}{\isacharbrackright}\ deps{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}{\isasymlbrakk}crdt{\isacharunderscore}ops\ xs\ deps{\isacharsemicolon}\isanewline
+\ \ \ \ oid\ {\isasymnotin}\ set\ {\isacharparenleft}map\ fst\ xs{\isacharparenright}{\isacharsemicolon}\isanewline
+\ \ \ \ {\isasymforall}ref\ {\isasymin}\ deps\ oper{\isachardot}\ ref\ {\isasymin}\ set\ {\isacharparenleft}map\ fst\ xs{\isacharparenright}\ {\isasymand}\ ref\ {\isacharless}\ oid\isanewline
+\ \ \ {\isasymrbrakk}\ {\isasymLongrightarrow}\ crdt{\isacharunderscore}ops\ {\isacharparenleft}xs\ {\isacharat}\ {\isacharbrackleft}{\isacharparenleft}oid{\isacharcomma}\ oper{\isacharparenright}{\isacharbrackright}{\isacharparenright}\ deps{\isachardoublequoteclose}
+\end{isabelle}
+
+
+\subsection{Specifying List Insertion}
+
+In this section we consider only list insertion.
+We model an insertion operation as a pair (\isa{ID, ref}), where \isa{ref} is either \isa{None} (signifying an insertion at the head of the list) or \isa{Some r} (an insertion immediately after a reference element with ID \isa{r}).
+If the reference element does not exist, the operation does nothing.
+
+We provide two different definitions of the interpretation function for list insertion: \isa{insert-spec} and \isa{insert-alt}.
+The \isa{insert-alt} definition matches the paper, while \isa{insert-spec} uses the Isabelle/HOL list datatype, making it more suitable for formal reasoning.
+In section~\ref{sec:insert-alt-equiv} we prove that the two definitions are in fact equivalent.
+
+\begin{isabelle}
+\isacommand{fun}\isamarkupfalse%
+\ insert{\isacharunderscore}spec\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ {\isasymRightarrow}\ {\isacharprime}oid\ list{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}spec\ xs\ \ \ \ \ {\isacharparenleft}oid{\isacharcomma}\ None{\isacharparenright}\ \ \ \ \ {\isacharequal}\ oid{\isacharhash}xs{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}spec\ {\isacharbrackleft}{\isacharbrackright}\ \ \ \ \ {\isacharparenleft}oid{\isacharcomma}\ {\isacharunderscore}{\isacharparenright}\ \ \ \ \ \ \ \ {\isacharequal}\ {\isacharbrackleft}{\isacharbrackright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}spec\ {\isacharparenleft}x{\isacharhash}xs{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ {\isacharparenleft}if\ x\ {\isacharequal}\ ref\ then\ x\ {\isacharhash}\ oid\ {\isacharhash}\ xs\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ else\ x\ {\isacharhash}\ {\isacharparenleft}insert{\isacharunderscore}spec\ xs\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ insert{\isacharunderscore}alt\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}alt\ list{\isacharunderscore}rel\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}\ {\isacharequal}\ {\isacharparenleft}\isanewline
+\ \ \ \ \ \ if\ {\isasymexists}n{\isachardot}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ list{\isacharunderscore}rel\isanewline
+\ \ \ \ \ \ then\ {\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ list{\isacharunderscore}rel{\isachardot}\ p\ {\isasymnoteq}\ ref{\isacharbraceright}\ {\isasymunion}\ {\isacharbraceleft}{\isacharparenleft}ref{\isacharcomma}\ Some\ oid{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ {\isacharbraceleft}{\isacharparenleft}i{\isacharcomma}\ n{\isacharparenright}{\isachardot}\ i\ {\isacharequal}\ oid\ {\isasymand}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ list{\isacharunderscore}rel{\isacharbraceright}\isanewline
+\ \ \ \ \ \ else\ list{\isacharunderscore}rel{\isacharparenright}{\isachardoublequoteclose}%
+\end{isabelle}
+
+\isa{interp-ins} is the sequential interpretation of a set of insertion operations.
+It starts with an empty list as initial state, and then applies the operations from left to right.
+
+\begin{isabelle}
+\isacommand{definition}\isamarkupfalse%
+\ interp{\isacharunderscore}ins\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharprime}oid\ list{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}interp{\isacharunderscore}ins\ ops\ {\isasymequiv}\ foldl\ insert{\isacharunderscore}spec\ {\isacharbrackleft}{\isacharbrackright}\ ops{\isachardoublequoteclose}%
+\end{isabelle}
+
+\subsubsection{The \isa{insert-ops} predicate}
+
+We now specialise the definitions from section~\ref{sec:abstract-opset} for list insertion.
+\isa{insert-opset} is an opset consisting only of insertion operations, and \isa{insert-ops} is the specialisation of the \isa{spec-ops} predicate for insertion operations.
+
+\begin{isabelle}
+\isacommand{locale}\isamarkupfalse%
+\ insert{\isacharunderscore}opset\ {\isacharequal}\ opset\ opset\ set{\isacharunderscore}option\isanewline
+\ \ \isakeyword{for}\ opset\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{definition}\isamarkupfalse%
+\ insert{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ list\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}ops\ list\ {\isasymequiv}\ spec{\isacharunderscore}ops\ list\ set{\isacharunderscore}option{\isachardoublequoteclose}
+\end{isabelle}
+
+\subsubsection{Equivalence of the two definitions of insertion}\label{sec:insert-alt-equiv}
+
+We now prove that the two definitions of insertion, \isa{insert-spec} and \isa{insert-alt}, are equivalent.
+First we define how to derive the successor relation from an Isabelle list.
+This relation contains (\isa{id}, \isa{None}) if \isa{id} is the last element of the list, and (\isa{id1}, \isa{id2}) if \isa{id1} is immediately followed by \isa{id2} in the list.
+
+\begin{isabelle}
+\isacommand{fun}\isamarkupfalse%
+\ succ{\isacharunderscore}rel\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharbrackleft}{\isacharbrackright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharbraceright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharbrackleft}head{\isacharbrackright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}head{\isacharcomma}\ None{\isacharparenright}{\isacharbraceright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}head{\isacharhash}x{\isacharhash}xs{\isacharparenright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}head{\isacharcomma}\ Some\ x{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ succ{\isacharunderscore}rel\ {\isacharparenleft}x{\isacharhash}xs{\isacharparenright}{\isachardoublequoteclose}%
+\end{isabelle}
+
+\noindent
+interp-alt is the equivalent of interp-ins, but using \isa{insert-alt} instead of \isa{insert-spec}.
+To match the paper, it uses a distinct head element to refer to the beginning of the list.
+
+\begin{isabelle}
+\isacommand{definition}\isamarkupfalse%
+\ interp{\isacharunderscore}alt\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}interp{\isacharunderscore}alt\ head\ ops\ {\isasymequiv}\ foldl\ insert{\isacharunderscore}alt\ {\isacharbraceleft}{\isacharparenleft}head{\isacharcomma}\ None{\isacharparenright}{\isacharbraceright}\isanewline
+\ \ \ \ \ {\isacharparenleft}map\ {\isacharparenleft}{\isasymlambda}x{\isachardot}\ case\ x\ of\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ {\isacharparenleft}oid{\isacharcomma}\ None{\isacharparenright}\ \ \ \ \ {\isasymRightarrow}\ {\isacharparenleft}oid{\isacharcomma}\ head{\isacharparenright}\ {\isacharbar}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isacharparenright}\ \isanewline
+\ \ \ \ \ \ ops{\isacharparenright}{\isachardoublequoteclose}
+\end{isabelle}
+
+\noindent We can now prove that \isa{insert-spec} and \isa{insert-alt} are equivalent:
+\begin{isabelle}
+\isacommand{theorem}\isamarkupfalse%
+\ insert{\isacharunderscore}alt{\isacharunderscore}equivalent{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}insert{\isacharunderscore}ops\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}head\ {\isasymnotin}\ fst\ {\isacharbackquote}\ set\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}{\isasymAnd}r{\isachardot}\ Some\ r\ {\isasymin}\ snd\ {\isacharbackquote}\ set\ ops\ {\isasymLongrightarrow}\ r\ {\isasymnoteq}\ head{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}ins\ ops{\isacharparenright}\ {\isacharequal}\ interp{\isacharunderscore}alt\ head\ ops{\isachardoublequoteclose}
+\end{isabelle}
+
+\subsection{No Interleaving}
+
+We prove the absence of interleaving for three list elements \isa{xid}, \isa{yid}, and \isa{zid}, where \isa{xid} and \isa{zid} are both inserted after the same reference element, and \isa{yid} is inserted after \isa{xid}.
+We then show that, regardless of the order in which these operations are applied, \isa{zid} is never inserted between \isa{xid} and \isa{yid}.
+\begin{isabelle}
+\isacommand{theorem}\isamarkupfalse%
+\ no{\isacharunderscore}interleaving{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}insert{\isacharunderscore}ops\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}{\isacharparenleft}xid{\isacharcomma}\ ref{\isacharparenright}\ {\isasymin}\ set\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}{\isacharparenleft}yid{\isacharcomma}\ Some\ xid{\isacharparenright}\ {\isasymin}\ set\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}{\isacharparenleft}zid{\isacharcomma}\ ref{\isacharparenright}\ {\isasymin}\ set\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}xid\ {\isasymnoteq}\ yid{\isachardoublequoteclose}\ \isakeyword{and}\ {\isachardoublequoteopen}yid\ {\isasymnoteq}\ zid{\isachardoublequoteclose}\ \isakeyword{and}\ {\isachardoublequoteopen}zid\ {\isasymnoteq}\ xid{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}{\isacharparenleft}list{\isacharunderscore}order\ ops\ xid\ yid\ {\isasymand}\ list{\isacharunderscore}order\ ops\ yid\ zid{\isacharparenright}\ {\isasymor}\isanewline
+\ \ \ \ \ \ \ \ \ {\isacharparenleft}list{\isacharunderscore}order\ ops\ zid\ xid\ {\isasymand}\ list{\isacharunderscore}order\ ops\ xid\ yid{\isacharparenright}\ {\isasymor}\isanewline
+\ \ \ \ \ \ \ \ \ {\isacharparenleft}xid\ {\isasymnotin}\ set\ {\isacharparenleft}interp{\isacharunderscore}ins\ ops{\isacharparenright}\ {\isasymand}\ yid\ {\isasymnotin}\ set\ {\isacharparenleft}interp{\isacharunderscore}ins\ ops{\isacharparenright}\ {\isasymand}\isanewline
+\ \ \ \ \ \ \ \ \ \ zid\ {\isasymnotin}\ set\ {\isacharparenleft}interp{\isacharunderscore}ins\ ops{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\end{isabelle}
+
+
+\subsection{The Replicated Growable Array (RGA)}
+
+The RGA algorithm \cite{Roh:2011dw} is a replicated list (or collaborative text-editing) algorithm.
+In this section we prove that RGA satisfies our list specification.
+The Isabelle/HOL definition of RGA in this section is based on our prior work on formally verifying CRDTs \cite{Gomes:2017gy,Gomes:2017vo}.
+
+\begin{isabelle}
+\isacommand{fun}\isamarkupfalse%
+\ insert{\isacharunderscore}body\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ list\ {\isasymRightarrow}\ {\isacharprime}oid\ {\isasymRightarrow}\ {\isacharprime}oid\ list{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}body\ {\isacharbrackleft}{\isacharbrackright}\ \ \ \ \ \ \ e\ {\isacharequal}\ {\isacharbrackleft}e{\isacharbrackright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}body\ {\isacharparenleft}x\ {\isacharhash}\ xs{\isacharparenright}\ e\ {\isacharequal}\isanewline
+\ \ \ \ \ {\isacharparenleft}if\ x\ {\isacharless}\ e\ then\ e\ {\isacharhash}\ x\ {\isacharhash}\ xs\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ else\ x\ {\isacharhash}\ insert{\isacharunderscore}body\ xs\ e{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ insert{\isacharunderscore}rga\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ {\isasymRightarrow}\ {\isacharprime}oid\ list{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}rga\ \ xs\ \ \ \ \ \ {\isacharparenleft}e{\isacharcomma}\ None{\isacharparenright}\ \ \ {\isacharequal}\ insert{\isacharunderscore}body\ xs\ e{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}rga\ \ {\isacharbrackleft}{\isacharbrackright}\ \ \ \ \ \ {\isacharparenleft}e{\isacharcomma}\ Some\ i{\isacharparenright}\ {\isacharequal}\ {\isacharbrackleft}{\isacharbrackright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}rga\ {\isacharparenleft}x\ {\isacharhash}\ xs{\isacharparenright}\ {\isacharparenleft}e{\isacharcomma}\ Some\ i{\isacharparenright}\ {\isacharequal}\isanewline
+\ \ \ \ \ {\isacharparenleft}if\ x\ {\isacharequal}\ i\ then\isanewline
+\ \ \ \ \ \ \ \ x\ {\isacharhash}\ insert{\isacharunderscore}body\ xs\ e\isanewline
+\ \ \ \ \ \ else\isanewline
+\ \ \ \ \ \ \ \ x\ {\isacharhash}\ insert{\isacharunderscore}rga\ xs\ {\isacharparenleft}e{\isacharcomma}\ Some\ i{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{definition}\isamarkupfalse%
+\ interp{\isacharunderscore}rga\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharprime}oid\ list{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}interp{\isacharunderscore}rga\ ops\ {\isasymequiv}\ foldl\ insert{\isacharunderscore}rga\ {\isacharbrackleft}{\isacharbrackright}\ ops{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{definition}\isamarkupfalse%
+\ rga{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ list\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}rga{\isacharunderscore}ops\ list\ {\isasymequiv}\ crdt{\isacharunderscore}ops\ list\ set{\isacharunderscore}option{\isachardoublequoteclose}
+\end{isabelle}
+
+\noindent We can then prove that RGA satisfies our list specification:
+\begin{isabelle}
+\isacommand{theorem}\isamarkupfalse%
+\ rga{\isacharunderscore}meets{\isacharunderscore}spec{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}rga{\isacharunderscore}ops\ xs{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}{\isasymexists}ys{\isachardot}\ set\ ys\ {\isacharequal}\ set\ xs\ {\isasymand}\ insert{\isacharunderscore}ops\ ys\ {\isasymand}\ interp{\isacharunderscore}ins\ ys\ {\isacharequal}\ interp{\isacharunderscore}rga\ xs{\isachardoublequoteclose}
+\end{isabelle}
+
+
+\subsection{Relationship to Strong List Specification}
+
+In this section we show that our list specification is stronger than the $\mathcal{A}_\textsf{strong}$ specification of collaborative text editing by Attiya et al.~\cite{Attiya:2016kh}.
+We do this by showing that the OpSet interpretation of any set of insertion and deletion operations satisfies all of the consistency criteria that constitute the $\mathcal{A}_\textsf{strong}$ specification.
+
+Attiya et al.'s specification is as follows~\cite{Attiya:2016kh}:
+
+\begin{displayquote}
+An abstract execution $A = (H, \textsf{vis})$ belongs to the \emph{strong list specification} $\mathcal{A}_\textsf{strong}$ if and only if there is a relation $\textsf{lo} \subseteq \textsf{elems}(A) \times \textsf{elems}(A)$, called the \emph{list order}, such that:
+\begin{enumerate}
+\item Each event $e = \mathit{do}(\mathit{op}, w) \in H$ returns a sequence of elements $w=a_0 \dots a_{n-1}$, where $a_i \in \textsf{elems}(A)$, such that
+\begin{enumerate}
+\item $w$ contains exactly the elements visible to $e$ that have been inserted, but not deleted:
+\[ \forall a.\; a \in w \quad\Longleftrightarrow\quad (\mathit{do}(\textsf{ins}(a, \_), \_) \le_\textsf{vis} e)
+\;\wedge\; \neg(\mathit{do}(\textsf{del}(a), \_) \le_\textsf{vis} e). \]
+\item The order of the elements is consistent with the list order:
+\[ \forall i, j.\; (i < j) \;\Longrightarrow\; (a_i, a_j) \in \textsf{lo}. \]
+\item Elements are inserted at the specified position:
+if $\mathit{op} = \textsf{ins}(a, k)$, then $a = a_{\mathrm{min} \{k,\; n-1\}}$.
+\end{enumerate}
+\item The list order $\textsf{lo}$ is transitive, irreflexive and total, and thus determines the order of all insert operations in the execution.
+\end{enumerate}
+\end{displayquote}
+
+This specification considers only insertion and deletion operations, but no assignment.
+Moreover, it considers only a single list object, not a graph of composable objects like in our paper.
+Thus, we prove the relationship to $\mathcal{A}_\textsf{strong}$ using a simplified interpretation function that defines only insertion and deletion on a single list.
+
+We first define a datatype for list operations, with two constructors: \isa{Insert ref val}, and \isa{Delete ref}.
+For insertion, the \isa{ref} argument is the ID of the existing element after which we want to insert, or \isa{None} to insert at the head of the list.
+The \isa{val} argument is an arbitrary value to associate with the list element.
+For deletion, the \isa{ref} argument is the ID of the existing list element to delete.
+
+\begin{isabelle}
+\isacommand{datatype}\isamarkupfalse%
+\ {\isacharparenleft}{\isacharprime}oid{\isacharcomma}\ {\isacharprime}val{\isacharparenright}\ list{\isacharunderscore}op\ {\isacharequal}\isanewline
+\ \ Insert\ {\isachardoublequoteopen}{\isacharprime}oid\ option{\isachardoublequoteclose}\ {\isachardoublequoteopen}{\isacharprime}val{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ Delete\ {\isachardoublequoteopen}{\isacharprime}oid{\isachardoublequoteclose}%
+\end{isabelle}
+
+When interpreting operations, the result is a pair (\isa{list, vals}).
+The \isa{list} contains the IDs of list elements in the correct order (equivalent to the list relation in the paper), and \isa{vals} is a mapping from list element IDs to values (equivalent to the element relation in the paper).
+
+Insertion delegates to the previously defined \isa{insert-spec} interpretation function.
+Deleting a list element removes it from \isa{vals}.
+
+\begin{isabelle}
+\isacommand{fun}\isamarkupfalse%
+\ interp{\isacharunderscore}op\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid\ list\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymrightharpoonup}\ {\isacharprime}val{\isacharparenright}{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid{\isacharcomma}\ {\isacharprime}val{\isacharparenright}\ list{\isacharunderscore}op{\isacharparenright}\isanewline
+\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ list\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymrightharpoonup}\ {\isacharprime}val{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}interp{\isacharunderscore}op\ {\isacharparenleft}list{\isacharcomma}\ vals{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Insert\ ref\ val{\isacharparenright}\ {\isacharequal}\ {\isacharparenleft}insert{\isacharunderscore}spec\ list\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}{\isacharcomma}\ vals{\isacharparenleft}oid\ {\isasymmapsto}\ val{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}interp{\isacharunderscore}op\ {\isacharparenleft}list{\isacharcomma}\ vals{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Delete\ ref\ \ \ \ {\isacharparenright}\ {\isacharequal}\ {\isacharparenleft}list{\isacharcomma}\ vals{\isacharparenleft}ref\ {\isacharcolon}{\isacharequal}\ None{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{definition}\isamarkupfalse%
+\ interp{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid{\isacharcomma}\ {\isacharprime}val{\isacharparenright}\ list{\isacharunderscore}op{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ list\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymrightharpoonup}\ {\isacharprime}val{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}interp{\isacharunderscore}ops\ ops\ {\isasymequiv}\ foldl\ interp{\isacharunderscore}op\ {\isacharparenleft}{\isacharbrackleft}{\isacharbrackright}{\isacharcomma}\ Map{\isachardot}empty{\isacharparenright}\ ops{\isachardoublequoteclose}%
+\end{isabelle}
+
+\noindent \isa{list-order ops x y} holds iff, after interpreting the list of operations \isa{ops}, the list element with ID \isa{x} appears before the list element with ID \isa{y} in the resulting list.
+
+\begin{isabelle}
+\isacommand{definition}\isamarkupfalse%
+\ list{\isacharunderscore}order\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid{\isacharcomma}\ {\isacharprime}val{\isacharparenright}\ list{\isacharunderscore}op{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharprime}oid\ {\isasymRightarrow}\ {\isacharprime}oid\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}list{\isacharunderscore}order\ ops\ x\ y\ {\isasymequiv}\ {\isasymexists}xs\ ys\ zs{\isachardot}\ fst\ {\isacharparenleft}interp{\isacharunderscore}ops\ ops{\isacharparenright}\ {\isacharequal}\ xs\ {\isacharat}\ {\isacharbrackleft}x{\isacharbrackright}\ {\isacharat}\ ys\ {\isacharat}\ {\isacharbrackleft}y{\isacharbrackright}\ {\isacharat}\ zs{\isachardoublequoteclose}%
+\end{isabelle}
+
+\noindent The \isa{make-insert} function generates a new operation for insertion into a given index in a given list.
+The exclamation mark is Isabelle's list subscript operator.
+
+\begin{isabelle}
+\isacommand{fun}\isamarkupfalse%
+\ make{\isacharunderscore}insert\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ list\ {\isasymRightarrow}\ {\isacharprime}val\ {\isasymRightarrow}\ nat\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid{\isacharcomma}\ {\isacharprime}val{\isacharparenright}\ list{\isacharunderscore}op{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}make{\isacharunderscore}insert\ list\ val\ {\isadigit{0}}\ \ \ \ \ \ \ {\isacharequal}\ Insert\ None\ val{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}make{\isacharunderscore}insert\ {\isacharbrackleft}{\isacharbrackright}\ \ \ val\ k\ \ \ \ \ \ \ {\isacharequal}\ Insert\ None\ val{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}make{\isacharunderscore}insert\ list\ val\ {\isacharparenleft}Suc\ k{\isacharparenright}\ {\isacharequal}\ Insert\ {\isacharparenleft}Some\ {\isacharparenleft}list\ {\isacharbang}\ {\isacharparenleft}min\ k\ {\isacharparenleft}length\ list\ {\isacharminus}\ {\isadigit{1}}{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isacharparenright}\ val{\isachardoublequoteclose}%
+\end{isabelle}
+
+\noindent The \isa{list-ops} predicate is a specialisation of \isa{spec-ops} to the \isa{list-op} datatype: it describes a list of (ID, operation) pairs that is sorted by ID, and can thus be used for the sequential interpretation of the OpSet.
+
+\begin{isabelle}
+\isacommand{fun}\isamarkupfalse%
+\ list{\isacharunderscore}op{\isacharunderscore}deps\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcomma}\ {\isacharprime}val{\isacharparenright}\ list{\isacharunderscore}op\ {\isasymRightarrow}\ {\isacharprime}oid\ set{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}list{\isacharunderscore}op{\isacharunderscore}deps\ {\isacharparenleft}Insert\ {\isacharparenleft}Some\ ref{\isacharparenright}\ {\isacharunderscore}{\isacharparenright}\ {\isacharequal}\ {\isacharbraceleft}ref{\isacharbraceright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}list{\isacharunderscore}op{\isacharunderscore}deps\ {\isacharparenleft}Insert\ \ None\ \ \ \ \ \ {\isacharunderscore}{\isacharparenright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharbraceright}{\isachardoublequoteclose}\ \ \ \ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}list{\isacharunderscore}op{\isacharunderscore}deps\ {\isacharparenleft}Delete\ \ ref\ \ \ \ \ \ \ \ {\isacharparenright}\ {\isacharequal}\ {\isacharbraceleft}ref{\isacharbraceright}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{locale}\isamarkupfalse%
+\ list{\isacharunderscore}opset\ {\isacharequal}\ opset\ opset\ list{\isacharunderscore}op{\isacharunderscore}deps\isanewline
+\ \ \isakeyword{for}\ opset\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid{\isacharcomma}\ {\isacharprime}val{\isacharparenright}\ list{\isacharunderscore}op{\isacharparenright}\ set{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{definition}\isamarkupfalse%
+\ list{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid{\isacharcomma}\ {\isacharprime}val{\isacharparenright}\ list{\isacharunderscore}op{\isacharparenright}\ list\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}list{\isacharunderscore}ops\ ops\ {\isasymequiv}\ spec{\isacharunderscore}ops\ ops\ list{\isacharunderscore}op{\isacharunderscore}deps{\isachardoublequoteclose}%
+\end{isabelle}
+
+\subsubsection{Satisfying all conditions of $\mathcal{A}_\textsf{strong}$}
+
+Part 1(a) of Attiya et al.'s specification states that whenever the list is observed, the elements of the list are exactly those that have been inserted but not deleted.
+$\mathcal{A}_\textsf{strong}$ uses the visibility relation $\le_\textsf{vis}$ to capture the operations known to a node at some arbitrary point in the execution; in the OpSet model, we can simply prove the theorem for an arbitrary OpSet, since the contents of the OpSet at a particular time on a particular node correspond exactly to the set of operations known to that node at that time.
+
+\begin{isabelle}
+\isacommand{theorem}\isamarkupfalse%
+\ inserted{\isacharunderscore}but{\isacharunderscore}not{\isacharunderscore}deleted{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}list{\isacharunderscore}ops\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}interp{\isacharunderscore}ops\ ops\ {\isacharequal}\ {\isacharparenleft}list{\isacharcomma}\ vals{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}a\ {\isasymin}\ dom\ {\isacharparenleft}vals{\isacharparenright}\ {\isasymlongleftrightarrow}\ {\isacharparenleft}{\isasymexists}ref\ val{\isachardot}\ {\isacharparenleft}a{\isacharcomma}\ Insert\ ref\ val{\isacharparenright}\ {\isasymin}\ set\ ops{\isacharparenright}\ {\isasymand}\ {\isacharparenleft}{\isasymnexists}i{\isachardot}\ {\isacharparenleft}i{\isacharcomma}\ Delete\ a{\isacharparenright}\ {\isasymin}\ set\ ops{\isacharparenright}{\isachardoublequoteclose}
+\end{isabelle}
+
+Part 1(b) states that whenever the list is observed, the order of list elements is consistent with the global list order.
+We can define the global list order simply as the list order that arises from interpreting the OpSet containing all operations in the entire execution.
+Then, at any point in the execution, the OpSet is some subset of the set of all operations.
+
+We can then rephrase condition 1(b) as follows: whenever list element \isa{x} appears before list element \isa{y} in the interpretation of \isa{some-ops}, then for any OpSet \isa{all-ops} that is a superset of \isa{some-ops}, \isa{x} must also appear before \isa{y} in the interpretation of \isa{all-ops}.
+In other words, adding more operations to the OpSet does not change the relative order of any existing list elements.
+
+\begin{isabelle}
+\isacommand{theorem}\isamarkupfalse%
+\ list{\isacharunderscore}order{\isacharunderscore}consistent{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}list{\isacharunderscore}ops\ some{\isacharunderscore}ops{\isachardoublequoteclose}\ \isakeyword{and}\ {\isachardoublequoteopen}list{\isacharunderscore}ops\ all{\isacharunderscore}ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}set\ some{\isacharunderscore}ops\ {\isasymsubseteq}\ set\ all{\isacharunderscore}ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}list{\isacharunderscore}order\ some{\isacharunderscore}ops\ x\ y{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}list{\isacharunderscore}order\ all{\isacharunderscore}ops\ x\ y{\isachardoublequoteclose}
+\end{isabelle}
+
+Part 1(c) states that inserted elements appear at the specified position: that is, immediately after an insertion of \isa{oid} at index \isa{k}, the list index \isa{k} does indeed contain \isa{oid} (provided that \isa{k} is less than the length of the list).
+We prove this property below.
+
+\begin{isabelle}
+\isacommand{theorem}\isamarkupfalse%
+\ correct{\isacharunderscore}position{\isacharunderscore}insert{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}list{\isacharunderscore}ops\ {\isacharparenleft}ops\ {\isacharat}\ {\isacharbrackleft}{\isacharparenleft}oid{\isacharcomma}\ ins{\isacharparenright}{\isacharbrackright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}ins\ {\isacharequal}\ make{\isacharunderscore}insert\ {\isacharparenleft}fst\ {\isacharparenleft}interp{\isacharunderscore}ops\ ops{\isacharparenright}{\isacharparenright}\ val\ k{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}list\ {\isacharequal}\ fst\ {\isacharparenleft}interp{\isacharunderscore}ops\ {\isacharparenleft}ops\ {\isacharat}\ {\isacharbrackleft}{\isacharparenleft}oid{\isacharcomma}\ ins{\isacharparenright}{\isacharbrackright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}list\ {\isacharbang}\ {\isacharparenleft}min\ k\ {\isacharparenleft}length\ list\ {\isacharminus}\ {\isadigit{1}}{\isacharparenright}{\isacharparenright}\ {\isacharequal}\ oid{\isachardoublequoteclose}
+\end{isabelle}
+
+Part 2 states that the list order relation must be transitive, irreflexive, and total.
+These three properties are straightforward to prove, using our definition of the \isa{list-order} predicate.
+
+\begin{isabelle}
+\isacommand{theorem}\isamarkupfalse%
+\ list{\isacharunderscore}order{\isacharunderscore}trans{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}list{\isacharunderscore}ops\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}list{\isacharunderscore}order\ ops\ x\ y{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}list{\isacharunderscore}order\ ops\ y\ z{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}list{\isacharunderscore}order\ ops\ x\ z{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{theorem}\isamarkupfalse%
+\ list{\isacharunderscore}order{\isacharunderscore}irrefl{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}list{\isacharunderscore}ops\ ops{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}{\isasymnot}\ list{\isacharunderscore}order\ ops\ x\ x{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{theorem}\isamarkupfalse%
+\ list{\isacharunderscore}order{\isacharunderscore}total{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}list{\isacharunderscore}ops\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}x\ {\isasymin}\ set\ {\isacharparenleft}fst\ {\isacharparenleft}interp{\isacharunderscore}ops\ ops{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}y\ {\isasymin}\ set\ {\isacharparenleft}fst\ {\isacharparenleft}interp{\isacharunderscore}ops\ ops{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}x\ {\isasymnoteq}\ y{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}list{\isacharunderscore}order\ ops\ x\ y\ {\isasymor}\ list{\isacharunderscore}order\ ops\ y\ x{\isachardoublequoteclose}
+\end{isabelle}
