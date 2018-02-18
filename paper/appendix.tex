@@ -239,20 +239,31 @@ To match the paper, it uses a distinct head element to refer to the beginning of
 
 \subsection{No Interleaving}
 
-We prove the absence of interleaving for three list elements \isa{xid}, \isa{yid}, and \isa{zid}, where \isa{xid} and \isa{zid} are both inserted after the same reference element, and \isa{yid} is inserted after \isa{xid}.
-We then show that, regardless of the order in which these operations are applied, \isa{zid} is never inserted between \isa{xid} and \isa{yid}.
+The predicate \isa{insert-seq start ops} is true iff \isa{ops} is a list of insertion operations that begins by inserting after \isa{start}, and then continues by placing each subsequent insertion directly after its predecessor.
+This definition models the sequential insertion of text at a particular place in a text document.%
+\begin{isabelle}
+\isacommand{inductive}\isamarkupfalse%
+\ insert{\isacharunderscore}seq\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ option\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ list\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}insert{\isacharunderscore}seq\ start\ {\isacharbrackleft}{\isacharparenleft}oid{\isacharcomma}\ start{\isacharparenright}{\isacharbrackright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
+\ \ {\isachardoublequoteopen}{\isasymlbrakk}insert{\isacharunderscore}seq\ start\ {\isacharparenleft}list\ {\isacharat}\ {\isacharbrackleft}{\isacharparenleft}prev{\isacharcomma}\ ref{\isacharparenright}{\isacharbrackright}{\isacharparenright}{\isasymrbrakk}\isanewline
+\ \ \ \ \ \ {\isasymLongrightarrow}\ insert{\isacharunderscore}seq\ start\ {\isacharparenleft}list\ {\isacharat}\ {\isacharbrackleft}{\isacharparenleft}prev{\isacharcomma}\ ref{\isacharparenright}{\isacharcomma}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ prev{\isacharparenright}{\isacharbrackright}{\isacharparenright}{\isachardoublequoteclose}
+\end{isabelle}
+
+Consider an execution that contains two distinct insertion sequences, \isa{xs} and \isa{ys}, that both begin at the same initial position \isa{start}.
+We prove that, provided the starting element exists, the two insertion sequences are not interleaved.
+That is, in the final list order, either all insertions by \isa{xs} appear before all insertions by \isa{ys}, or vice versa.
+
 \begin{isabelle}
 \isacommand{theorem}\isamarkupfalse%
 \ no{\isacharunderscore}interleaving{\isacharcolon}\isanewline
 \ \ \isakeyword{assumes}\ {\isachardoublequoteopen}insert{\isacharunderscore}ops\ ops{\isachardoublequoteclose}\isanewline
-\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}{\isacharparenleft}xid{\isacharcomma}\ ref{\isacharparenright}\ {\isasymin}\ set\ ops{\isachardoublequoteclose}\isanewline
-\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}{\isacharparenleft}yid{\isacharcomma}\ Some\ xid{\isacharparenright}\ {\isasymin}\ set\ ops{\isachardoublequoteclose}\isanewline
-\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}{\isacharparenleft}zid{\isacharcomma}\ ref{\isacharparenright}\ {\isasymin}\ set\ ops{\isachardoublequoteclose}\isanewline
-\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}xid\ {\isasymnoteq}\ yid{\isachardoublequoteclose}\ \isakeyword{and}\ {\isachardoublequoteopen}yid\ {\isasymnoteq}\ zid{\isachardoublequoteclose}\ \isakeyword{and}\ {\isachardoublequoteopen}zid\ {\isasymnoteq}\ xid{\isachardoublequoteclose}\isanewline
-\ \ \isakeyword{shows}\ {\isachardoublequoteopen}{\isacharparenleft}list{\isacharunderscore}order\ ops\ xid\ yid\ {\isasymand}\ list{\isacharunderscore}order\ ops\ yid\ zid{\isacharparenright}\ {\isasymor}\isanewline
-\ \ \ \ \ \ \ \ \ {\isacharparenleft}list{\isacharunderscore}order\ ops\ zid\ xid\ {\isasymand}\ list{\isacharunderscore}order\ ops\ xid\ yid{\isacharparenright}\ {\isasymor}\isanewline
-\ \ \ \ \ \ \ \ \ {\isacharparenleft}xid\ {\isasymnotin}\ set\ {\isacharparenleft}interp{\isacharunderscore}ins\ ops{\isacharparenright}\ {\isasymand}\ yid\ {\isasymnotin}\ set\ {\isacharparenleft}interp{\isacharunderscore}ins\ ops{\isacharparenright}\ {\isasymand}\isanewline
-\ \ \ \ \ \ \ \ \ \ zid\ {\isasymnotin}\ set\ {\isacharparenleft}interp{\isacharunderscore}ins\ ops{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}insert{\isacharunderscore}seq\ start\ xs{\isachardoublequoteclose}\ \isakeyword{and}\ {\isachardoublequoteopen}insert{\isacharunderscore}ops\ xs{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}insert{\isacharunderscore}seq\ start\ ys{\isachardoublequoteclose}\ \isakeyword{and}\ {\isachardoublequoteopen}insert{\isacharunderscore}ops\ ys{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}set\ xs\ {\isasymsubseteq}\ set\ ops{\isachardoublequoteclose}\ \isakeyword{and}\ {\isachardoublequoteopen}set\ ys\ {\isasymsubseteq}\ set\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}distinct\ {\isacharparenleft}map\ fst\ xs\ {\isacharat}\ map\ fst\ ys{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}start\ {\isacharequal}\ None\ {\isasymor}\ {\isacharparenleft}{\isasymexists}r{\isachardot}\ start\ {\isacharequal}\ Some\ r\ {\isasymand}\ r\ {\isasymin}\ set\ {\isacharparenleft}interp{\isacharunderscore}ins\ ops{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}{\isacharparenleft}{\isasymforall}x\ {\isasymin}\ set\ {\isacharparenleft}map\ fst\ xs{\isacharparenright}{\isachardot}\ {\isasymforall}y\ {\isasymin}\ set\ {\isacharparenleft}map\ fst\ ys{\isacharparenright}{\isachardot}\ list{\isacharunderscore}order\ ops\ x\ y{\isacharparenright}\ {\isasymor}\isanewline
+\ \ \ \ \ \ \ \ \ {\isacharparenleft}{\isasymforall}x\ {\isasymin}\ set\ {\isacharparenleft}map\ fst\ xs{\isacharparenright}{\isachardot}\ {\isasymforall}y\ {\isasymin}\ set\ {\isacharparenleft}map\ fst\ ys{\isacharparenright}{\isachardot}\ list{\isacharunderscore}order\ ops\ y\ x{\isacharparenright}{\isachardoublequoteclose}
 \end{isabelle}
 
 
