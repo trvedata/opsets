@@ -88,6 +88,6 @@ This is in contrast to axiomatic specifications, which may not be implementable,
 \end{enumerate*}
 
 For an \emph{implementation}, each node retaining an explicit OpSet may induce poor performance, depending on the use-case and application, since nodes must potentially apply the same subset of operations repeatedly.
-More efficient (and, most likely, more complex) algorithms for CRDTs can therefore be developed and shown to satisfy the OpSet-based specification---we do this in \S~\ref{sec:datatypes}.
+More efficient (and, most likely, more complex) algorithms for CRDTs can therefore be developed and shown to satisfy the OpSet-based specification---we do this in \S~\ref{sec:bad-merge}.
 However, building an implementation around OpSets does have some advantages: for example, users can easily inspect the editing history of a document, since every past version of the document is the interpretation of a particular subset of operations.
 Moreover, using OpSets provides a straightforward mechanism for recovering from network partitions and failures, as missing operations may be retransmitted and added to the OpSets of previously partitioned nodes.
