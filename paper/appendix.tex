@@ -269,6 +269,19 @@ That is, in the final list order, either all insertions by \isa{xs} appear befor
 \ \ \ \ \ \ \ \ \ {\isacharparenleft}{\isasymforall}x\ {\isasymin}\ set\ {\isacharparenleft}map\ fst\ xs{\isacharparenright}{\isachardot}\ {\isasymforall}y\ {\isasymin}\ set\ {\isacharparenleft}map\ fst\ ys{\isacharparenright}{\isachardot}\ list{\isacharunderscore}order\ ops\ y\ x{\isacharparenright}{\isachardoublequoteclose}
 \end{isabelle}
 
+\noindent
+For completeness, we also prove what happens if there are two insertion sequences, \isa{xs} and \isa{ys}, but their reference element \isa{start} does not exist.
+In this failure case, none of the insertions in \isa{xs} or \isa{ys} take effect.
+\begin{isabelle}
+\isacommand{theorem}\isamarkupfalse%
+\ missing{\isacharunderscore}start{\isacharunderscore}no{\isacharunderscore}insertion{\isacharcolon}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}insert{\isacharunderscore}ops\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}insert{\isacharunderscore}seq\ {\isacharparenleft}Some\ start{\isacharparenright}\ xs{\isachardoublequoteclose}\ \isakeyword{and}\ {\isachardoublequoteopen}insert{\isacharunderscore}ops\ xs{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}insert{\isacharunderscore}seq\ {\isacharparenleft}Some\ start{\isacharparenright}\ ys{\isachardoublequoteclose}\ \isakeyword{and}\ {\isachardoublequoteopen}insert{\isacharunderscore}ops\ ys{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}set\ xs\ {\isasymsubseteq}\ set\ ops{\isachardoublequoteclose}\ \isakeyword{and}\ {\isachardoublequoteopen}set\ ys\ {\isasymsubseteq}\ set\ ops{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}start\ {\isasymnotin}\ set\ {\isacharparenleft}interp{\isacharunderscore}ins\ ops{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}{\isasymforall}x\ {\isasymin}\ set\ {\isacharparenleft}map\ fst\ xs{\isacharparenright}\ {\isasymunion}\ set\ {\isacharparenleft}map\ fst\ ys{\isacharparenright}{\isachardot}\ x\ {\isasymnotin}\ set\ {\isacharparenleft}interp{\isacharunderscore}ins\ ops{\isacharparenright}{\isachardoublequoteclose}
+\end{isabelle}
 
 \subsection{The Replicated Growable Array (RGA)}
 
