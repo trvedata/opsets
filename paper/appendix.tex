@@ -75,9 +75,9 @@ To avoid assuming anything about the structure of operations here, we use a func
 This requirement is a weak expression of causality: an operation can only depend on causally prior operations, and by making the total order on IDs a linear extension of the causal order, we can easily ensure that any referenced IDs are less than that of the operation itself.
 \item The OpSet is finite (but we do not assume any particular maximum size).
 \end{enumerate}
-We define it as follows in Isabelle:\footnote{In programming terms, an Isabelle \emph{locale} may be thought of as an interface with associated laws that implementations must obey.
+We define it as follows in Isabelle:\footnote{In programming terms, a \emph{locale} (or 'local theory') may be thought of as an interface with associated laws that implementations must obey.
 When showing that an implementation matches this interface, one must also show that the implementation satisfies all assumed laws of the locale.
-Moreover, locales can be extended with new assumed facts and fixed constants to form a hierarchy, and definitions and theorems may be defined and declared within the scope of a locale and therefore be made available to all concrete implementations of the locale.
+Moreover, locales can be extended with new assumed facts and fixed constants to form a hierarchy, and definitions and theorems may be defined and declared within a locale and made available to all of its implementations.
 See the standard Isabelle tutorial material, as well as~\cite{DBLP:conf/tphol/KammullerWP99} and~\cite{DBLP:conf/types/HaftmannW08} for a more detailed explanation of locales.}
 \begin{isabelle}
 \isacommand{locale}\isamarkupfalse%
