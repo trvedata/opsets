@@ -443,44 +443,7 @@ qed
 lemma insert_ops_exist:
   assumes "rga_ops xs"
   shows "\<exists>ys. set xs = set ys \<and> insert_ops ys"
-using assms proof(induction xs rule: List.rev_induct)
-  case Nil
-  then show "\<exists>ys. set [] = set ys \<and> insert_ops ys"
-    by (simp add: spec_ops_empty insert_ops_def)
-next
-  case (snoc x xs)
-  hence IH: "\<exists>ys. set xs = set ys \<and> insert_ops ys"
-    using rga_ops_rem_last by blast
-  then obtain ys oid ref
-    where "set xs = set ys" and "insert_ops ys" and "x = (oid, ref)"
-    by force
-  moreover have "\<exists>pre suf. ys = pre@suf \<and>
-                       (\<forall>i \<in> set (map fst pre). i < oid) \<and>
-                       (\<forall>i \<in> set (map fst suf). oid < i)"
-  proof -
-    have "oid \<notin> set (map fst xs)"
-      using calculation(3) crdt_ops_unique_last rga_ops_def snoc.prems by fastforce
-    hence "oid \<notin> set (map fst ys)"
-      by (simp add: calculation(1))
-    thus ?thesis
-      using spec_ops_split \<open>insert_ops ys\<close> insert_ops_def by blast
-  qed
-  from this obtain pre suf where "ys = pre @ suf" and
-                       "\<forall>i \<in> set (map fst pre). i < oid" and
-                       "\<forall>i \<in> set (map fst suf). oid < i" by force
-  moreover have "set (xs @ [(oid, ref)]) = set (pre @ [(oid, ref)] @ suf)"
-    using crdt_ops_distinct calculation snoc.prems rga_ops_def by simp
-  moreover have "insert_ops (pre @ [(oid, ref)] @ suf)"
-  proof -
-    have "\<forall>r \<in> set_option ref. r < oid"
-      using calculation(3) crdt_ops_ref_less_last rga_ops_def snoc.prems by fastforce
-    hence "spec_ops (pre @ [(oid, ref)] @ suf) set_option"
-      using spec_ops_add_any calculation insert_ops_def by metis
-    thus ?thesis by (simp add: insert_ops_def)
-  qed
-  ultimately show "\<exists>ys. set (xs @ [x]) = set ys \<and> insert_ops ys"
-    by blast
-qed
+using assms by (simp add: crdt_ops_spec_ops_exist insert_ops_def rga_ops_def)
 
 theorem rga_meets_spec:
   assumes "rga_ops xs"

@@ -747,4 +747,46 @@ proof -
     by (simp add: crdt_ops_intro)
 qed
 
+lemma crdt_ops_spec_ops_exist:
+  assumes "crdt_ops xs deps"
+  shows "\<exists>ys. set xs = set ys \<and> spec_ops ys deps"
+using assms proof(induction xs rule: List.rev_induct)
+  case Nil
+  then show "\<exists>ys. set [] = set ys \<and> spec_ops ys deps"
+    by (simp add: spec_ops_empty)
+next
+  case (snoc x xs)
+  hence IH: "\<exists>ys. set xs = set ys \<and> spec_ops ys deps"
+    using crdt_ops_rem_last by blast
+  then obtain ys oid ref
+    where "set xs = set ys" and "spec_ops ys deps" and "x = (oid, ref)"
+    by force
+  moreover have "\<exists>pre suf. ys = pre@suf \<and>
+                       (\<forall>i \<in> set (map fst pre). i < oid) \<and>
+                       (\<forall>i \<in> set (map fst suf). oid < i)"
+  proof -
+    have "oid \<notin> set (map fst xs)"
+      using calculation(3) crdt_ops_unique_last snoc.prems by force
+    hence "oid \<notin> set (map fst ys)"
+      by (simp add: calculation(1))
+    thus ?thesis
+      using spec_ops_split \<open>spec_ops ys deps\<close> by blast
+  qed
+  from this obtain pre suf where "ys = pre @ suf" and
+                       "\<forall>i \<in> set (map fst pre). i < oid" and
+                       "\<forall>i \<in> set (map fst suf). oid < i" by force
+  moreover have "set (xs @ [(oid, ref)]) = set (pre @ [(oid, ref)] @ suf)"
+    using crdt_ops_distinct calculation snoc.prems by simp
+  moreover have "spec_ops (pre @ [(oid, ref)] @ suf) deps"
+  proof -
+    have "\<forall>r \<in> deps ref. r < oid"
+      using calculation(3) crdt_ops_ref_less_last snoc.prems by fastforce
+    hence "spec_ops (pre @ [(oid, ref)] @ suf) deps"
+      using spec_ops_add_any calculation by metis
+    thus ?thesis by simp
+  qed
+  ultimately show "\<exists>ys. set (xs @ [x]) = set ys \<and> spec_ops ys deps"
+    by blast
+qed
+
 end
