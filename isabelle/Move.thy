@@ -30,15 +30,6 @@ fun tree_spec :: "('oid \<times> 'oid \<times> string \<times> 'oid) set \<Right
 definition interp_tree :: "('oid \<times> 'oid tree_op) list \<Rightarrow> ('oid \<times> 'oid \<times> string \<times> 'oid) set" where
   "interp_tree ops \<equiv> foldl tree_spec {} ops"
 
-(*fun cmp_pair :: "('oid::{linorder} \<times> 'oid tree_op) \<Rightarrow> ('oid \<times> 'oid tree_op) \<Rightarrow> bool" where
-  "cmp_pair (id1, op1) (id2, op2) = (id1 < id2)"
-
-fun sorted_ops :: "('oid::{linorder} \<times> 'oid tree_op) set \<Rightarrow> ('oid \<times> 'oid tree_op) list" where
-  "sorted_ops ops = List.linorder.sorted_list_of_set cmp_pair ops"
-
-fun interp_ops :: "('oid::{linorder} \<times> 'oid tree_op) set \<Rightarrow> ('oid \<times> 'oid \<times> string \<times> 'oid) set" where
-  "interp_ops ops = foldl tree_spec {} (sorted_ops ops)"*)
-
 fun sorted_oplist :: "('oid::{linorder} \<times> 'oid tree_op) list \<Rightarrow> ('oid \<times> 'oid tree_op) \<Rightarrow> ('oid \<times> 'oid tree_op) list" where
   "sorted_oplist ((i1, op1) # list) (i2, op2) =
      (if i1 < i2
@@ -47,27 +38,32 @@ fun sorted_oplist :: "('oid::{linorder} \<times> 'oid tree_op) list \<Rightarrow
   "sorted_oplist [] oper = [oper]"
 
 lemma sorted_oplist_insert:
-  shows "\<exists>as bs. xs = as @ bs \<and> sorted_oplist xs oper = as @ [oper] @ bs"
+  shows "\<exists>as bs. xs = as @ bs \<and> sorted_oplist xs oper = as @ [oper] @ bs \<and>
+         (\<forall>a \<in> set as. fst a < fst oper) \<and> (bs \<noteq> [] \<longrightarrow> fst oper \<le> fst (hd bs))"
 proof(induction xs, simp)
   case (Cons x xs)
   obtain i1 op1 where "x = (i1, op1)" by fastforce
   obtain i2 op2 where "oper = (i2, op2)" by fastforce
-  show "\<exists>as bs. x # xs = as @ bs \<and> sorted_oplist (x # xs) oper = as @ [oper] @ bs"
+  show "\<exists>as bs. x # xs = as @ bs \<and> sorted_oplist (x # xs) oper = as @ [oper] @ bs \<and>
+         (\<forall>a \<in> set as. fst a < fst oper) \<and> (bs \<noteq> [] \<longrightarrow> fst oper \<le> fst (hd bs))"
   proof(cases "i1 < i2")
     case True
-    hence "sorted_oplist (x # xs) oper = x # (sorted_oplist xs oper)"
+    moreover from this have "sorted_oplist (x # xs) oper = x # (sorted_oplist xs oper)"
       by (simp add: \<open>oper = (i2, op2)\<close> \<open>x = (i1, op1)\<close>)
-    moreover obtain as bs where "xs = as @ bs \<and> sorted_oplist xs oper = as @ [oper] @ bs"
+    moreover obtain as bs where "xs = as @ bs \<and> sorted_oplist xs oper = as @ [oper] @ bs \<and>
+         (\<forall>a \<in> set as. fst a < fst oper) \<and> (bs \<noteq> [] \<longrightarrow> fst oper \<le> fst (hd bs))"
       using Cons.IH by blast
-    ultimately have "x # xs = (x # as) @ bs \<and> sorted_oplist (x # xs) oper = (x # as) @ [oper] @ bs"
-      by auto
+    ultimately have "x # xs = (x # as) @ bs \<and> sorted_oplist (x # xs) oper = (x # as) @ [oper] @ bs \<and>
+         (\<forall>a \<in> set (x # as). fst a < fst oper) \<and> (bs \<noteq> [] \<longrightarrow> fst oper \<le> fst (hd bs))"
+      using \<open>oper = (i2, op2)\<close> \<open>x = (i1, op1)\<close> by auto
     then show ?thesis by blast
   next
     case False
-    hence "sorted_oplist (x # xs) oper = oper # x # xs"
+    moreover from this have "sorted_oplist (x # xs) oper = oper # x # xs"
       by (simp add: \<open>oper = (i2, op2)\<close> \<open>x = (i1, op1)\<close>)
-    hence "x # xs = [] @ (x # xs) \<and> sorted_oplist (x # xs) oper = [] @ [oper] @ (x # xs)"
-      by simp
+    ultimately have "x # xs = [] @ (x # xs) \<and> sorted_oplist (x # xs) oper = [] @ [oper] @ (x # xs) \<and>
+         (\<forall>a \<in> set []. fst a < fst oper) \<and> (x # xs \<noteq> [] \<longrightarrow> fst oper \<le> fst (hd (x # xs)))"
+      using \<open>oper = (i2, op2)\<close> \<open>x = (i1, op1)\<close> by auto
     then show ?thesis by blast
   qed
 qed
@@ -85,10 +81,76 @@ proof(induction ops rule: List.rev_induct, simp)
     using snoc.IH by auto
 qed
 
-lemma
-  assumes "tree_ops ops"
-  shows "tree_spec_ops (foldl sorted_oplist [] ops)"
-  oops
+lemma sorted_oplist_sorted_1:
+  assumes "sorted (map fst xs)"
+  shows "sorted (map fst (sorted_oplist xs oper))"
+using assms proof(induction xs, simp)
+  case (Cons x xs)
+  hence IH: "sorted (map fst (sorted_oplist xs oper))"
+    by (simp add: sorted_Cons)
+  obtain i1 op1 where "x = (i1, op1)" by fastforce
+  obtain i2 op2 where "oper = (i2, op2)" by fastforce
+  show "sorted (map fst (sorted_oplist (x # xs) oper))"
+  proof(cases "i1 < i2")
+    case True
+    hence "sorted_oplist (x # xs) oper = x # (sorted_oplist xs oper)"
+      by (simp add: \<open>oper = (i2, op2)\<close> \<open>x = (i1, op1)\<close>)
+    moreover have "\<And>i. i \<in> set (map fst (sorted_oplist xs oper)) \<Longrightarrow> i1 \<le> i"
+    proof -
+      fix i
+      assume i_asm: "i \<in> set (map fst (sorted_oplist xs oper))"
+      obtain as bs where "xs = as @ bs \<and> sorted_oplist xs oper = as @ [oper] @ bs"
+        using sorted_oplist_insert by blast
+      hence "i \<in> set (map fst xs) \<or> i = i2"
+        using i_asm \<open>oper = (i2, op2)\<close> by fastforce
+      then show "i1 \<le> i"
+        by (metis Cons.prems True \<open>x = (i1, op1)\<close> fst_conv leD le_cases list.simps(9) sorted_Cons)
+    qed
+    ultimately show "sorted (map fst (sorted_oplist (x # xs) oper))"
+      by (metis IH \<open>x = (i1, op1)\<close> fst_conv list.simps(9) sorted.simps)
+  next
+    case False
+    moreover from this have "sorted_oplist (x # xs) oper = oper # x # xs"
+      by (simp add: \<open>oper = (i2, op2)\<close> \<open>x = (i1, op1)\<close>)
+    ultimately show "sorted (map fst (sorted_oplist (x # xs) oper))"
+      using Cons.prems \<open>oper = (i2, op2)\<close> \<open>x = (i1, op1)\<close> by auto
+  qed
+qed
+
+lemma sorted_oplist_sorted:
+  shows "sorted (map fst (foldl sorted_oplist [] ops))"
+by (induction ops rule: List.rev_induct, auto simp add: sorted_oplist_sorted_1)
+
+lemma sorted_oplist_commute_base:
+  assumes "i1 < i2"
+  shows "sorted_oplist (sorted_oplist xs (i1, op1)) (i2, op2) =
+         sorted_oplist (sorted_oplist xs (i2, op2)) (i1, op1)"
+proof(induction xs)
+  case Nil
+  then show ?case using assms by auto
+next
+  case (Cons a xs)
+  obtain ia opa where "a = (ia, opa)" by fastforce
+  consider (lt_i1) "ia < i1" | (i1_i2) "ia \<ge> i1 \<and> ia < i2" | (gt_i2) "ia \<ge> i2"
+    using le_less_linear by blast
+  then show ?case
+  proof(cases)
+    case lt_i1
+    then show ?thesis using \<open>a = (ia, opa)\<close> Cons.IH by auto
+  next
+    case i1_i2
+    then show ?thesis using \<open>a = (ia, opa)\<close> assms by auto
+  next
+    case gt_i2
+    then show ?thesis using \<open>a = (ia, opa)\<close> assms dual_order.asym by auto
+  qed
+qed
+
+lemma sorted_oplist_commute:
+  assumes "i1 \<noteq> i2"
+  shows "sorted_oplist (sorted_oplist xs (i1, op1)) (i2, op2) =
+         sorted_oplist (sorted_oplist xs (i2, op2)) (i1, op1)"
+by (metis assms neqE sorted_oplist_commute_base)
 
 
 end
