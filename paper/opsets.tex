@@ -1,13 +1,5 @@
-\documentclass[11pt]{article}
-
-\usepackage{authblk}
-\usepackage[a4paper,margin=1.8cm]{geometry}
-\usepackage[utf8]{inputenc}
-\usepackage{mathptmx} % times roman, including math
-\usepackage[hyphens]{url}
-\usepackage{doi}
-\usepackage{hyperref}
-\usepackage[numbers,sort]{natbib}
+\documentclass[a4paper,UKenglish]{lipics-v2016}
+\usepackage{microtype}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
@@ -43,23 +35,42 @@
 
 \newtheorem{proposition}{Proposition}
 
+\title{OpSets: Sequential Specifications for Replicated Datatypes\footnote{An extended version of the paper is available at \url{https://TODO}}}
+%\titlerunning{}
+
+%% Please provide for each author the \author and \affil macro, even when authors have the same affiliation, i.e. for each author there needs to be the  \author and \affil macros
+\author[1]{Martin Kleppmann}
+\author[2]{Victor B.\ F.\ Gomes}
+\author[3]{Dominic P.\ Mulligan}
+\author[4]{Alastair R.\ Beresford}
+\affil[1]{Computer Laboratory, University of Cambridge, UK\\\texttt{mk428@cl.cam.ac.uk}}
+\affil[2]{Computer Laboratory, University of Cambridge, UK\\\texttt{vb358@cl.cam.ac.uk}}
+\affil[3]{Security Research Group, Arm Research, Cambridge, UK\\\texttt{Dominic.Mulligan@arm.com}}
+\affil[4]{Computer Laboratory, University of Cambridge, UK\\\texttt{arb33@cl.cam.ac.uk}}
+\authorrunning{M.\ Kleppmann, V.\,B.\,F.\ Gomes, D.\,P.\ Mulligan, and A.\,R.\ Beresford} %mandatory. First: Use abbreviated first/middle names. Second (only in severe cases): Use first author plus 'et. al.'
+
+\Copyright{Martin Kleppmann, Victor B.\ F.\ Gomes, Dominic P.\ Mulligan, and Alastair R.\ Beresford}%mandatory, please use full first names. LIPIcs license is "CC-BY";  http://creativecommons.org/licenses/by/3.0/
+
+\subjclass{Dummy classification -- please refer to \url{http://www.acm.org/about/class/ccs98-html}}% mandatory: Please choose ACM 1998 classifications from http://www.acm.org/about/class/ccs98-html . E.g., cite as "F.1.1 Models of Computation". 
+\keywords{Dummy keyword -- please provide 1--5 keywords}% mandatory: Please provide 1-5 keywords
+% Author macros::end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\EventEditors{}
+\EventNoEds{0}
+\EventLongTitle{}
+\EventShortTitle{}
+\EventAcronym{}
+\EventYear{}
+\EventDate{}
+\EventLocation{}
+\EventLogo{}
+\SeriesVolume{}
+\ArticleNo{--}
+% Editor-only macros::end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \begin{document}
-\sloppy
-\title{OpSets: Sequential Specifications for Replicated Datatypes}
-\author[1]{Martin Kleppmann\thanks{Corresponding author. Email: martin.kleppmann@cl.cam.ac.uk}}
-\author[1]{Victor B.\ F.\ Gomes}
-\author[2]{Dominic P.\ Mulligan}
-\author[1]{Alastair R.\ Beresford}
-\date{}
-
-\affil[1]{Department of Computer Science and Technology, University of Cambridge, UK}
-\affil[2]{Security Research Group, Arm Research, Cambridge, UK}
-
 \maketitle
-
-\begin{center}
-Regular Paper (not eligible for best student paper award)
-\end{center}
 
 \begin{abstract}
 We introduce OpSets, an executable framework for specifying and reasoning about the semantics of replicated datatypes that provide eventual consistency in a distributed system, and for mechanically verifying algorithms that implement these datatypes.
@@ -144,7 +155,7 @@ the EPSRC ``Interdisciplinary Centre for Finding, Understanding and Countering C
 We thank Nathan Chong, Peter Sewell, and KC Sivaramakrishnan for their helpful feedback on this paper.
 
 \newpage
-\bibliographystyle{plainnat}
+\bibliographystyle{plainurl}
 \bibliography{references}{}
 
 \newpage
