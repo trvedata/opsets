@@ -1,24 +1,17 @@
 \mathrm{isListElem}(\mathit{Oid}) \leftarrow\; &
     \mathrm{insertAfter}(\mathit{Oid}, \mathit{Parent}).\\
-\mathrm{isListParent}(\mathit{Oid}) \leftarrow\; &
-    \mathrm{makeList}(\mathit{Oid}).\\
-\mathrm{isListParent}(\mathit{Oid}) \leftarrow\; &
-    \mathrm{isListElem}(\mathit{Oid}).\\
-\mathrm{parentChild}(\mathit{Parent}, \mathit{Child}) \leftarrow\; &
-    \mathrm{insertAfter}(\mathit{Child}, \mathit{Parent}),\;
-    \mathrm{isListParent}(\mathit{Parent}).\\
 \mathrm{hasChild}(\mathit{Parent}) \leftarrow\; &
-    \mathrm{parentChild}(\mathit{Parent}, \mathit{Child}).\\
+    \mathrm{insertAfter}(\mathit{Child}, \mathit{Parent}).\\
 \mathrm{laterChild}(\mathit{Parent}, \mathit{Child2}) \leftarrow\; &
-    \mathrm{parentChild}(\mathit{Parent}, \mathit{Child1}),\;
-    \mathrm{parentChild}(\mathit{Parent}, \mathit{Child2}),\;
+    \mathrm{insertAfter}(\mathit{Child1}, \mathit{Parent}),\;
+    \mathrm{insertAfter}(\mathit{Child2}, \mathit{Parent}),\;
     \mathit{Child1} > \mathit{Child2}.\\
 \mathrm{firstChild}(\mathit{Parent}, \mathit{Child}) \leftarrow\; &
-    \mathrm{parentChild}(\mathit{Parent}, \mathit{Child}),\;
+    \mathrm{insertAfter}(\mathit{Child}, \mathit{Parent}),\;
     \neg\;\mathrm{laterChild}(\mathit{Parent}, \mathit{Child}).\\
 \mathrm{sibling}(\mathit{Child1}, \mathit{Child2}) \leftarrow\; &
-    \mathrm{parentChild}(\mathit{Parent}, \mathit{Child1}),\;
-    \mathrm{parentChild}(\mathit{Parent}, \mathit{Child2}).\\
+    \mathrm{insertAfter}(\mathit{Child1}, \mathit{Parent}),\;
+    \mathrm{insertAfter}(\mathit{Child2}, \mathit{Parent}).\\
 \mathrm{laterSibling}(\mathit{Sib1}, \mathit{Sib2}) \leftarrow\; &
     \mathrm{sibling}(\mathit{Sib1}, \mathit{Sib2}),\;
     \mathit{Sib1} > \mathit{Sib2}.\\
@@ -36,7 +29,7 @@
     \mathrm{nextSibling}(\mathit{Start}, \mathit{Next}).\\
 \mathrm{nextSiblingAnc}(\mathit{Start}, \mathit{Next}) \leftarrow\; &
     \neg\;\mathrm{hasNextSibling}(\mathit{Start}),\;
-    \mathrm{parentChild}(\mathit{Parent}, \mathit{Start}),\;
+    \mathrm{insertAfter}(\mathit{Start}, \mathit{Parent}),\;
     \mathrm{nextSiblingAnc}(\mathit{Parent}, \mathit{Next}).\\
 \mathrm{hasSiblingAnc}(\mathit{Start}) \leftarrow\; &
     \mathrm{nextSiblingAnc}(\mathit{Start}, \mathit{Next}).\\
