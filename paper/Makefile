@@ -22,4 +22,4 @@ assignment.tex: ../isabelle/Datalog_Assignment.thy
 	awk -f isabelle-to-latex.awk $< > $@
 
 clean:
-	rm -f *.{log,aux,out,bbl,blg,dvi,ps,pdf} *-arxiv.tex
+	rm -f opsets.{log,aux,out,bbl,blg,dvi,ps,pdf} *-arxiv.tex
