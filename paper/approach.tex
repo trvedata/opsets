@@ -46,7 +46,7 @@ However, in defining the semantics of CRDTs (see \S~\ref{sec:datatypes} and \S~\
 Let the OpSet $O$ be a set of pairs $(\mathit{id},\, \mathit{op})$, where $\mathit{id}$ is a unique operation identifier and $\mathit{op}$ is an arbitrary description of the change that occurred.
 Assume that we have a total ordering $<$ on identifiers, as explained in \S~\ref{sec:system-model}.
 Then observe that for any OpSet there exists a unique sequence of operations, containing all operations of the OpSet in ascending order of their identifier.
-We can specify the semantics of each operation~--- that is, the effect of the operation on the query result~--- when applied in this sequential order.
+We can specify the semantics of each operation~--- that is, the effect of the operation on the OpSet interpretation~--- when applied in this sequential order.
 
 Formally, we can define the interpretation $\llbracket O \rrbracket$ of the OpSet $O$ as follows:
 \begin{align*}
@@ -55,7 +55,7 @@ Formally, we can define the interpretation $\llbracket O \rrbracket$ of the OpSe
     \mathrm{interp}\big[\llbracket O \rrbracket,\, (\mathit{id},\, \mathit{op})\big]
     \qquad\text{ provided that } \forall\,(\mathit{id}',\, \mathit{op}') \in O.\; \mathit{id}' < \mathit{id}
 \end{align*}
-where $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the operation $(\mathit{id},\, \mathit{op})$ in the state $S$, and $\mathit{InitialState}$ is a fixed minimal element (e.g. the empty tree, or list) of the replicated type described, agreed upon by all nodes.
+where $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the operation $(\mathit{id},\, \mathit{op})$ in the state $S$, and $\mathit{InitialState}$ is a fixed minimal element (e.g. the empty tree, or empty list) of the replicated type described.
 In other words, if $S$ is the result of interpreting all operations with identifiers less than $\mathit{id}$, then
 $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the OpSet to which $(\mathit{id},\, \mathit{op})$ has been added.
 For example, if $\mathit{id}_1 < \mathit{id}_2 < \mathit{id}_3$, we have:

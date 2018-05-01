@@ -88,7 +88,7 @@
 \EventLocation{}
 \EventLogo{}
 \SeriesVolume{}
-\ArticleNo{--}
+\ArticleNo{~}
 % Editor-only macros::end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{document}
@@ -108,7 +108,7 @@ We use the Isabelle/HOL proof assistant throughout to formalise the OpSets appro
 \section{Introduction}
 
 A common requirement across many distributed systems is that several nodes may concurrently access and manipulate some shared data structure.
-Examples include everything from journalists using their laptops to work on a shared text document to a set of front-end web-servers manipulating a common database.
+Examples include everything from journalists using their laptops to work on a shared text document to a set of web servers manipulating a common database.
 In doing so, it is important that the shared data satisfies certain \emph{consistency guarantees}.
 For example, strong consistency models such as serializability \cite{Kleppmann:2017wj} or linearizability \cite{Herlihy:1990jq} make a system behave like a single sequentially executing node, even when it is in fact replicated and concurrent.
 An unavoidable downside of these models is that any operation or transaction must wait for network communication before it is allowed to complete \cite{Davidson:1985hv,Gilbert:2002il}.
@@ -120,7 +120,7 @@ Moreover, nothing in the definition of eventual consistency specifies which fina
 
 Conflict-free Replicated Data Types, or CRDTs \cite{Shapiro:2011wy,Shapiro:2011un}, are abstractions for replicated state that have received significant attention in recent years (see \S~\ref{sec:relwork}).
 The primary correctness property for CRDTs is \emph{convergence} \cite{Shapiro:2011un,Gomes:2017gy}, defined as: \emph{``whenever any two replicas have applied the same set of updates, they are in the same state''}, even if each replica applies the updates in a different order.
-Convergence is a stronger property than eventual consistency, but it also fails to define what the converged state should be.
+Convergence is a stronger property than eventual consistency, but it also fails to define what exactly the converged state should be.
 
 In this work we introduce \emph{Operation Sets} (or \emph{OpSets} for short), a novel approach for specifying the semantics of replicated datatypes, and for reasoning about algorithms for concurrent data access and manipulation.
 We go beyond merely ensuring replica convergence: the OpSets approach is a form of executable specification that precisely defines the permitted states of a replica after some set of updates has been applied.

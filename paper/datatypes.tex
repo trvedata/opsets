@@ -10,7 +10,7 @@ In \S~\ref{sec:tree} we will show how to restrict this object graph so that it c
 We treat each key of a map, and each element of a list, as a multi-value register.
 That is, if there are several concurrent assignments to the same map key or list element, our datatype preserves all concurrently written values.
 Thus, reading a map key or list element may return multiple values, which may be merged explicitly by the user.
-Assigning a new value to a map key or list elements overwrites all causally preceding values.
+Assigning a new value to a map key or list element overwrites all causally preceding values.
 Different register behaviour, such as last-writer-wins (arbitrarily picking one of the concurrently written values as winner), can easily be defined, as we show later.
 
 \subsection{Generating Operations}\label{sec:datatypes-gen}
