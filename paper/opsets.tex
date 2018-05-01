@@ -115,8 +115,8 @@ An unavoidable downside of these models is that any operation or transaction mus
 Thus, in a system with strong consistency, a node cannot make progress while it is offline or partitioned from other nodes.
 
 On the other hand, \emph{eventual consistency} \cite{Bailis:2013jc,Burckhardt:2014hy,Terry:1994fp,Vogels:2009ca} allows each participant to modify a local copy (\emph{replica}) of a shared data structure while offline, but its definition is very weak: \emph{``if no new updates are made to the shared state, all nodes will eventually have the same data.''}
-The premise \emph{if no new updates are made} may never be true if the shared state is continually modified because the system is never quiescent.
-Moreover, the final system state is unconstrained: nothing in the definition of eventual consistency specifies which states are legal.
+The premise \emph{``if no new updates are made''} may never be true if the shared state is continually modified (i.e.\ the system is never quiescent).
+Moreover, nothing in the definition of eventual consistency specifies which final states are legal.
 
 Conflict-free Replicated Data Types, or CRDTs \cite{Shapiro:2011wy,Shapiro:2011un}, are abstractions for replicated state that have received significant attention in recent years (see \S~\ref{sec:relwork}).
 The primary correctness property for CRDTs is \emph{convergence} \cite{Shapiro:2011un,Gomes:2017gy}, defined as: \emph{``whenever any two replicas have applied the same set of updates, they are in the same state''}, even if each replica applies the updates in a different order.
@@ -127,7 +127,7 @@ We go beyond merely ensuring replica convergence: the OpSets approach is a form 
 Our contributions in this paper are as follows:
 
 \begin{itemize*}
-\item In \S~\ref{sec:approach} we introduce the OpSet, a new abstraction for specifying and reasoning about the consistency properties of concurrently editable data structures.
+\item In \S~\ref{sec:approach} we introduce the OpSet, a simple abstraction for specifying and reasoning about the consistency properties of concurrently editable data structures.
 
 \item On top of this abstraction, in \S~\ref{sec:datatypes} and \S~\ref{sec:tree}, we specify a variety of composable abstract datatypes (maps, sets, lists, text, graphs, trees, and registers), and we argue that our specifications are both simple and precise, making them a suitable tool for reasoning about replicated data.
 
@@ -137,7 +137,7 @@ We then review a selection of text editing CRDTs from the literature, prove that
 
 \item In \S~\ref{sec:tree} we show how the OpSet abstraction can be used to develop new replicated datatypes. In particular we describe, for the first time, how an atomic move operation can be defined for a tree CRDT.
 This operation can be used to move a subtree to a new position within the tree, or to rename a key in a map, or to reorder items in a list.
-The OpSets approach enables a simple definition of this operation that had previously been thought impossible without locking \cite{Najafzadeh:2017vk}.
+The OpSets approach enables a simple definition of this operation that had previously been thought impossible to implement without locking \cite{Najafzadeh:2017vk}.
 
 \item Using the Isabelle/HOL proof assistant~\cite{DBLP:conf/tphol/WenzelPN08} we formalise the OpSets approach, producing mechanised proofs of correctness of the main claims in this paper.
 In particular, we prove that our list specification is strictly stronger than the recent specification of collaborative text editing by Attiya et al. \cite{Attiya:2016kh}.

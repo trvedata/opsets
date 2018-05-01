@@ -59,13 +59,15 @@ where $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interp
 In other words, if $S$ is the result of interpreting all operations with identifiers less than $\mathit{id}$, then
 $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the OpSet to which $(\mathit{id},\, \mathit{op})$ has been added.
 For example, if $\mathit{id}_1 < \mathit{id}_2 < \mathit{id}_3$, we have:
-\[ \big\llbracket \{(\mathit{id}_1,\ \mathit{op}_1),\,
-    (\mathit{id}_2,\ \mathit{op}_2),\,
-    (\mathit{id}_3,\ \mathit{op}_3)\} \big\rrbracket \;=\;
-    \mathrm{interp}\big[\mathrm{interp}\big[\mathrm{interp}\big[\mathit{InitialState},\,
+\begin{align*}
+    \big\llbracket \{(\mathit{id}_1,\ \mathit{op}_1),\;
+    &(\mathit{id}_2,\ \mathit{op}_2),\,
+    (\mathit{id}_3,\ \mathit{op}_3)\} \big\rrbracket \;=\\
+    &\mathrm{interp}\big[\mathrm{interp}\big[\mathrm{interp}\big[\mathit{InitialState},\,
     (\mathit{id}_1,\ \mathit{op}_1)\big],\,
     (\mathit{id}_2,\ \mathit{op}_2)\big],\,
-    (\mathit{id}_3,\ \mathit{op}_3)\big] \]
+    (\mathit{id}_3,\ \mathit{op}_3)\big]
+\end{align*}
 Provided that the operation interpretation $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is deterministic, the OpSet interpretation function $\llbracket-\rrbracket$ is also deterministic, due to the fact that the operation order in the OpSet is unique.
 
 In real systems it is likely that operations arrive at nodes in an order that does not match their $\mathit{id}$ order.

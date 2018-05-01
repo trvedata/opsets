@@ -4,7 +4,7 @@
 To help any readers who are not familiar with Isabelle/HOL, this appendix provides a brief introduction to the key concepts and syntax, taken from our previous work \cite{Gomes:2017gy}.
 A more detailed introduction can be found in the standard tutorial material~\cite{DBLP:books/sp/NipkowK14}.
 
-\paragraph{Syntax of expressions.}
+\subsection{Syntax of expressions.}
 
 Isabelle/HOL is a logic with a strict, polymorphic, inferred type system.
 \emph{Function types} are written $\tau_1 \Rightarrow \tau_2$, and are inhabited by \emph{total} functions, mapping elements of $\tau_1$ to elements of $\tau_2$.
@@ -24,7 +24,7 @@ Accordingly, the implication arrow of Isabelle's meta-logic, $\isa{t} \Longright
 However, for purposes of an intuitive understanding, the two forms of implication can be regarded as equivalent by the reader, with the requirement to use one over the other merely being an implementation detail of Isabelle itself.
 We will sometimes use the shorthand ${\isasymlbrakk}\isa{H}_1{\isacharsemicolon}\ \ldots{\isacharsemicolon}\ \isa{H}_n{\isasymrbrakk}\ {\isasymLongrightarrow}\ C$ instead of iterated meta-logic implications, i.e., $H_1\ {\isasymLongrightarrow}\ \ldots\ {\isasymLongrightarrow}\ H_n\ {\isasymLongrightarrow}\ C$.
 
-\paragraph{Definitions and theorems.}
+\subsection{Definitions and theorems.}
 
 New non-recursive definitions are entered into Isabelle's global context using the $\mathbf{definition}$ keyword.
 Recursive functions are defined using the $\mathbf{fun}$ keyword, and support \emph{pattern matching} on their arguments.
@@ -108,7 +108,8 @@ A list is implicitly finite in Isabelle/HOL.
 
 \begin{isabelle}
 \isacommand{definition}\isamarkupfalse%
-\ spec{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharprime}oper{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oper\ {\isasymRightarrow}\ {\isacharprime}oid\ set{\isacharparenright}\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ spec{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharprime}oper{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oper\ {\isasymRightarrow}\ {\isacharprime}oid\ set{\isacharparenright}\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\isanewline
+\isakeyword{where}\isanewline
 \ \ {\isachardoublequoteopen}spec{\isacharunderscore}ops\ ops\ deps\ {\isasymequiv}\ {\isacharparenleft}sorted\ {\isacharparenleft}map\ fst\ ops{\isacharparenright}\ {\isasymand}\ distinct\ {\isacharparenleft}map\ fst\ ops{\isacharparenright}\ {\isasymand}\isanewline
 \ \ \ \ \ \ \ \ \ \ \ {\isacharparenleft}{\isasymforall}oid\ oper\ ref{\isachardot}\ {\isacharparenleft}oid{\isacharcomma}\ oper{\isacharparenright}\ {\isasymin}\ set\ ops\ {\isasymand}\ ref\ {\isasymin}\ deps\ oper\ {\isasymlongrightarrow}\ ref\ {\isacharless}\ oid{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}
 \end{isabelle}
@@ -141,7 +142,8 @@ Thus, to check whether a CRDT satisfies its sequential specification, we can pro
 
 \begin{isabelle}
 \isacommand{inductive}\isamarkupfalse%
-\ crdt{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharprime}oper{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oper\ {\isasymRightarrow}\ {\isacharprime}oid\ set{\isacharparenright}\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ crdt{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid{\isacharcolon}{\isacharcolon}{\isacharbraceleft}linorder{\isacharbraceright}\ {\isasymtimes}\ {\isacharprime}oper{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oper\ {\isasymRightarrow}\ {\isacharprime}oid\ set{\isacharparenright}\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\isanewline
+\isakeyword{where}\isanewline
 \ \ {\isachardoublequoteopen}crdt{\isacharunderscore}ops\ {\isacharbrackleft}{\isacharbrackright}\ deps{\isachardoublequoteclose}\ {\isacharbar}\isanewline
 \ \ {\isachardoublequoteopen}{\isasymlbrakk}crdt{\isacharunderscore}ops\ xs\ deps{\isacharsemicolon}\isanewline
 \ \ \ \ oid\ {\isasymnotin}\ set\ {\isacharparenleft}map\ fst\ xs{\isacharparenright}{\isacharsemicolon}\isanewline
@@ -162,7 +164,8 @@ In section~\ref{sec:insert-alt-equiv} we prove that the two definitions are in f
 
 \begin{isabelle}
 \isacommand{fun}\isamarkupfalse%
-\ insert{\isacharunderscore}spec\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ {\isasymRightarrow}\ {\isacharprime}oid\ list{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ insert{\isacharunderscore}spec\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ {\isasymRightarrow}\ {\isacharprime}oid\ list{\isachardoublequoteclose}\isanewline
+\isakeyword{where}\isanewline
 \ \ {\isachardoublequoteopen}insert{\isacharunderscore}spec\ xs\ \ \ \ \ {\isacharparenleft}oid{\isacharcomma}\ None{\isacharparenright}\ \ \ \ \ {\isacharequal}\ oid{\isacharhash}xs{\isachardoublequoteclose}\ {\isacharbar}\isanewline
 \ \ {\isachardoublequoteopen}insert{\isacharunderscore}spec\ {\isacharbrackleft}{\isacharbrackright}\ \ \ \ \ {\isacharparenleft}oid{\isacharcomma}\ {\isacharunderscore}{\isacharparenright}\ \ \ \ \ \ \ \ {\isacharequal}\ {\isacharbrackleft}{\isacharbrackright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
 \ \ {\isachardoublequoteopen}insert{\isacharunderscore}spec\ {\isacharparenleft}x{\isacharhash}xs{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}\ {\isacharequal}\isanewline
@@ -170,7 +173,8 @@ In section~\ref{sec:insert-alt-equiv} we prove that the two definitions are in f
 \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ else\ x\ {\isacharhash}\ {\isacharparenleft}insert{\isacharunderscore}spec\ xs\ {\isacharparenleft}oid{\isacharcomma}\ Some\ ref{\isacharparenright}{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
 \isanewline
 \isacommand{fun}\isamarkupfalse%
-\ insert{\isacharunderscore}alt\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ insert{\isacharunderscore}alt\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid{\isacharparenright}\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\isanewline
+\isakeyword{where}\isanewline
 \ \ {\isachardoublequoteopen}insert{\isacharunderscore}alt\ list{\isacharunderscore}rel\ {\isacharparenleft}oid{\isacharcomma}\ ref{\isacharparenright}\ {\isacharequal}\ {\isacharparenleft}\isanewline
 \ \ \ \ \ \ if\ {\isasymexists}n{\isachardot}\ {\isacharparenleft}ref{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ list{\isacharunderscore}rel\isanewline
 \ \ \ \ \ \ then\ {\isacharbraceleft}{\isacharparenleft}p{\isacharcomma}\ n{\isacharparenright}\ {\isasymin}\ list{\isacharunderscore}rel{\isachardot}\ p\ {\isasymnoteq}\ ref{\isacharbraceright}\ {\isasymunion}\ {\isacharbraceleft}{\isacharparenleft}ref{\isacharcomma}\ Some\ oid{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\isanewline
@@ -210,7 +214,8 @@ This relation contains (\isa{id}, \isa{None}) if \isa{id} is the last element of
 
 \begin{isabelle}
 \isacommand{fun}\isamarkupfalse%
-\ succ{\isacharunderscore}rel\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ succ{\isacharunderscore}rel\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\isanewline
+\isakeyword{where}\isanewline
 \ \ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharbrackleft}{\isacharbrackright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharbraceright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
 \ \ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharbrackleft}head{\isacharbrackright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}head{\isacharcomma}\ None{\isacharparenright}{\isacharbraceright}{\isachardoublequoteclose}\ {\isacharbar}\isanewline
 \ \ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}head{\isacharhash}x{\isacharhash}xs{\isacharparenright}\ {\isacharequal}\ {\isacharbraceleft}{\isacharparenleft}head{\isacharcomma}\ Some\ x{\isacharparenright}{\isacharbraceright}\ {\isasymunion}\ succ{\isacharunderscore}rel\ {\isacharparenleft}x{\isacharhash}xs{\isacharparenright}{\isachardoublequoteclose}%
@@ -222,7 +227,8 @@ To match the paper, it uses a distinct head element to refer to the beginning of
 
 \begin{isabelle}
 \isacommand{definition}\isamarkupfalse%
-\ interp{\isacharunderscore}alt\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ interp{\isacharunderscore}alt\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharprime}oid\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharprime}oid\ option{\isacharparenright}\ set{\isachardoublequoteclose}\isanewline
+\isakeyword{where}\isanewline
 \ \ {\isachardoublequoteopen}interp{\isacharunderscore}alt\ head\ ops\ {\isasymequiv}\ foldl\ insert{\isacharunderscore}alt\ {\isacharbraceleft}{\isacharparenleft}head{\isacharcomma}\ None{\isacharparenright}{\isacharbraceright}\isanewline
 \ \ \ \ \ {\isacharparenleft}map\ {\isacharparenleft}{\isasymlambda}x{\isachardot}\ case\ x\ of\isanewline
 \ \ \ \ \ \ \ \ \ \ \ \ {\isacharparenleft}oid{\isacharcomma}\ None{\isacharparenright}\ \ \ \ \ {\isasymRightarrow}\ {\isacharparenleft}oid{\isacharcomma}\ head{\isacharparenright}\ {\isacharbar}\isanewline
@@ -379,7 +385,8 @@ Deleting a list element removes it from \isa{vals}.
 \ \ {\isachardoublequoteopen}interp{\isacharunderscore}op\ {\isacharparenleft}list{\isacharcomma}\ vals{\isacharparenright}\ {\isacharparenleft}oid{\isacharcomma}\ Delete\ ref\ \ \ \ {\isacharparenright}\ {\isacharequal}\ {\isacharparenleft}list{\isacharcomma}\ vals{\isacharparenleft}ref\ {\isacharcolon}{\isacharequal}\ None{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
 \isanewline
 \isacommand{definition}\isamarkupfalse%
-\ interp{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid{\isacharcomma}\ {\isacharprime}val{\isacharparenright}\ list{\isacharunderscore}op{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ list\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymrightharpoonup}\ {\isacharprime}val{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+\ interp{\isacharunderscore}ops\ {\isacharcolon}{\isacharcolon}\ {\isachardoublequoteopen}{\isacharparenleft}{\isacharprime}oid\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid{\isacharcomma}\ {\isacharprime}val{\isacharparenright}\ list{\isacharunderscore}op{\isacharparenright}\ list\ {\isasymRightarrow}\ {\isacharparenleft}{\isacharprime}oid\ list\ {\isasymtimes}\ {\isacharparenleft}{\isacharprime}oid\ {\isasymrightharpoonup}\ {\isacharprime}val{\isacharparenright}{\isacharparenright}{\isachardoublequoteclose}\isanewline
+\isakeyword{where}\isanewline
 \ \ {\isachardoublequoteopen}interp{\isacharunderscore}ops\ ops\ {\isasymequiv}\ foldl\ interp{\isacharunderscore}op\ {\isacharparenleft}{\isacharbrackleft}{\isacharbrackright}{\isacharcomma}\ Map{\isachardot}empty{\isacharparenright}\ ops{\isachardoublequoteclose}%
 \end{isabelle}
 
@@ -430,7 +437,8 @@ $\mathcal{A}_\textsf{strong}$ uses the visibility relation $\le_\textsf{vis}$ to
 \ inserted{\isacharunderscore}but{\isacharunderscore}not{\isacharunderscore}deleted{\isacharcolon}\isanewline
 \ \ \isakeyword{assumes}\ {\isachardoublequoteopen}list{\isacharunderscore}ops\ ops{\isachardoublequoteclose}\isanewline
 \ \ \ \ \isakeyword{and}\ {\isachardoublequoteopen}interp{\isacharunderscore}ops\ ops\ {\isacharequal}\ {\isacharparenleft}list{\isacharcomma}\ vals{\isacharparenright}{\isachardoublequoteclose}\isanewline
-\ \ \isakeyword{shows}\ {\isachardoublequoteopen}a\ {\isasymin}\ dom\ {\isacharparenleft}vals{\isacharparenright}\ {\isasymlongleftrightarrow}\ {\isacharparenleft}{\isasymexists}ref\ val{\isachardot}\ {\isacharparenleft}a{\isacharcomma}\ Insert\ ref\ val{\isacharparenright}\ {\isasymin}\ set\ ops{\isacharparenright}\ {\isasymand}\ {\isacharparenleft}{\isasymnexists}i{\isachardot}\ {\isacharparenleft}i{\isacharcomma}\ Delete\ a{\isacharparenright}\ {\isasymin}\ set\ ops{\isacharparenright}{\isachardoublequoteclose}
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}a\ {\isasymin}\ dom\ {\isacharparenleft}vals{\isacharparenright}\ {\isasymlongleftrightarrow}\ {\isacharparenleft}{\isasymexists}ref\ val{\isachardot}\ {\isacharparenleft}a{\isacharcomma}\ Insert\ ref\ val{\isacharparenright}\ {\isasymin}\ set\ ops{\isacharparenright}\ {\isasymand}\isanewline
+\hspace{47mm}{\isacharparenleft}{\isasymnexists}i{\isachardot}\ {\isacharparenleft}i{\isacharcomma}\ Delete\ a{\isacharparenright}\ {\isasymin}\ set\ ops{\isacharparenright}{\isachardoublequoteclose}
 \end{isabelle}
 
 Part 1(b) states that whenever the list is observed, the order of list elements is consistent with the global list order.

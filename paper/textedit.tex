@@ -21,11 +21,11 @@ When the concurrent edits are merged, the algorithm randomly interleaves the two
   \node [box] (left)  at (0,2) {\texttt{Hello Alice!}};
   \node [box] (right) at (6,2) {\texttt{Hello Charlie!}};
   \node [box] (merge) at (3,0) {\texttt{Hello Al Ciharcliee!}};
-  \draw (start) to node [left,inner xsep=10pt]  {Insert ``~Alice'' between ``o'' and ``!''} (left);
-  \draw (start) to node [right,inner xsep=10pt] {Insert ``~Charlie'' between ``o'' and ``!''} (right);
+  \draw (start) to node [left,inner xsep=10pt,font=\footnotesize]  {Insert ``~Alice'' between ``o'' and ``!''} (left);
+  \draw (start) to node [right,inner xsep=10pt,font=\footnotesize] {Insert ``~Charlie'' between ``o'' and ``!''} (right);
   \draw (left)  -- (merge);
   \draw (right) -- (merge);
-  \node [text width=3cm,text badly centered] at (3,1) {Merge concurrent edits};
+  \node [text width=3cm,text badly centered,font=\footnotesize] at (3,1) {Merge concurrent edits};
 \end{tikzpicture}
 \caption{Two concurrent insertions at the same position are interleaved.}\label{fig:bad-merge}
 \end{figure}
@@ -79,7 +79,7 @@ This implies that the ID of the operation inserting ``l'' must be greater than t
 % ``C'', ``A'', ``l'', ``h''
 % ``C'', ``A'', ``h'', ``l''
 % ``C'', ``h'', ``A'', ``l''
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{1pt}
 \begin{tabular}{ll|ll|ll}
 $\mathit{id}_1, \mathsf{InsertAfter}(\mathit{id}_0), \text{``A''}$ & $\rightarrow$ \texttt{A} &
 $\mathit{id}_1, \mathsf{InsertAfter}(\mathit{id}_0), \text{``A''}$ & $\rightarrow$ \texttt{A} &

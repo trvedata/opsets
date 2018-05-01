@@ -43,22 +43,25 @@ An OpSet for these datatypes may contain six types of operation:
 \noindent
 \renewcommand\algorithmicindent{10pt}
 \begin{minipage}[t]{0.5\textwidth}
-\begin{algorithmic}
+\begin{algorithmic}[0]
     \Function{setMapKey}{$O, \mathit{map}, \mathit{key}, \mathit{val}$}
     \State $(E,\, L) = \llbracket O \rrbracket$
     \State $(\mathit{id}_1, \mathit{op}_1) = \Call{valueID}{O, \mathit{val}}$
-    \State $O' = (\textbf{if } \mathit{op}_1 = \bot \textbf{ then } O \textbf{ else } 
-        O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
-    \State $\mathit{id}_2 = \mathrm{newID}(O')$
+    \If{$\mathit{op}_1 \neq \bot$}
+    \State $O := O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
+    \EndIf
+    \State $\mathit{id}_2 = \mathrm{newID}(O)$
     \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,v.\; (\mathit{id}, \mathit{map}, \mathit{key}, v) \in E \}$
-    \State \Return $O' \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{map}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\}$
+    \State \Return $O \;\cup$
+    \State $\quad\big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{map}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\}$
     \EndFunction\Statex
 
     \Function{removeMapKey}{$O, \mathit{map}, \mathit{key}$}
     \State $(E,\, L) = \llbracket O \rrbracket$
     \State $\mathit{id}_1 = \mathrm{newID}(O)$
     \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,v.\; (\mathit{id}, \mathit{map}, \mathit{key}, v) \in E \}$
-    \State \Return $O \;\cup\; \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{map}, \mathit{key}, \mathit{prev})) \big\}$
+    \State \Return $O \;\cup$
+    \State $\quad\big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{map}, \mathit{key}, \mathit{prev})) \big\}$
     \EndFunction\Statex
 
     \Function{valueID}{$O, \mathit{val}$}
@@ -75,29 +78,36 @@ An OpSet for these datatypes may contain six types of operation:
 \end{algorithmic}
 \end{minipage}%
 \begin{minipage}[t]{0.5\textwidth}
-\begin{algorithmic}
+\begin{algorithmic}[0]
     \Function{setListIndex}{$O, \mathit{list}, \mathit{index}, \mathit{val}$}
     \State $(E,\, L) = \llbracket O \rrbracket$
     \State $(\mathit{id}_1, \mathit{op}_1) = \Call{valueID}{O, \mathit{val}}$
-    \State $O' = (\textbf{if } \mathit{op}_1 = \bot \textbf{ then } O \textbf{ else } 
-        O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
-    \State $\mathit{id}_2 = \mathrm{newID}(O')$
+    \If{$\mathit{op}_1 \neq \bot$}
+    \State $O := O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
+    \EndIf
+    \State $\mathit{id}_2 = \mathrm{newID}(O)$
     \State $\mathit{key} = \mathrm{idxKey}_{E,\, L}(\mathit{list}, \mathit{list}, \mathit{index})$
     \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,v.\; (\mathit{id}, \mathit{list}, \mathit{key}, v) \in E \}$
-    \State \Return $O' \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{list}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\}$
+    \State \Return $O \;\cup$
+    \State $\quad\big\{ (\mathit{id}_2,\, \mathsf{Assign}(\mathit{list}, \mathit{key}, \mathit{id}_1, \mathit{prev})) \big\}$
     \EndFunction\Statex
 
-    \Function{insertListIndex}{$O, \mathit{list}, \mathit{index}, \mathit{val}$}
+    \Function{insListIndex}{$O, \mathit{list}, \mathit{index}, \mathit{val}$}
     \State $(E,\, L) = \llbracket O \rrbracket$
     \State $(\mathit{id}_1, \mathit{op}_1) = \Call{valueID}{O, \mathit{val}}$
-    \State $O' = (\textbf{if } \mathit{op}_1 = \bot \textbf{ then } O \textbf{ else } 
-        O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
-    \State $\mathit{id}_2 = \mathrm{newID}(O')$
-    \State $\mathit{ref} = (\textbf{if } \mathit{index}=0 \textbf{ then } \mathit{list}$
-    \State $\hphantom{\mathit{ref} = (}\textbf{else } \mathrm{idxKey}_{E,\, L}(\mathit{list}, \mathit{list}, \mathit{index} - 1))$
-    \State $O'' = O' \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{InsertAfter}(\mathit{ref})) \big\}$
-    \State $\mathit{id}_3 = \mathrm{newID}(O'')$
-    \State \Return $O'' \;\cup\; \big\{ (\mathit{id}_3,\, \mathsf{Assign}(\mathit{list}, \mathit{id}_2, \mathit{id}_1, \emptyset)) \big\}$
+    \If{$\mathit{op}_1 \neq \bot$}
+    \State $O := O \;\cup\; \big\{ (\mathit{id}_1, \mathit{op}_1) \big\})$
+    \EndIf
+    \State $\mathit{id}_2 = \mathrm{newID}(O)$
+    \If{$\mathit{index}=0$}
+    \State $\mathit{ref} = \mathit{list}$
+    \Else
+    \State $\mathit{ref} = \mathrm{idxKey}_{E,\, L}(\mathit{list}, \mathit{list}, \mathit{index} - 1)$
+    \EndIf
+    \State $O := O \;\cup\; \big\{ (\mathit{id}_2,\, \mathsf{InsertAfter}(\mathit{ref})) \big\}$
+    \State $\mathit{id}_3 = \mathrm{newID}(O)$
+    \State \Return $O \;\cup$
+    \State $\quad\big\{ (\mathit{id}_3,\, \mathsf{Assign}(\mathit{list}, \mathit{id}_2, \mathit{id}_1, \emptyset)) \big\}$
     \EndFunction\Statex
 
     \Function{removeListIndex}{$O, \mathit{list}, \mathit{index}$}
@@ -105,7 +115,8 @@ An OpSet for these datatypes may contain six types of operation:
     \State $\mathit{id}_1 = \mathrm{newID}(O)$
     \State $\mathit{key} = \mathrm{idxKey}_{E,\, L}(\mathit{list}, \mathit{list}, \mathit{index})$
     \State $\mathit{prev} = \{ \mathit{id} \mid \exists\,v.\; (\mathit{id}, \mathit{list}, \mathit{key}, v) \in E \}$
-    \State \Return $O \;\cup\; \big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{list}, \mathit{key}, \mathit{prev})) \big\}$
+    \State \Return $O \;\cup$
+    \State $\quad\big\{ (\mathit{id}_1,\, \mathsf{Remove}(\mathit{list}, \mathit{key}, \mathit{prev})) \big\}$
     \EndFunction
 \end{algorithmic}
 \end{minipage}
@@ -125,7 +136,7 @@ A new ID $\mathit{id}_2$ is generated for the $\mathsf{Assign}$ operation, in wh
 Finally, the function returns the OpSet with the $\mathsf{Assign}$ operation included.
 The other definitions follow a similar pattern.
 
-The list manipulation functions \textsc{setListIndex}, \textsc{insertListIndex} and \textsc{removeListIndex} take a numeric index as argument to identify the position in the list being edited.
+The list manipulation functions \textsc{setListIndex}, \textsc{insListIndex} and \textsc{removeListIndex} take a numeric index as argument to identify the position in the list being edited.
 The numeric index is translated into the ID of a list element using the function $\mathrm{idxKey}_{E,\, L}()$, which is defined in \S~\ref{sec:datatypes-interp}.
 
 \subsection{Interpreting Operations}\label{sec:datatypes-interp}
@@ -146,16 +157,17 @@ To encode the current state of map and list data structures we use a pair of rel
 Initially, both relations are empty; that is, we have $\llbracket\emptyset\rrbracket = \mathit{InitialState} = (\emptyset,\, \emptyset)$.
 We can then define the interpretation of the six operation types as follows:
 \begin{align*}
-    \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{Assign}(\mathit{obj}, k, v, \mathit{prev})) \big] &\;=\; \Big(
-    \big\{ (\mathit{id}', \mathit{obj}', k', v') \in E \mid
+    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{Assign}(\mathit{obj}, k, v, \mathit{prev})) \big] \;=\\
+    &\Big( \big\{ (\mathit{id}', \mathit{obj}', k', v') \in E \mid
     \mathit{id}' \notin \mathit{prev} \big\} \;\cup\;
     \big\{ (\mathit{id}, \mathit{obj}, k, v) \big\},\; L \Big) \\[5pt]
     %%%%%%%%%%
-    \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{Remove}(\mathit{obj}, k, \mathit{prev})) \big] &\;=\; \Big(
-    \big\{ (\mathit{id}', \mathit{obj}', k', v') \in E \mid
+    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{Remove}(\mathit{obj}, k, \mathit{prev})) \big] \;=\\
+    &\Big( \big\{ (\mathit{id}', \mathit{obj}', k', v') \in E \mid
     \mathit{id}' \notin \mathit{prev} \big\},\; L \Big) \\[5pt]
     %%%%%%%%%%
-    \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{InsertAfter}(r)) \big] &\;=\; \left\{
+    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{InsertAfter}(r)) \big] \;=\\
+    &\left\{
         \arraycolsep=0pt \def\arraystretch{1.2}
         \begin{array}{ll}
             (E,\, L) & \text{if } \nexists\,n.\; (r,\, n) \in L\\[3pt]
@@ -165,10 +177,11 @@ We can then define the interpretation of the six operation types as follows:
             & \text{if } \exists\,n.\; (r,\,n) \in L
         \end{array} \right. \\[5pt]
     %%%%%%%%%%
-    \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{MakeList}) \big] &\;=\; \Big(
-    E,\; L \;\cup\; \big\{(\mathit{id},\, \bot)\big\}\Big) \\[5pt]
+    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{MakeList}) \big] \hspace{21.1pt}=\;
+    \Big( E,\; L \;\cup\; \big\{(\mathit{id},\, \bot)\big\}\Big) \\[1pt]
     %%%%%%%%%%
-    \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{MakeMap}) \big] &\;=\; \mathit{interp}\big[(E,\, L),\, (\mathit{id},\, \mathsf{MakeVal}(\mathit{val})) \big] \;=\; (E,\; L)
+    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{MakeMap}) \big] \hspace{17.6pt}=\; (E,\; L) \\[5pt]
+    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{MakeVal}(\mathit{val})) \big] \;=\; (E,\; L)
 \end{align*}
 
 The interpretation of $\mathsf{Assign}$ and $\mathsf{Remove}$ updates only $E$ and leaves $L$ unchanged; conversely, the interpretation of $\mathsf{InsertAfter}$ and $\mathsf{MakeList}$ updates only $L$.
@@ -182,12 +195,12 @@ Thus, the new list element $\mathit{id}$ is inserted between $r$ and $n$.
 \begin{figure}
 \centering
 \begin{tikzpicture}
-  \tikzstyle{every node}=[anchor=base,minimum width=7mm,text height=9pt,text depth=2pt]
-  \node [anchor=west] at (-9,2) {Before:};
-  \node [anchor=west] at (-9,0) {$L = \{ (2, 13),\; (13, 5),\; (5, 23),\; (23, \bot) \}$};
-  \node [anchor=west] at (0,2) {After adding $(25,\, \mathsf{InsertAfter}(13))$ to OpSet:};
-  \node [anchor=west] at (0,-1) {$L' = L \;-\; \{(13, 5)\} \;\cup\; \{(13, 25),\; (25, 5)\}$};
-    \matrix [column sep={7mm,between origins},nodes=draw,matrix anchor=west] at (-9,1) {
+  \tikzstyle{every node}=[anchor=base,minimum width=6mm,text height=7pt,text depth=2pt,font=\footnotesize]
+  \node [anchor=west] at (-7,1.7) {Before:};
+  \node [anchor=west] at (-7,0.3) {$L = \{ (2, 13),\; (13, 5),\; (5, 23),\; (23, \bot) \}$};
+  \node [anchor=west] at (0,1.7) {After adding $(25,\, \mathsf{InsertAfter}(13))$ to OpSet:};
+  \node [anchor=west] at (0,-0.7) {$L' = L \;-\; \{(13, 5)\} \;\cup\; \{(13, 25),\; (25, 5)\}$};
+    \matrix [column sep={6mm,between origins},nodes=draw,matrix anchor=west] at (-7,1) {
     \node (l1a) {2};  & \node (l1b) {13}; &&
     \node (l2a) {13}; & \node (l2b) {5};  &&
     \node (l3a) {5};  & \node (l3b) {23}; &&
@@ -196,18 +209,18 @@ Thus, the new list element $\mathit{id}$ is inserted between $r$ and $n$.
   \draw [->] (l1b) -- (l2a);
   \draw [->] (l2b) -- (l3a);
   \draw [->] (l3b) -- (l4a);
-  \matrix [column sep={7mm,between origins},nodes=draw,matrix anchor=west] at (1,0) {
+  \matrix [column sep={6mm,between origins},nodes=draw,matrix anchor=west] at (1,0) {
     \node (n1) {13}; & \node (n2) {25}; &&
     \node (n3) {25}; & \node (n4) {5}; \\
   };
-  \matrix [column sep={7mm,between origins},nodes=draw,matrix anchor=west] at (0,1) {
+  \matrix [column sep={6mm,between origins},nodes=draw,matrix anchor=west] at (0,1) {
     \node (r1a) {2};  & \node (r1b) {13}; &&&&&
     \node (r3a) {5};  & \node (r3b) {23}; &&
     \node (r4a) [draw=none] {None}; \\
   };
-  \draw [->] (r1b.east) .. controls (2.7,1) and (0,0) .. (n1.west);
+  \draw [->] (r1b.east) .. controls (2.7,1) and (-0.3,0) .. (n1.west);
   \draw [->] (n2) -- (n3);
-  \draw [->] (n4.east) .. controls (5.8,0) and (3.2,1) .. (r3a.west);
+  \draw [->] (n4.east) .. controls (5.6,0) and (2.3,1) .. (r3a.west);
   \draw [->] (r3b) -- (r4a);
 \end{tikzpicture}
 \caption{Illustration of the interpretation of an $\mathsf{InsertAfter}$ operation.}\label{fig:list-insert}
@@ -221,14 +234,13 @@ On this basis we can now define the $\mathrm{idxKey}()$ function that is used in
 \[ \mathrm{idxKey}_{E,\, L}(\mathit{obj}, \mathit{key}, i) \;=\; \left\{
    \arraycolsep=2pt \def\arraystretch{1.3}
    \begin{array}{llllll}
-       \mathrm{idxKey}_{E,\, L}(\mathit{obj}, n, i-1) &
-       \quad\text{if }\; i > 0 & \wedge & (\mathit{key}, n) \in L & \wedge &
+       \mathrm{idxKey}_{E,\, L}(\mathit{obj}, n, i-1) \\
+       \quad\text{if }\; i > 0 \wedge (\mathit{key}, n) \in L & \wedge &
        \exists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in E \\
-       \mathrm{idxKey}_{E,\, L}(\mathit{obj}, n, i) &
-       \quad\text{if }\; && (\mathit{key}, n) \in L & \wedge &
+       \mathrm{idxKey}_{E,\, L}(\mathit{obj}, n, i) \\
+       \quad \hphantom{i > 0 \;\wedge\;} \text{if }\; (\mathit{key}, n) \in L & \wedge &
        \nexists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in E \\
-       \mathit{key} &
-       \quad\text{if }\; i = 0 & \wedge &&&
+       \mathit{key} \hspace{29.5pt}\text{if }\; i = 0 & \wedge &
        \exists\,\mathit{id}, \mathit{val}.\; (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in E \\
    \end{array} \right. \]
 $\mathit{key}$ is initially the ID of the $\mathsf{MakeList}$ operation that created the list.
