@@ -137,7 +137,7 @@ We then review a selection of text editing CRDTs from the literature, prove that
 
 \item In \S~\ref{sec:tree} we show how the OpSet abstraction can be used to develop new replicated datatypes. In particular we describe, for the first time, how an atomic move operation can be defined for a tree CRDT.
 This operation can be used to move a subtree to a new position within the tree, or to rename a key in a map, or to reorder items in a list.
-The OpSets approach enables a simple definition of this operation that had previously been thought impossible to implement without locking \cite{Najafzadeh:2017vk}.
+The OpSets approach enables a simple definition of this operation that had previously been thought impossible to implement without locking \cite{Najafzadeh:2017vk,Najafzadeh:2018bw}.
 
 \item Using the Isabelle/HOL proof assistant~\cite{DBLP:conf/tphol/WenzelPN08} we formalise the OpSets approach, producing mechanised proofs of correctness of the main claims in this paper.
 In particular, we prove that our list specification is strictly stronger than the recent specification of collaborative text editing by Attiya et al. \cite{Attiya:2016kh}.

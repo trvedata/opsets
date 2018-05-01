@@ -49,7 +49,7 @@ If $\mathit{val}$ does not currently exist in the tree (e.g.\ because it has jus
 
 \subsection{Discussion: Subtree Move Conflicts}
 
-In a replicated tree datatype with move operations, concurrent moves may conflict in various ways \cite{Najafzadeh:2017vk,AhmedNacer:2012us,Tao:2015gd}.
+In a replicated tree datatype with move operations, concurrent moves may conflict in various ways \cite{Najafzadeh:2018bw,AhmedNacer:2012us,Tao:2015gd}.
 For example, two different operations may concurrently move the same object to different positions; we resolve this conflict by letting the operation with the greatest identifier ``win''.
 Intuitively, we can think of the location of an object in the tree as being determined by a last-writer-wins register, and a move operation overwrites that register.
 
