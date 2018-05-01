@@ -1,4 +1,10 @@
 \documentclass[a4paper,english]{lipics-v2018}
+
+\newif\ifarxiv
+% Use \arxivtrue to build extended version to submit to arXiv (with appendices);
+% use \arxivfalse to build version for conference submission (without appendices).
+\arxivtrue
+
 \usepackage{microtype}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -35,21 +41,41 @@
 
 \newtheorem{proposition}{Proposition}
 
-\title{OpSets: Sequential Specifications for Replicated Datatypes\footnote{An extended version of the paper is available at \url{https://TODO}}}
-%\titlerunning{}
+\ifarxiv
+  \title{OpSets: Sequential Specifications for Replicated Datatypes (Extended Version)}
+  \titlerunning{OpSets: Sequential Specifications for Replicated Datatypes}
+\else
+  \title{OpSets: Sequential Specifications for Replicated Datatypes}
+\fi
 
 %% Please provide for each author the \author and \affil macro, even when authors have the same affiliation, i.e. for each author there needs to be the  \author and \affil macros
-\author{Martin Kleppmann}{Computer Laboratory, University of Cambridge, UK}{mk428@cl.cam.ac.uk}{}{}
-\author{Victor B.\ F.\ Gomes}{Computer Laboratory, University of Cambridge, UK}{vb358@cl.cam.ac.uk}{}{}
-\author{Dominic P.\ Mulligan}{Security Research Group, Arm Research, Cambridge, UK}{Dominic.Mulligan@arm.com}{}{}
-\author{Alastair R.\ Beresford}{Computer Laboratory, University of Cambridge, UK}{arb33@cl.cam.ac.uk}{}{}
+\author{Martin Kleppmann}{Computer Laboratory, University of Cambridge, UK}{mk428@cl.cam.ac.uk}{https://orcid.org/0000-0001-7252-6958}{}
+\author{Victor B.\ F.\ Gomes}{Computer Laboratory, University of Cambridge, UK}{vb358@cl.cam.ac.uk}{https://orcid.org/0000-0002-2954-4648}{}
+\author{Dominic P.\ Mulligan}{Security Research Group, Arm Research, Cambridge, UK}{Dominic.Mulligan@arm.com}{https://orcid.org/0000-0003-4643-3541}{}
+\author{Alastair R.\ Beresford}{Computer Laboratory, University of Cambridge, UK}{arb33@cl.cam.ac.uk}{https://orcid.org/0000-0003-0818-6535}{}
 \authorrunning{M.\ Kleppmann, V.\,B.\,F.\ Gomes, D.\,P.\ Mulligan, and A.\,R.\ Beresford} %mandatory. First: Use abbreviated first/middle names. Second (only in severe cases): Use first author plus 'et. al.'
 
 \Copyright{Martin Kleppmann, Victor B.\ F.\ Gomes, Dominic P.\ Mulligan, and Alastair R.\ Beresford}%mandatory, please use full first names. LIPIcs license is "CC-BY";  http://creativecommons.org/licenses/by/3.0/
 
-\subjclass{Dummy classification -- please refer to \url{http://www.acm.org/about/class/ccs98-html}}% mandatory: Please choose ACM 1998 classifications from http://www.acm.org/about/class/ccs98-html . E.g., cite as "F.1.1 Models of Computation". 
-\keywords{Dummy keyword -- please provide 1--5 keywords}% mandatory: Please provide 1-5 keywords
-% Author macros::end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subjclass{%
+\ccsdesc[500]{Networks~Protocol testing and verification};
+\ccsdesc[500]{Networks~Formal specifications};
+\ccsdesc[300]{Theory of computation~Distributed algorithms};
+\ccsdesc[300]{Computer systems organization~Distributed architectures};
+\ccsdesc[300]{Software and its engineering~Distributed systems organizing principles};
+\ccsdesc[300]{Software and its engineering~Formal software verification}
+}
+
+%\subjclass{Dummy classification -- please refer to \url{http://www.acm.org/about/class/ccs98-html}}% mandatory: Please choose ACM 1998 classifications from http://www.acm.org/about/class/ccs98-html . E.g., cite as "F.1.1 Models of Computation". 
+\keywords{replication; conflict-free replicated datatypes; distributed systems; specification; formal verification}
+
+% On the arXiv version, hide line numbers and the LIPIcs branding
+\ifarxiv
+  \hideLIPIcs
+  \nolinenumbers
+\else
+  \relatedversion{An extended version is available at \url{https://TODO}}
+\fi
 
 %Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \EventEditors{}
@@ -150,12 +176,12 @@ the EPSRC ``REMS: Rigorous Engineering for Mainstream Systems'' programme grant 
 the EPSRC ``Interdisciplinary Centre for Finding, Understanding and Countering Crime in the Cloud'' grant (EP/M020320).
 We thank Nathan Chong, Peter Sewell, and KC Sivaramakrishnan for their helpful feedback on this paper.
 
-\newpage
 \bibliographystyle{plainurl}
 \bibliography{references}{}
 
+\ifarxiv
 \newpage
 \appendix
 \input{appendix}
-
+\fi
 \end{document}
