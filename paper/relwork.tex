@@ -1,25 +1,42 @@
 \section{Related Work}\label{sec:relwork}
 
+\subsection{Interpretation of Operation Sequences}\label{sec:op-sequences}
+
+The general idea of establishing a total order of operations, and executing them in that order, appears in many areas of computing:
+for example, in the state machine approach to replication \cite{Schneider:1990vy},
+the event sourcing approach to data modelling \cite{Vernon:2013ww},
+write-ahead logs for crash recovery \cite{Mohan:1992fe},
+serializable transactions \cite{Davidson:1985hv},
+and scalable multicore data structures \cite{BoydWickizer:2014uz}.
+However, beneath the superficial similarity of these approaches there are important differences that need to be distinguished.
+
+As discussed in \S~\ref{sec:order-change}, many of these systems rely on the property that after some operation is executed, all subsequent operations will appear \emph{after} it in the total order.
+In other words, the operation sequence is an append-only log, and new operations never need to be inserted ahead of an existing operation in the total order.
+This is a very strong property: in the context of a distributed system, it requires an atomic broadcast (or total order broadcast) protocol \cite{Defago:2004ji}, which is equivalent to solving distributed consensus \cite{Chandra:1996cp}.
+This class of protocols requires communication with a quorum of nodes in order to make progress \cite{Howard:2016tz}, and it cannot guarantee progress in a fully asynchronous setting \cite{Fischer:1985tt}.
+
+By contrast, the sequential OpSet interpretation of \S~\ref{sec:op-serial} does not require atomic broadcast because it allows operations to be added to the OpSet in any order, and it assigns operation IDs without any coordination.
+Few systems use this approach; the most closely related prior work are the Bayou system \cite{Terry:1995dn}, which executes tentative transactions deterministically in timestamp order, and Burckhardt's \emph{standard conflict resolution} \cite[\S~4.3.3]{Burckhardt:2014hy}.
+Both of these share the OpSet approach's characteristic that operations with a higher ID need to be undone and re-applied when a new operation with a lower ID is received.
+
+Our contribution in this paper is to formulate the OpSet approach more generally as a tool for specifying and reasoning about complex replicated data structures, such as lists and trees.
+Our work is the first to use this approach in mechanised proofs, in which we show that a non-OpSet list CRDT (RGA) satisfies an OpSet-based specification, and prove the absence of the interleaving anomaly in Figure~\ref{fig:bad-merge}.
+
+Baquero et al.~\cite{Baquero:2014ed} and Grishchenko~\cite{Grishchenko:2014eh} have proposed representing CRDTs in terms of a partially-ordered log of operations, where the partial order captures the causal relationships between operations.
+The OpSet approach can be seen as a variant of this idea, in which we define the total order on identifiers to be a linear extension of the partial order.
+
+\subsection{Specification and Verification of Replicated Datatypes}
+
 Algorithms for collaboratively editing a shared data structure have been the topic of active research for approximately 30 years, under the headings of Operational Transformation \cite{Ellis:1989ue,Ressel:1996wx,Sun:1998vf,Oster:2006tr} and CRDTs \cite{Shapiro:2011wy,Shapiro:2011un}.
 However, throughout this time, the exact consistency properties provided by the algorithms have been somewhat unclear.
 For example, Sun et al.~\cite{Sun:1998un} identified three desirable properties that they articulated informally: \emph{convergence}, \emph{causality preservation}, and \emph{intention preservation}.
 While the definition of the first two properties is fairly unambiguous, the definition of ``intention preservation'' leaves much more room for interpretation.
-Efforts to formally specify and verify the semantics of replicated datatypes have replaced such informal statements with precise definitions of consistency properties.
-
-\subsection{Specification and Verification}
+Efforts to formally specify and verify the semantics of replicated datatypes have replaced such informal statements with precise consistency properties.
 
 Burckhardt et al.~\cite{Burckhardt:2014ft} provide a wide-ranging formal account of CRDTs, covering their specification, verification, and optimality, with the semantics of an operation on a replicated datatype given as a function of the operation, $o$, and a \emph{operation context}---the set of operations visible to a node at the time that $o$ was received.
 Our OpSets can be seen as an explicitly executable variation on this idea: nodes record all operations that they have ever received in a monotonically growing set, and the interpretation function builds the result ``bottom up'' in a fold-like operation.
 In contrast to Burckhardt et al., who focus on applying their techniques to set and counter datatypes, we apply our approach to the specification of lists, maps, and trees, using our OpSets as a tool for designing new replicated datatypes---including those previously thought impossible, such as our replicated tree with atomic move.
-Gotsman et al.~\cite{DBLP:conf/popl/GotsmanYFNS16} extend Burckhardt et al's formalism to reason about hybrid consistency models, providing a modular proof rule inspired by permissions-based logics to enforce an integrity invariant for a given consistency model.
-
-Baquero et al.~\cite{Baquero:2014ed} and Grishchenko~\cite{Grishchenko:2014eh} have also previously proposed representing CRDTs in terms of a partially-ordered log of operations (where the partial order captures the causal relationships between operations).
-Again, our OpSet is a variant of this idea, in which we define the total order on identifiers to be a linear extension of the partial order that captures causality.
-This linear extension is well-known and goes back to Lamport~\cite{Lamport:1978jq}.
-
-Our approach of sequentially interpreting operations, in order of $\mathit{id}$, is reminiscent of the concept of \emph{serializability} in databases: the data structure obtained by interpreting an OpSet is equal to the outcome of applying the operations in their serial order, even if the execution that produced the OpSet was in fact concurrent.
-However, conventional transaction serializability requires synchronous coordination between replicas \cite{Davidson:1985hv}.
-We circumvent this limitation, and hence allow nodes to make progress while offline, by allowing the interpretation of an operation to be affected by the subsequent delivery of another operation with a lower ID.
+Gotsman et al.~\cite{DBLP:conf/popl/GotsmanYFNS16} extend Burckhardt et al.'s formalism to reason about hybrid consistency models, providing a modular proof rule inspired by permissions-based logics to enforce an integrity invariant for a given consistency model.
 
 Bieniusa et al.~\cite{Bieniusa:2012gt} articulate a \emph{principle of permutation equivalence} that partially specifies the expected semantics of replicated datatypes, but which leaves some combinations of operations unspecified.
 Zeller et al.~\cite{Zeller:2014fl} formalise counters, registers, and sets using Isabelle/HOL and provide mechanised proofs of their correctness.
