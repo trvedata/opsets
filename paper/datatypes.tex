@@ -65,24 +65,24 @@ To encode the current state of map and list data structures we use a pair of rel
 Initially, both relations are empty; that is, we have $\llbracket\emptyset\rrbracket = \mathit{InitialState} = (\emptyset,\, \emptyset)$.
 We can then define the interpretation of the six operation types as follows:
 \begin{align*}
-    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{Assign}(\mathit{obj}, k, v, \mathit{prev})) \big] \;=\\
-    &\Big( \big\{ (\mathit{id}', \mathit{obj}', k', v') \in E \mid
+    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big] \;=\\
+    &\Big( \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in E \mid
     \mathit{id}' \notin \mathit{prev} \big\} \;\cup\;
-    \big\{ (\mathit{id}, \mathit{obj}, k, v) \big\},\; L \Big) \\[5pt]
+    \big\{ (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \big\},\; L \Big) \\[5pt]
     %%%%%%%%%%
-    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{Remove}(\mathit{obj}, k, \mathit{prev})) \big] \;=\\
-    &\Big( \big\{ (\mathit{id}', \mathit{obj}', k', v') \in E \mid
+    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev})) \big] \;=\\
+    &\Big( \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in E \mid
     \mathit{id}' \notin \mathit{prev} \big\},\; L \Big) \\[5pt]
     %%%%%%%%%%
-    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{InsertAfter}(r)) \big] \;=\\
+    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{InsertAfter}(\mathit{ref})) \big] \;=\\
     &\left\{
         \arraycolsep=0pt \def\arraystretch{1.2}
         \begin{array}{ll}
-            (E,\, L) & \text{if } \nexists\,n.\; (r,\, n) \in L\\[3pt]
-            \Big(E,\; \big\{ (p,n) \;&\in L \mid p \neq r \big\} \;\cup\;
-            \big\{ (r, \mathit{id}) \big\} \;\cup\;
-            \big\{ (\mathit{id}, n) \mid (r, n) \in L \big\} \Big)\\
-            & \text{if } \exists\,n.\; (r,\,n) \in L
+            (E,\, L) & \text{if } \nexists\,n.\; (\mathit{ref},\, n) \in L\\[3pt]
+            \Big(E,\; \big\{ (p,n) &\;\in L \mid p \neq \mathit{ref} \big\} \;\cup\;
+            \big\{ (\mathit{ref}, \mathit{id}) \big\} \;\cup\;
+            \big\{ (\mathit{id}, n) \mid (\mathit{ref}, n) \in L \big\} \Big)\\
+            & \text{if } \exists\,n.\; (\mathit{ref},\,n) \in L
         \end{array} \right. \\[5pt]
     %%%%%%%%%%
     \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{MakeList}) \big] \hspace{21.1pt}=\;
@@ -94,11 +94,11 @@ We can then define the interpretation of the six operation types as follows:
 
 The interpretation of $\mathsf{Assign}$ and $\mathsf{Remove}$ updates only $E$ and leaves $L$ unchanged; conversely, the interpretation of $\mathsf{InsertAfter}$ and $\mathsf{MakeList}$ updates only $L$.
 Both the $\mathsf{Assign}$ and $\mathsf{Remove}$ interpretations remove any tuples from causally prior assignments (those whose IDs appear in $\mathit{prev}$), but leave any tuples from concurrent assignments unchanged.
-This is the behaviour of a multi-value register; if a last-writer-wins register is required, the condition $\mathit{id}' \notin \mathit{prev}$ can be changed to $\mathit{obj}' \neq \mathit{obj} \;\vee\; k' \neq k$, which removes any existing tuples with the same object ID and key.
+This is the behaviour of a multi-value register; if a last-writer-wins register is required, the condition $\mathit{id}' \notin \mathit{prev}$ can be changed to $\mathit{obj}' \neq \mathit{obj} \;\vee\; \mathit{key}' \neq \mathit{key}$, which removes any existing tuples with the same object ID and key.
 
 The interpretation of $\mathsf{InsertAfter}$ resembles the insertion into a linked list, as illustrated in Figure~\ref{fig:list-insert}.
-For example, to interpret $(\mathit{id},\, \mathsf{InsertAfter}(r))$, if we have $(r, n) \in L$, we remove the pair $(r, n)$ from L, and add the pairs $(r, \mathit{id})$ and $(\mathit{id}, n)$ to $L$.
-Thus, the new list element $\mathit{id}$ is inserted between $r$ and $n$.
+For example, to interpret $(\mathit{id},\, \mathsf{InsertAfter}(\mathit{ref}))$, if we have $(\mathit{ref}, \mathit{next}) \in L$, we remove the pair $(\mathit{ref}, \mathit{next})$ from L, and add the pairs $(\mathit{ref}, \mathit{id})$ and $(\mathit{id}, \mathit{next})$ to $L$.
+Thus, the new list element $\mathit{id}$ is inserted between $\mathit{ref}$ and $\mathit{next}$.
 
 \begin{figure}
 \centering
