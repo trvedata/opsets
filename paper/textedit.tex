@@ -1,6 +1,6 @@
 \section{Discussion: Merging Text Edits}\label{sec:bad-merge}
 
-The datatypes we have specified can support a wide range of applications.
+The datatypes we have specified in \S~\ref{sec:datatypes} can support a wide range of applications.
 For example, the list datatype can be used to implement a collaborative text editor: by treating the text as a list of individual characters, every edit can be expressed as a sequence of insertion or deletion operations on the list.
 
 The problem of collaborative text editing has been studied extensively, using two main approaches: Operational Transformation and CRDTs.
@@ -34,10 +34,10 @@ The problem is even worse if the concurrent insertions are not just a single wor
 In these cases, interleaving the users' insertions would most likely result in an entirely incomprehensible text that would have to be deleted and rewritten.
 Even though the merge in Figure~\ref{fig:bad-merge} is so obviously undesirable, there is to our knowledge no formal specification of collaborative text editing that rules out such an interleaving of insertions.
 
-\begin{proposition}\label{prop:attiya-allows-interleaving}
-    The $\mathcal{A}_\textsf{strong}$ specification of collaborative text editing by Attiya et al. \cite{Attiya:2016kh} allows the outcome in Figure~\ref{fig:bad-merge}.
-    Moreover, the text editing CRDT algorithms Logoot \cite{Weiss:2009ht,Weiss:2010hx} and LSEQ \cite{Nedelec:2013ky,Nedelec:2016eo} also allow this outcome.
-\end{proposition}
+\begin{theorem}\label{thm:attiya-allows-interleaving}
+    The $\mathcal{A}_\textsf{strong}$ specification of collaborative text editing by Attiya et al. \cite{Attiya:2016kh} allows the outcome in Figure~\ref{fig:bad-merge}; that is, an algorithm that interleaves concurrent insertions at the same position may nevertheless satisfy the $\mathcal{A}_\textsf{strong}$ specification.
+    Moreover, the text editing CRDT algorithms Logoot \cite{Weiss:2009ht,Weiss:2010hx} and LSEQ \cite{Nedelec:2016eo,Nedelec:2013ky} also allow this outcome.
+\end{theorem}
 \begin{proof}
     Follows directly from the respective definitions, which are all based on the idea of assigning each character a position in a totally ordered identifier space, such that the order of identifiers corresponds to the order of characters in the document.
     When a new character is inserted, it is assigned an identifier that lies somewhere between the identifiers of its predecessor and successor.
@@ -51,11 +51,17 @@ Rather than interleaving characters, a better approach to merging is to keep all
 With this constraint, there are two acceptable merged results in the example of Figure~\ref{fig:bad-merge}: either ``Hello Alice Charlie!'' or ``Hello Charlie Alice!''.
 The choice between these two outcomes is arbitrary, as there is no \emph{a priori} requirement for one user's insertions to come before the other's.
 
-\begin{proposition}\label{prop:no-interleaving}
-    The list specification from \S~\ref{sec:datatypes} does not allow the outcome in Figure~\ref{fig:bad-merge}.
-\end{proposition}
+\begin{theorem}\label{thm:no-interleaving}
+    The list specification from \S~\ref{sec:datatypes} does not allow interleaving of concurrent insertions.
+    That is, if one user inserts a character sequence $\langle x_1, x_2, \dots, x_n \rangle$ and another user concurrently inserts a character sequence $\langle y_1, y_2, \dots, y_m \rangle$ at the same position, the merged document contains either the character sequence $\langle x_1, x_2, \dots, x_n, y_1, y_2, \dots, y_m \rangle$ or the character sequence $\langle y_1, y_2, \dots, y_m, x_1, x_2, \dots, x_n \rangle$ at the specified position.
+\end{theorem}
 \begin{proof}
-    We describe our machine-checked formal proof using Isabelle/HOL in the appendix.
+    We formalise the list specification and Theorem~\ref{thm:no-interleaving} using the Isabelle/HOL proof assistant~\cite{DBLP:conf/tphol/WenzelPN08}.
+    \ifarxiv
+        The formal proof development is summarised in Appendix~\ref{appendix:no-interleaving}.
+    \else
+        For space reasons, we elide the formal proof development; it is described in the extended version of this paper.
+    \fi
 \end{proof}
 
 For an informal argument why interleaving is ruled out, see Figure~\ref{fig:op-permutations}, which shows an editing scenario similar to Figure~\ref{fig:bad-merge}, but with the insertions of ``~Alice'' and ``~Charlie'' shortened to ``Al'' and ``Ch'' respectively.
@@ -68,7 +74,7 @@ All other operations can be reordered without affecting the outcome.
 Thus, even if the inserted strings are longer than two characters, their relative ordering only depends on the IDs of their first character.
 The remaining characters follow their initial character without interleaving.
 
-Note that there are only six possible orderings of the four operations, and not $4! = 24$, because (as discussed in \S~\ref{sec:system-model}) we require that the ordering on identifiers is a linear extension of the causal order.
+Note that there are only six possible orderings of the four operations, and not $4! = 24$, because the Lamport timestamp ordering on identifiers (as given in \S~\ref{sec:system-model}) is a linear extension of the causal order.
 In this example we assume that text is typed from left to right (that is, ``A'' is always inserted before ``l'', and ``C'' is inserted before ``h'').
 This implies that the ID of the operation inserting ``l'' must be greater than that of the insertion of ``A'', and likewise the ``h'' insertion must be greater than the ``C'' insertion.
 
@@ -113,23 +119,34 @@ $\mathit{id}_4, \mathsf{InsertAfter}(\mathit{id}_1), \text{``h''}$ & $\rightarro
 $\mathit{id}_4, \mathsf{InsertAfter}(\mathit{id}_2), \text{``l''}$ & $\rightarrow$ \texttt{AlCh} &
 $\mathit{id}_4, \mathsf{InsertAfter}(\mathit{id}_3), \text{``l''}$ & $\rightarrow$ \texttt{AlCh} \\
 \end{tabular}
-\caption{All possible operation orderings when ``Al'' (for ``Alice'') and ``Ch'' (for ``Charlie'') are concurrently inserted at the same position.
-The IDs are arbitrary; we only require $id_0 < id_1 < id_2 < id_3 < id_4$.}\label{fig:op-permutations}
+\caption{All possible operation orderings when the strings ``Al'' (for ``Alice'') and ``Ch'' (for ``Charlie'') are concurrently inserted at the same position.
+The operation IDs are arbitrary; we only require that $id_0 < id_1 < id_2 < id_3 < id_4$.}\label{fig:op-permutations}
 \end{figure}
 
-\begin{proposition}
-    The OpSet list specification introduced in this paper is strictly stronger than the $\mathcal{A}_\textsf{strong}$ specification of Attiya et al \cite{Attiya:2016kh}.
-\end{proposition}
+\begin{theorem}
+    The OpSet list specification from \S~\ref{sec:datatypes} is strictly stronger than the $\mathcal{A}_\textsf{strong}$ specification of Attiya et al \cite{Attiya:2016kh}.
+    That is, any algorithm that satisfies the list specification given in \S~\ref{sec:datatypes} also satisfies $\mathcal{A}_\textsf{strong}$, but the converse is not true.
+\end{theorem}
 \begin{proof}
-    We use Isabelle/HOL to prove that every datatype implementation that satisfies our list specification also satisfies the specification of Attiya et al., as explained in the appendix.
-    The fact that our specification is \emph{strictly} stronger follows from Propositions~\ref{prop:attiya-allows-interleaving} and~\ref{prop:no-interleaving}.
+    We formalise the $\mathcal{A}_\textsf{strong}$ specification with Isabelle/HOL, and produce a mechanically verified proof that every possible execution of the list specification from \S~\ref{sec:datatypes} satisfies all conditions of $\mathcal{A}_\textsf{strong}$.
+    \ifarxiv
+        The formal proof development is summarised in Appendix~\ref{appendix:attiya-spec}.
+    \else
+        The formal proof development is described in the extended version of this paper.
+    \fi
+    The fact that our specification is \emph{strictly} stronger follows from Theorems~\ref{thm:attiya-allows-interleaving} and~\ref{thm:no-interleaving}.
 \end{proof}
 
-\begin{proposition}
-    The RGA algorithm \cite{Roh:2011dw} satisfies the OpSet list specification introduced in this paper, while Logoot \cite{Weiss:2009ht,Weiss:2010hx} and LSEQ \cite{Nedelec:2013ky,Nedelec:2016eo} do not.
-\end{proposition}
+\begin{theorem}
+    The RGA algorithm \cite{Roh:2011dw} satisfies the OpSet list specification introduced in this paper, while Logoot \cite{Weiss:2009ht,Weiss:2010hx} and LSEQ \cite{Nedelec:2016eo,Nedelec:2013ky} do not.
+\end{theorem}
 \begin{proof}
-    We use Isabelle/HOL to prove that RGA satisfies our specification, as described in the appendix.
-    Our Isabelle/HOL implementation of RGA is based on the formalisation that we developed in previous work \cite{Gomes:2017gy,Gomes:2017vo}.
-    The fact that the other algorithms do not satisfy our specification follows directly from Propositions~\ref{prop:attiya-allows-interleaving} and~\ref{prop:no-interleaving}.
+    We use Isabelle/HOL to prove that RGA satisfies our specification, as described in
+    \ifarxiv
+        Appendix~\ref{appendix:rga}.
+    \else
+        the extended version of this paper.
+    \fi
+    Our Isabelle/HOL implementation of RGA is based on the formalisation that we developed in previous work \cite{Gomes:2017vo,Gomes:2017gy}.
+    The fact that Logoot and LSEQ do not satisfy our specification follows directly from Theorems~\ref{thm:attiya-allows-interleaving} and~\ref{thm:no-interleaving}.
 \end{proof}

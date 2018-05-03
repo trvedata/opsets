@@ -366,7 +366,7 @@ To match the paper, it uses a distinct head element to refer to the beginning of
 \ \ \isakeyword{shows}\ {\isachardoublequoteopen}succ{\isacharunderscore}rel\ {\isacharparenleft}head\ {\isacharhash}\ interp{\isacharunderscore}ins\ ops{\isacharparenright}\ {\isacharequal}\ interp{\isacharunderscore}alt\ head\ ops{\isachardoublequoteclose}
 \end{isabelle}
 
-\subsection{No Interleaving}
+\subsection{No Interleaving}\label{appendix:no-interleaving}
 
 The predicate \isa{insert-seq start ops} is true iff \isa{ops} is a list of insertion operations that begins by inserting after \isa{start}, and then continues by placing each subsequent insertion directly after its predecessor.
 This definition models the sequential insertion of text at a particular place in a text document.%
@@ -409,7 +409,7 @@ In this failure case, none of the insertions in \isa{xs} or \isa{ys} take effect
 \ \ \isakeyword{shows}\ {\isachardoublequoteopen}{\isasymforall}x\ {\isasymin}\ set\ {\isacharparenleft}map\ fst\ xs{\isacharparenright}\ {\isasymunion}\ set\ {\isacharparenleft}map\ fst\ ys{\isacharparenright}{\isachardot}\ x\ {\isasymnotin}\ set\ {\isacharparenleft}interp{\isacharunderscore}ins\ ops{\isacharparenright}{\isachardoublequoteclose}
 \end{isabelle}
 
-\subsection{The Replicated Growable Array (RGA)}
+\subsection{The Replicated Growable Array (RGA)}\label{appendix:rga}
 
 The RGA algorithm \cite{Roh:2011dw} is a replicated list (or collaborative text-editing) algorithm.
 In this section we prove that RGA satisfies our list specification.
@@ -451,7 +451,7 @@ The Isabelle/HOL definition of RGA in this section is based on our prior work on
 \end{isabelle}
 
 
-\subsection{Relationship to Strong List Specification}
+\subsection{Relationship to Strong List Specification}\label{appendix:attiya-spec}
 
 In this section we show that our list specification is stronger than the $\mathcal{A}_\textsf{strong}$ specification of collaborative text editing by Attiya et al.~\cite{Attiya:2016kh}.
 We do this by showing that the OpSet interpretation of any set of insertion and deletion operations satisfies all of the consistency criteria that constitute the $\mathcal{A}_\textsf{strong}$ specification.
