@@ -53,7 +53,7 @@ To encode the current state of map and list data structures we use a pair of rel
     \item[The element relation $E \subseteq (\mathrm{ID} \times \mathrm{ID} \times (\mathrm{ID} \cup \mathrm{Key}) \times \mathrm{ID})$]
         is a set of 4-tuples containing the values currently assigned to map keys and list elements.
         If $(\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in E$, then an $\mathsf{Assign}$ operation with ID $\mathit{id}$ updated the object with ID $\mathit{obj}$, assigning the value with ID $\mathit{val}$ to the map key or list element $\mathit{key}$.
-        If $\mathit{obj}$ references a list object, $\mathit{key}$ is the ID of an element in the list relation $L$ (see below).
+        If $\mathit{obj}$ references a list object, $\mathit{key}$ is the ID of an element in the list relxation $L$ (see below).
         If $\mathit{obj}$ references a map object, any primitive value such as string or integer may be used as $\mathit{key}$.
       \item[The list relation $L \subseteq (\mathrm{ID} \times \mathrm{ID} \cup \{\bot\})$] is a set of pairs that indicates the order of list elements.
         If $(\mathit{prev}, \mathit{next}) \in L$, that means the list element with ID $\mathit{prev}$ is immediately followed by the list element with ID $\mathit{next}$.
