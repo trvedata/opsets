@@ -1,0 +1,11 @@
+session "OpSets" = "HOL" +
+  options [document = pdf, document_output = "output"]
+  theories
+    OpSet
+    List_Spec
+    Insert_Spec
+    Interleaving
+    RGA
+  document_files
+    "root.tex"
+    "root.bib"
