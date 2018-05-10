@@ -3,7 +3,7 @@
 \newif\ifarxiv
 % Use \arxivtrue to build extended version to submit to arXiv (with appendices);
 % use \arxivfalse to build version for conference submission (without appendices).
-\arxivtrue
+\arxivfalse
 
 \usepackage{microtype}
 \usepackage{amsmath}
@@ -144,6 +144,8 @@ By using mechanised proofs we eliminate the ambiguity of previous informal appro
 Moreover, the proof framework we have developed is reusable and can be leveraged to verify other datatypes in the future.
 \end{itemize*}
 
+An extended technical report with an appendix containing an overview of our Isabelle/HOL mechanisation, and pseudocode for implementations of the replicated datatypes discussed in this paper, is available from \url{XXX: Arxiv}.
+
 \input{approach}
 \input{datatypes}
 \input{textedit}
@@ -162,13 +164,13 @@ The simplicity of our approach builds on sequential OpSet interpretation: operat
 This property is very useful as it trivially ensures convergence, and it simplifies reasoning about specifications and invariants for CRDTs.
 In contrast, the traditional approach requires operations to be defined in a way that is commutative, increasing their complexity.
 We took advantage of the ease of specification to demonstrate the correspondence between sequential specification and commutative implementation, proving that the RGA CRDT satisfies our OpSet specification of lists.
-For future work it will be interesting to further explore this correspondence for other datatypes; in particular, we hypothesise that it is possible to derive a tree CRDT with a commutative move operation from the specification in \S~\ref{sec:tree}.
+For future work it will be interesting to further explore this correspondence for other datatypes; in particular, we hypothesise that it is possible to derive a tree CRDT with a commutative move operation from the specification in \S~\ref{sec:tree}, which could be used to implement a distributed peer-to-peer file system with an atomic move operation.
 
 Lastly, one can view the OpSet as a \emph{database of facts}, containing all changes ever made to the shared data, and the interpretation function a \emph{query} over this database, with the resulting datatype being a \emph{materialized view} in database terminology.
 When new operations are added to an OpSet $O$, computing the corresponding change to $\llbracket O \rrbracket$ is a change in \emph{materialized views}, or a \emph{rematerialization}, which have been studied extensively in the database literature \cite{Gupta:1999uz}.
-Moreover, several optimisation techniques have been developed enabling the rematerialization of views without having to recompute from the base relations.
-We have found that thinking about replicated datatypes as materialized views onto an OpSet a useful perspective for understanding and improving replication algorithms.
-In future work we aim to explore the possible application of database-centric techniques to replicated types, implemented using the OpSets approach, more fully.
+This observation is interesting, as optimisation techniques have been developed within the database community enabling the rematerialization of views without having to recompute afresh, from the base relations ``upwards''.
+Applying these techniques to replicated datatypes implemented with OpSets, where relevant, would allow us to derive much more efficient implementations than those that na\"ively recompute the materialized replicated datatype whenever new operations are added to the OpSet.
+In future work we aim to explore the possible application of these techniques to our replicated datatypes more fully.
 
 \subsection*{Acknowledgements}
 
