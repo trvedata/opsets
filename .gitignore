@@ -12,3 +12,5 @@
 *~
 .DS_Store
 /isabelle/output
+/isabelle/OpSets/output
+/isabelle/OpSets.zip

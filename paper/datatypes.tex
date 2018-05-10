@@ -55,26 +55,26 @@ To encode the current state of map and list data structures we use a pair of rel
         If $(\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in E$, then an $\mathsf{Assign}$ operation with ID $\mathit{id}$ updated the object with ID $\mathit{obj}$, assigning the value with ID $\mathit{val}$ to the map key or list element $\mathit{key}$.
         If $\mathit{obj}$ references a list object, $\mathit{key}$ is the ID of an element in the list relation $L$ (see below).
         If $\mathit{obj}$ references a map object, any primitive value such as string or integer may be used as $\mathit{key}$.
-    \item[The list relation $L \subseteq (\mathrm{ID} \times \mathrm{ID})$] is a set of pairs that indicates the order of list elements.
+      \item[The list relation $L \subseteq (\mathrm{ID} \times \mathrm{ID} \cup \{\bot\})$] is a set of pairs that indicates the order of list elements.
         If $(\mathit{prev}, \mathit{next}) \in L$, that means the list element with ID $\mathit{prev}$ is immediately followed by the list element with ID $\mathit{next}$.
         We use $(\mathit{last}, \bot) \in L$ to indicate that list element $\mathit{last}$ has no successor.
         To indicate that $\mathit{head}$ is the first element in the list $\mathit{obj}$ (i.e.\ $\mathit{obj}$ is the ID of the $\mathsf{MakeList}$ operation that created the list) we have $(\mathit{obj}, \mathit{head}) \in L$.
 \end{description}
 
 \noindent
-Initially, both relations are empty; that is, we have $\llbracket\emptyset\rrbracket = \mathit{InitialState} = (\emptyset,\, \emptyset)$.
+Initially, both relations are empty; that is, we have $\llbracket\emptyset\rrbracket = \mathsf{InitialState} = (\emptyset,\, \emptyset)$.
 We can then define the interpretation of the six operation types as follows:
 \begin{align*}
-    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big] \;=\\
+    \mathsf{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big] \;=\\
     &\Big( \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in E \mid
     \mathit{id}' \notin \mathit{prev} \big\} \;\cup\;
     \big\{ (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \big\},\; L \Big) \\[5pt]
     %%%%%%%%%%
-    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev})) \big] \;=\\
+    \mathsf{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{Remove}(\mathit{obj}, \mathit{key}, \mathit{prev})) \big] \;=\\
     &\Big( \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in E \mid
     \mathit{id}' \notin \mathit{prev} \big\},\; L \Big) \\[5pt]
     %%%%%%%%%%
-    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{InsertAfter}(\mathit{ref})) \big] \;=\\
+    \mathsf{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{InsertAfter}(\mathit{ref})) \big] \;=\\
     &\left\{
         \arraycolsep=0pt \def\arraystretch{1.2}
         \begin{array}{ll}
@@ -85,11 +85,11 @@ We can then define the interpretation of the six operation types as follows:
             & \text{if } \exists\,n.\; (\mathit{ref},\,n) \in L
         \end{array} \right. \\[5pt]
     %%%%%%%%%%
-    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{MakeList}) \big] \hspace{21.1pt}=\;
+    \mathsf{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{MakeList}) \big] \hspace{21.1pt}=\;
     \Big( E,\; L \;\cup\; \big\{(\mathit{id},\, \bot)\big\}\Big) \\[1pt]
     %%%%%%%%%%
-    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{MakeMap}) \big] \hspace{17.6pt}=\; (E,\; L) \\[5pt]
-    \mathit{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{MakeVal}(\mathit{val})) \big] \;=\; (E,\; L)
+    \mathsf{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{MakeMap}) \big] \hspace{17.6pt}=\; (E,\; L) \\[5pt]
+    \mathsf{interp}\big[(E,\, L),\; &(\mathit{id},\, \mathsf{MakeVal}(\mathit{val})) \big] \;=\; (E,\; L)
 \end{align*}
 
 The interpretation of $\mathsf{Assign}$ and $\mathsf{Remove}$ updates only $E$ and leaves $L$ unchanged; conversely, the interpretation of $\mathsf{InsertAfter}$ and $\mathsf{MakeList}$ updates only $L$.
