@@ -37,10 +37,10 @@ A Lamport timestamp is a pair $(\mathit{counter}, \mathit{nodeID})$ that is cons
 Although different nodes may generate IDs with the same counter value, each node generates IDs with strictly increasing counter values, and thus IDs are globally unique.
 We define the total order on IDs as being the lexicographic order:
 \[
-    \big[ \,(\mathit{ctr}_1, \mathit{node}_1) < (\mathit{ctr}_2, \mathit{node}_2)\, \big]
+    \,(\mathit{ctr}_1, \mathit{node}_1) < (\mathit{ctr}_2, \mathit{node}_2)\,
     \;\Longleftrightarrow\;
-    \big[ \mathit{ctr}_1 < \mathit{ctr}_2 \;\vee\;
-    (\mathit{ctr}_1 = \mathit{ctr}_2 \wedge \mathit{node}_1 <\mathit{node}_2) \big].
+    \mathit{ctr}_1 < \mathit{ctr}_2 \;\vee\;
+    (\mathit{ctr}_1 = \mathit{ctr}_2 \wedge \mathit{node}_1 <\mathit{node}_2).
 \]
 
 %This total order is a linear extension of the partial order that captures their causal dependencies (the \emph{happens-before} relation).
@@ -106,7 +106,7 @@ Thus, whenever there is some operation $(\mathit{id}_1, \mathit{op}_1) \in O$ in
 
 In the OpSet model, such out-of-order delivery of operations is no problem: the order in which operations are received has no effect on the OpSet $O$, and since we assume the interpretation function to be pure and side-effect free, the interpretation $\llbracket O \rrbracket$ can always be recomputed whenever new operations are added to $O$.
 
-The interpretation function can be seen as an \emph{executable specification} that defines the expected result of interpreting a set of operations.
+The interpretation function is an \emph{executable specification} that defines the expected result of interpreting a set of operations.
 Presenting replicated datatypes in this manner has two significant advantages:
 \begin{enumerate*}
 \item
