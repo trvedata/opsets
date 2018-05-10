@@ -135,7 +135,7 @@ Type variables are written in lowercase, and preceded with a prime: ${\isacharpr
 
 In Isabelle/HOL's term language we write $\isa{t} \mathbin{::} \tau$ for a \emph{type ascription}, constraining the type of the term $\isa{t}$ to the type $\tau$.
 We write $\lambda{x}.\: t$ for an anonymous function mapping an argument $\isa{x}$ to $\isa{t(x)}$, and write the application of term $\isa{t}$ with function type to an argument $\isa{u}$ as $\isa{t\ u}$.
-Terms of list type are introduced using one of two constructors: the empty list $[\,]$ or `nil', and the infix operator $\isa{\#}$ which is pronounced ``cons'', and which prepends an element to an existing list.
+Terms of list type are introduced using one of two constructors: the empty list $[\,]$ or `nil', and the infix `cons' operator $\isa{\#}$, which prepends an element to an existing list.
 We use $[t_1, \ldots, t_n]$ as syntactic sugar for a list literal, and $\isa{xs} \mathbin{\isacharat} \isa{ys}$ to express the concatenation (appending) of two lists $\isa{xs}$ and $\isa{ys}$.
 We write $\{\,\}$ for the empty set, and use usual mathematical notation for set union, disjunction, membership tests, and so on: $\isa{t} \cup \isa{u}$, $\isa{t} \cap \isa{u}$, and $\isa{x} \in \isa{t}$.
 We write $t \longrightarrow s$ for logical implication between formulae (terms of type $\isa{bool}$).
@@ -165,7 +165,7 @@ Moreover, $\isa{only-fives}\ \isa{xs}$ is true in no other circumstances---it is
 In short, the clauses above state that $\isa{only-fives}\ \isa{xs}$ holds exactly in the case where $\isa{xs}$ is a (potentially empty) list containing only repeated copies of the natural number $5$.
 
 Lemmas, theorems, and corollaries can be asserted using the $\isacommand{lemma}$, $\isacommand{theorem}$, and $\isacommand{corollary}$ keywords, respectively.
-There is no semantic difference between these keywords in Isabelle.
+There is no semantic difference between these keywords in Isabelle, and they serve only to mark certain results as especially important (or unimportant) for human readers.
 For example,
 \begin{isabelle}
 \isacommand{theorem} only-fives-concat{\isacharcolon} \\
