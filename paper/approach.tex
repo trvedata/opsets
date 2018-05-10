@@ -52,15 +52,15 @@ Most definitions of operation-based CRDTs describe how a node's local state is m
 We now depart from this convention and present an alternative formulation of replicated datatypes.
 
 In the OpSets approach, we require that the shared data structure is never manipulated directly.
-Instead, we use an \emph{interpretation function} $\llbracket O \rrbracket$ that takes an OpSet $O$ and returns the current state of the shared data structure described by the OpSet.
+Instead, we use an \emph{interpretation function} $\llbracket-\rrbracket$ that takes an OpSet $O$ and returns the current state $\llbracket O \rrbracket$ of the shared data structure described by the OpSet.
 The interpretation function is \emph{pure}, i.e.\ deterministic, side-effect free, and its result depends only on $O$.
 All nodes in the system employ the same interpretation function.
 
 Consequently, whenever any two nodes have the same OpSet $O$, their view of the shared data structure $\llbracket O \rrbracket$ must also be equal.
 This construction trivially ensures eventual consistency: as two nodes converge towards the same OpSet contents, any data structure that is deterministically derived from the OpSet must also converge.
 
-In principle, any deterministic function can serve as interpretation function $\llbracket O \rrbracket$ of the OpSet $O$.
-However, in defining the semantics of CRDTs (see \S~\ref{sec:datatypes} and \S~\ref{sec:tree}), we have found it useful to specialise $\llbracket O \rrbracket$ such that we can interpret one operation at a time.
+In principle, any deterministic function can serve as interpretation function.
+However, in defining the semantics of CRDTs (see \S~\ref{sec:datatypes} and \S~\ref{sec:tree}), we have found it useful to specialise $\llbracket-\rrbracket$ such that we can interpret one operation at a time.
 
 Let the OpSet $O$ be a set of pairs $(\mathit{id},\, \mathit{op})$, where $\mathit{id}$ is a unique operation identifier and $\mathit{op}$ is an arbitrary description of the change that occurred.
 Assume that we have a total ordering $<$ on identifiers, as explained in \S~\ref{sec:system-model}.
@@ -69,25 +69,25 @@ We can specify the semantics of each operation~--- that is, the effect of the op
 
 Formally, we can define the interpretation $\llbracket O \rrbracket$ of the OpSet $O$ as follows:
 \begin{align*}
-    \big\llbracket \emptyset \big\rrbracket &= \mathit{InitialState} \\
+    \big\llbracket \emptyset \big\rrbracket &= \mathsf{InitialState} \\
     \big\llbracket O \;\cup\; \{(\mathit{id},\, \mathit{op})\} \big\rrbracket &=
-    \mathrm{interp}\big[\llbracket O \rrbracket,\, (\mathit{id},\, \mathit{op})\big]
+    \mathsf{interp}\big[\llbracket O \rrbracket,\, (\mathit{id},\, \mathit{op})\big]
     \qquad\text{ provided that } \forall\,(\mathit{id}',\, \mathit{op}') \in O.\; \mathit{id}' < \mathit{id}
 \end{align*}
-where $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the operation $(\mathit{id},\, \mathit{op})$ in the state $S$, and $\mathit{InitialState}$ is a fixed minimal element (e.g. the empty tree, or empty list) of the replicated type described.
+where $\mathsf{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the operation $(\mathit{id},\, \mathit{op})$ in the state $S$, and $\mathsf{InitialState}$ is a fixed minimal element (e.g. the empty tree, or empty list) of the replicated type described.
 In other words, if $S$ is the result of interpreting all operations with identifiers less than $\mathit{id}$, then
-$\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the OpSet to which $(\mathit{id},\, \mathit{op})$ has been added.
+$\mathsf{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is the interpretation of the OpSet to which $(\mathit{id},\, \mathit{op})$ has been added.
 For example, if $\mathit{id}_1 < \mathit{id}_2 < \mathit{id}_3$, we have:
 \begin{align*}
     \big\llbracket \{(\mathit{id}_1,\ \mathit{op}_1),\;
     &(\mathit{id}_2,\ \mathit{op}_2),\,
     (\mathit{id}_3,\ \mathit{op}_3)\} \big\rrbracket \;=\\
-    &\mathrm{interp}\big[\mathrm{interp}\big[\mathrm{interp}\big[\mathit{InitialState},\,
+    &\mathsf{interp}\big[\mathsf{interp}\big[\mathsf{interp}\big[\mathsf{InitialState},\,
     (\mathit{id}_1,\ \mathit{op}_1)\big],\,
     (\mathit{id}_2,\ \mathit{op}_2)\big],\,
     (\mathit{id}_3,\ \mathit{op}_3)\big]
 \end{align*}
-Provided that the operation interpretation $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is deterministic, the OpSet interpretation function $\llbracket-\rrbracket$ is also deterministic, due to the fact that the operation order in the OpSet is unique.
+Provided that the operation interpretation $\mathsf{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ is deterministic, the OpSet interpretation function $\llbracket-\rrbracket$ is also deterministic, due to the fact that the operation order in the OpSet is unique.
 
 \subsection{Receiving Messages Out-of-order}\label{sec:order-change}
 
@@ -110,7 +110,7 @@ The interpretation function is an \emph{executable specification} that defines t
 Presenting replicated datatypes in this manner has two significant advantages:
 \begin{enumerate*}
 \item
-Unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for the interpretation function $\mathrm{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ to commute with respect to other operations: any pure function can be used.
+Unlike typical definitions of CRDT algorithms \cite{Shapiro:2011wy,Shapiro:2011un}, it is not necessary for the interpretation function $\mathsf{interp}\big[S,\, (\mathit{id},\, \mathit{op})\big]$ to commute with respect to other operations: any pure function can be used.
 This fact makes it much simpler to specify the interpretation of operations, as we shall see in \S~\ref{sec:datatypes} and \S~\ref{sec:tree}.
 \item
 We can guarantee the existence of an implementation of each described datatype: the specification itself.

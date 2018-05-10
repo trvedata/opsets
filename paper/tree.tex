@@ -14,29 +14,29 @@ Further assume that for any OpSet $O$ specifying a tree, we have either $(\maths
 We define an object $x$ to be the \emph{parent} of an object $y$ if one of the values in $x$ is a reference to $y$.
 The \emph{ancestor} relation is the transitive closure of the parent relation, defined using the element relation $E$:
 \begin{align*}
-    \mathrm{parent}(E,\, i) &=
+    \mathsf{parent}(E,\, i) &=
     \begin{cases}
         \big\{ (\mathit{obj}, \mathit{val}) \mid \exists\,\mathit{id}, \mathit{key}.\;
             (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \in E \big\} & \text{if } i=1 \\
-        \big\{ (x, z) \mid (x, y) \in \mathrm{parent}(E,\, i-1) \;\wedge\;
-            (y, z) \in \mathrm{parent}(E,\, 1) \big\} & \text{if } i > 1
+        \big\{ (x, z) \mid (x, y) \in \mathsf{parent}(E,\, i-1) \;\wedge\;
+            (y, z) \in \mathsf{parent}(E,\, 1) \big\} & \text{if } i > 1
     \end{cases} \\[8pt]
-    \mathrm{ancestor}(E) &= \bigcup_{i \;\geq\; 1} \mathrm{parent}(E,\, i)
+    \mathsf{ancestor}(E) &= \bigcup_{i \;\geq\; 1} \mathsf{parent}(E,\, i)
 \end{align*}
 
 An object graph is a tree if the root has no parent, every non-root node has exactly one parent, and if the ancestor relation has no cycles.
 We can redefine the operation interpretations from \S~\ref{sec:datatypes-interp} to preserve this tree invariant.
 In fact, it is sufficient to redefine the interpretation of $\mathsf{Assign}$, and leave the interpretation of the other five operation types unchanged:
 \begin{align*}
-    \mathrm{interp}&\big[(E,\, L),\; (\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big] \;=\\
+    \mathsf{interp}&\big[(E,\, L),\; (\mathit{id},\, \mathsf{Assign}(\mathit{obj}, \mathit{key}, \mathit{val}, \mathit{prev})) \big] \;=\\
     & \left\{
     \arraycolsep=0pt \def\arraystretch{1.5}
     \begin{array}{l}
-        (E,\, L) \qquad \text{if } (\mathit{val},\, \mathit{obj}) \in \mathrm{ancestor}(E) \\[2pt]
+        (E,\, L) \qquad \text{if } (\mathit{val},\, \mathit{obj}) \in \mathsf{ancestor}(E) \\[2pt]
         \Big( \big\{ (\mathit{id}', \mathit{obj}', \mathit{key}', \mathit{val}') \in E \mid
         \mathit{id}' \notin \mathit{prev} \wedge \mathit{val}' \neq \mathit{val} \big\} \;\cup\;
         \big\{ (\mathit{id}, \mathit{obj}, \mathit{key}, \mathit{val}) \big\},\; L \Big) \\
-        \hphantom{(E,\, L)} \qquad \text{if } (\mathit{val},\, \mathit{obj}) \notin \mathrm{ancestor}(E)
+        \hphantom{(E,\, L)} \qquad \text{if } (\mathit{val},\, \mathit{obj}) \notin \mathsf{ancestor}(E)
     \end{array} \right.
 \end{align*}
 
