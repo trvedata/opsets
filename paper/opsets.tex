@@ -125,7 +125,7 @@ We go beyond merely ensuring replica convergence: the OpSets approach is an exec
 Our contributions in this paper are as follows:
 
 \begin{itemize*}
-\item In \S~\ref{sec:approach} we introduce the OpSet which provides a simple abstraction for specifying and reasoning about the consistency properties of concurrently editable data structures.
+\item In \S~\ref{sec:approach} we introduce the OpSet, which provides a simple abstraction for specifying and reasoning about the consistency properties of concurrently editable data structures.
 
 \item On top of this abstraction, in \S~\ref{sec:datatypes} and \S~\ref{sec:tree}, we specify a variety of composable abstract datatypes (maps, sets, lists, text, graphs, trees, and registers), and we argue that our specifications are both simple and precise, making them a suitable tool for reasoning about replicated data.
 
@@ -154,7 +154,7 @@ An extended technical report with an appendix containing an overview of our Isab
 
 \section{Conclusion}
 
-In this work we have introduced Operation Sets (OpSets), a simple but expressive approach for specifying the semantics of replicated datatypes.
+In this work we have introduced Operation Sets (OpSets), a simple but powerful approach for specifying the semantics of replicated datatypes.
 We specified a variety of common, composable replicated datatypes in the OpSets model, and used Isabelle/HOL to formally reason about their properties.
 We have also shown how the OpSet abstraction can be used to reason about existing replication algorithms, and developed a new specification to highlight an interleaving anomaly that affects some existing collaborative text editing algorithms.
 Finally we demonstrated how the OpSet model to can be used to develop new specifications to support algorithm design, and developed a specification for an atomic move operation in a tree CRDT.

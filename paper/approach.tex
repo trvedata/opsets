@@ -34,10 +34,10 @@ A Lamport timestamp is a pair $(\mathit{counter}, \mathit{nodeID})$ that is cons
 \item $\mathit{nodeID}$ is a string that uniquely identifies the node generating the ID, e.g.\ a UUID \cite{Leach:2005hm}.
 \end{itemize}
 
-Although different nodes may generate IDs with the same counter value, each node generates IDs with strictly increasing counter values, and thus IDs are globally unique.
+Although different nodes may generate IDs with the same counter value, each node generates IDs with strictly monotonically increasing counter values, and thus IDs are globally unique.
 We define the total order on IDs as being the lexicographic order:
 \[
-    \,(\mathit{ctr}_1, \mathit{node}_1) < (\mathit{ctr}_2, \mathit{node}_2)\,
+    (\mathit{ctr}_1, \mathit{node}_1) < (\mathit{ctr}_2, \mathit{node}_2)
     \;\Longleftrightarrow\;
     \mathit{ctr}_1 < \mathit{ctr}_2 \;\vee\;
     (\mathit{ctr}_1 = \mathit{ctr}_2 \wedge \mathit{node}_1 <\mathit{node}_2).
