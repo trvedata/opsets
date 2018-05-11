@@ -72,7 +72,7 @@
   \hideLIPIcs
   \nolinenumbers
 \else
-  \relatedversion{An extended version is available at \url{https://TODO}}
+  \relatedversion{Extended paper with proofs: \url{http://martinkl.com/papers/opsets.pdf}}
 \fi
 
 %Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -144,7 +144,13 @@ By using mechanised proofs we eliminate the ambiguity of previous informal appro
 Moreover, the proof framework we have developed is reusable and can be leveraged to verify other datatypes in the future.
 \end{itemize*}
 
-An extended technical report with an appendix containing an overview of our Isabelle/HOL mechanisation, and pseudocode for implementations of the replicated datatypes discussed in this paper, is available from \url{XXX: Arxiv}.
+\ifarxiv
+  The appendices contain
+\else
+  The extended version of this paper \cite{ExtendedVersion} contains
+\fi
+an overview of our Isabelle/HOL mechanisation, and pseudocode for the replicated datatypes discussed in this paper.
+The full formal proof development is published in the Isabelle Archive of Formal Proofs \cite{AFP}.
 
 \input{approach}
 \input{datatypes}
