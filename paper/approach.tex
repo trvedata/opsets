@@ -120,6 +120,6 @@ This is in contrast to axiomatic specifications, which may not be implementable,
 For practical implementations of replicated datatypes, a naive OpSet interpretation may exhibit poor performance, since nodes must potentially apply the same subset of operations repeatedly.
 More efficient (and, most likely, more complex) algorithms for CRDTs can therefore be developed and shown to satisfy the OpSet-based specification---we do this in \S~\ref{sec:bad-merge}.
 
-However, we have developed a practical JavaScript CRDT implementation around the OpSet model,\footnote{\url{https://github.com/automerge/automerge}} and found it to have some advantages: for example, users can easily inspect the editing history of a document, since every past version of the document is the interpretation of a particular subset of operations.
+However, we have developed a practical JavaScript CRDT implementation around the OpSet model \cite{Automerge}, and found it to have some advantages: for example, users can easily inspect the editing history of a document, since every past version of the document is the interpretation of a particular subset of operations.
 Moreover, using OpSets provides a straightforward mechanism for recovering from network partitions and failures, as missing operations may be retransmitted and added to the OpSets of previously partitioned nodes.
 The details of this implementation are beyond the scope of this paper.
