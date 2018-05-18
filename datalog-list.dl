@@ -1,0 +1,36 @@
+// Download the Soufflé Datalog engine from http://souffle-lang.org/
+// Then run `souffle datalog-list.dl`
+
+.decl insert(NodeID: number, Parent: number)
+.decl hasChild(Parent: number)
+.decl laterChild(Parent: number, Child2: number)
+.decl firstChild(Parent: number, Child: number)
+.decl sibling(Child1: number, Child2: number)
+.decl laterSibling(Sib1: number, Sib2: number)
+.decl laterSibling2(Sib1: number, Sib3: number)
+.decl nextSibling(Sib1: number, Sib2: number)
+.decl hasNextSibling(Sib1: number)
+.decl nextSiblingAnc(Start: number, Next: number)
+.decl nextElem(Prev: number, Next: number)
+
+insert(1,0).
+insert(2,0).
+insert(3,2).
+insert(4,1).
+insert(5,2).
+insert(6,2).
+
+.output nextElem(IO=stdout)
+
+hasChild(Parent) :- insert(_, Parent).
+laterChild(Parent, Child2) :- insert(Child1, Parent), insert(Child2, Parent), Child1 > Child2.
+firstChild(Parent, Child) :- insert(Child, Parent), !laterChild(Parent, Child).
+sibling(Child1, Child2) :- insert(Child1, Parent), insert(Child2, Parent).
+laterSibling(Sib1, Sib2) :- sibling(Sib1, Sib2), Sib1 > Sib2.
+laterSibling2(Sib1, Sib3) :- sibling(Sib1, Sib2), sibling(Sib1, Sib3), Sib1 > Sib2, Sib2 > Sib3.
+nextSibling(Sib1, Sib2) :- laterSibling(Sib1, Sib2), !laterSibling2(Sib1, Sib2).
+hasNextSibling(Sib1) :- laterSibling(Sib1, _).
+nextSiblingAnc(Start, Next) :- nextSibling(Start, Next).
+nextSiblingAnc(Start, Next) :- !hasNextSibling(Start), insert(Start, Parent), nextSiblingAnc(Parent, Next).
+nextElem(Prev, Next) :- firstChild(Prev, Next).
+nextElem(Prev, Next) :- !hasChild(Prev), nextSiblingAnc(Prev, Next).
