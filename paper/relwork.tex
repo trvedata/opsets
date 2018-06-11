@@ -16,11 +16,12 @@ This is a very strong property: in the context of a distributed system, it requi
 This class of protocols requires communication with a quorum of nodes in order to make progress \cite{Howard:2016tz}, and it cannot guarantee progress in a fully asynchronous setting \cite{Fischer:1985tt}.
 
 By contrast, the sequential OpSet interpretation of \S~\ref{sec:op-serial} does not require atomic broadcast because it allows operations to be added to the OpSet in any order, and it assigns operation IDs without any coordination.
-Few systems use this approach; the most closely related prior work are the Bayou system \cite{Terry:1995dn}, which executes tentative transactions deterministically in timestamp order, and Burckhardt's \emph{standard conflict resolution} \cite[\S~4.3.3]{Burckhardt:2014hy}.
-Both of these share the OpSet approach's characteristic that operations with a higher ID need to be undone and re-applied when a new operation with a lower ID is received.
+However, the order in which operations are received may not match their ID order.
+Few systems use this approach; the most closely related prior work are the Bayou system \cite{Terry:1995dn}, which executes tentative transactions deterministically in timestamp order, Jefferson's \emph{Time Warp} mechanism \cite{Jefferson:1985em}, and Burckhardt's \emph{standard conflict resolution} \cite[\S~4.3.3]{Burckhardt:2014hy}.
+These share the OpSet approach's characteristic that operations with a higher ID need to be undone and re-applied when a new operation with a lower ID is received.
 
 Our contribution in this paper is to formulate the OpSet approach more generally as a tool for specifying and reasoning about complex replicated data structures, such as lists and trees.
-Our work is the first to use this approach in mechanised proofs, in which we show that a non-OpSet list CRDT (RGA) satisfies an OpSet-based specification, and prove the absence of the interleaving anomaly in Figure~\ref{fig:bad-merge}.
+Our work is the first to use this approach in mechanised proofs, in which we show that a non-OpSet list CRDT (RGA) satisfies an OpSet-based specification, and we prove the absence of the interleaving anomaly in Figure~\ref{fig:bad-merge}.
 
 Baquero et al.~\cite{Baquero:2014ed} and Grishchenko~\cite{Grishchenko:2014eh} have proposed representing CRDTs in terms of a partially-ordered log of operations, where the partial order captures the causal relationships between operations.
 The OpSet approach can be seen as a variant of this idea, in which we define the total order on identifiers to be a linear extension of the partial order.
