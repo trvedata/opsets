@@ -1,36 +1,83 @@
 // Download the Soufflé Datalog engine from http://souffle-lang.org/
 // Then run `souffle datalog-list.dl`
 
-.decl insert(NodeID: number, Parent: number)
-.decl hasChild(Parent: number)
-.decl laterChild(Parent: number, Child2: number)
-.decl firstChild(Parent: number, Child: number)
-.decl sibling(Child1: number, Child2: number)
-.decl laterSibling(Sib1: number, Sib2: number)
-.decl laterSibling2(Sib1: number, Sib3: number)
-.decl nextSibling(Sib1: number, Sib2: number)
-.decl hasNextSibling(Sib1: number)
-.decl nextSiblingAnc(Start: number, Next: number)
-.decl nextElem(Prev: number, Next: number)
+// Datatype of Lamport timestamps, used to uniquely identify ops and objects
+.type id = [ctr: number, node: number]
 
-insert(1,0).
-insert(2,0).
-insert(3,2).
-insert(4,1).
-insert(5,2).
-insert(6,2).
+// Example tree, encoded as insert(Child, Parent) facts:
+//
+//        0
+//      /   \
+//     2     1
+//   / | \   |
+//  6  5  3  4
 
-.output nextElem(IO=stdout)
+.decl insert(ID: id, Parent: id)
+insert([1,0], [0,0]).
+insert([2,0], [0,0]).
+insert([3,0], [2,0]).
+insert([4,0], [1,0]).
+insert([5,0], [2,0]).
+insert([6,0], [2,0]).
 
+// The list order is the pre-order depth-first traversal over this tree, with
+// siblings visited in descending order. Thus, the above tree represents the list:
+// [0, 2, 6, 5, 3, 1, 4].
+//
+// We express the list order with the nextElem(Prev, Next) relation. It contains
+// the following pairs (think like a linked list):
+// (0, 2), (2, 6), (6, 5), (5, 3), (3, 1), (1, 4).
+
+// Definition of insertion into an ordered list (defines nextElem):
+
+.decl hasChild(Parent: id)
 hasChild(Parent) :- insert(_, Parent).
-laterChild(Parent, Child2) :- insert(Child1, Parent), insert(Child2, Parent), Child1 > Child2.
-firstChild(Parent, Child) :- insert(Child, Parent), !laterChild(Parent, Child).
-sibling(Child1, Child2) :- insert(Child1, Parent), insert(Child2, Parent).
-laterSibling(Sib1, Sib2) :- sibling(Sib1, Sib2), Sib1 > Sib2.
-laterSibling2(Sib1, Sib3) :- sibling(Sib1, Sib2), sibling(Sib1, Sib3), Sib1 > Sib2, Sib2 > Sib3.
-nextSibling(Sib1, Sib2) :- laterSibling(Sib1, Sib2), !laterSibling2(Sib1, Sib2).
-hasNextSibling(Sib1) :- laterSibling(Sib1, _).
+
+.decl laterChild(Parent: id, Child2: id)
+laterChild(Parent, [Ctr2, N2]) :-
+  insert([Ctr1, N1], Parent),
+  insert([Ctr2, N2], Parent),
+  (Ctr1 > Ctr2; (Ctr1 = Ctr2, N1 > N2)).
+
+.decl firstChild(Parent: id, Child: id)
+firstChild(Parent, Child) :-
+  insert(Child, Parent),
+  !laterChild(Parent, Child).
+
+.decl sibling(Child1: id, Child2: id)
+sibling(Child1, Child2) :-
+  insert(Child1, Parent),
+  insert(Child2, Parent).
+
+.decl laterSibling(Sib1: id, Sib2: id)
+laterSibling([Ctr1,N1], [Ctr2,N2]) :-
+  sibling([Ctr1,N1], [Ctr2,N2]),
+  (Ctr1 > Ctr2; (Ctr1 = Ctr2, N1 > N2)).
+
+.decl laterSibling2(Sib1: id, Sib3: id)
+laterSibling2([Ctr1,N1], [Ctr3,N3]) :-
+  sibling([Ctr1,N1], [Ctr2,N2]),
+  sibling([Ctr1,N1], [Ctr3,N3]),
+  (Ctr1 > Ctr2; (Ctr1 = Ctr2, N1 > N2)),
+  (Ctr2 > Ctr3; (Ctr2 = Ctr3, N2 > N3)).
+
+.decl nextSibling(Sib1: id, Sib2: id)
+nextSibling(Sib1, Sib2) :-
+  laterSibling(Sib1, Sib2),
+  !laterSibling2(Sib1, Sib2).
+
+.decl hasNextSibling(Sib1: id)
+hasNextSibling(Sib1) :-
+  laterSibling(Sib1, _).
+
+.decl nextSiblingAnc(Start: id, Next: id)
 nextSiblingAnc(Start, Next) :- nextSibling(Start, Next).
 nextSiblingAnc(Start, Next) :- !hasNextSibling(Start), insert(Start, Parent), nextSiblingAnc(Parent, Next).
+
+.decl nextElem(Prev: id, Next: id)
 nextElem(Prev, Next) :- firstChild(Prev, Next).
 nextElem(Prev, Next) :- !hasChild(Prev), nextSiblingAnc(Prev, Next).
+
+.decl result(ctr1: number, node1: number, ctr2: number, node2: number)
+result(ctr1, node1, ctr2, node2) :- nextElem([ctr1, node1], [ctr2, node2]).
+.output result(IO=stdout)
