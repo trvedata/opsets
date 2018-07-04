@@ -234,5 +234,17 @@ fun tree_spec :: "('oid, 'key, 'val) tree_state \<Rightarrow> ('oid \<times> ('o
   "tree_spec E (oid, Assign obj key val) = E \<union> { (oid, obj, key, Val val) }" |
   "tree_spec E (oid, Remove ref) = { e \<in> E. fst e \<noteq> ref }"
 
+fun tree_query ::
+  "('oid::{linorder} \<times> ('oid, 'key, 'val) tree_op) set \<Rightarrow> ('oid, 'key, 'val) tree_state" where
+  "tree_query ops = {e.
+     (\<exists>oid obj key ref. e = (oid, obj, key, Child ref) \<and>
+           ((oid, MakeChild obj key) \<in> ops \<and> ref = oid \<or>
+            (oid, Move obj key ref) \<in> ops \<and>
+            (case obj of Root \<Rightarrow> True | Ref parent \<Rightarrow>
+            \<not>ancestor (tree_query {oper \<in> ops. fst oper < oid}) (Ref ref) parent)) \<and>
+           (\<nexists>i. (i, Remove oid) \<in> ops) \<and>
+           (\<nexists>i. oid < i \<and> (\<exists>obj' key'. (i, Move obj' key' ref) \<in> ops))) \<or>
+     (\<exists>oid obj key val. e = (oid, obj, key, Val val) \<and>
+           (oid, Assign obj key val) \<in> ops \<and> (\<nexists>i. (i, Remove oid) \<in> ops))}"
 
 end
