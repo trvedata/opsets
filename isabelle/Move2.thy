@@ -112,7 +112,12 @@ proof -
            (\<nexists>i. oid < i \<and> (\<exists>obj' key'. (i, Move obj' key' ref) \<in> ops'))) \<or>
      (\<exists>oid obj key val. e = (oid, obj, key, Val val) \<and>
            (oid, Assign obj key val) \<in> ops' \<and> (\<nexists>i. (i, Remove oid) \<in> ops'))"
-    sorry (* sledgehammer finds "by metis", but it times out *)
+    apply -
+    apply(rule iffI)
+    apply clarsimp
+    using assms(1) no_remove ops' apply fastforce
+    apply clarsimp
+    using assms(1) no_remove ops' sup_bot.right_neutral tree_op.distinct(1) tree_op.distinct(3) tree_op.inject(1) by auto
   hence "{e. (\<exists>oid obj key ref. e = (oid, obj, key, Child ref) \<and>
            ((oid, MakeChild obj key) \<in> ops \<and> ref = oid \<or> (oid, Move obj key ref) \<in> ops) \<and>
            (\<nexists>i. (i, Remove oid) \<in> ops) \<and>
@@ -147,22 +152,30 @@ qed
 
 lemma unconditional_Move:
   assumes "\<forall>i \<in> fst ` ops. i < oid"
+    and "\<And>i ref. (i, Remove ref) \<in> ops \<Longrightarrow> ref < i"
   shows "unconditional_query (ops \<union> {(oid, Move obj key ref)}) =
     {e \<in> unconditional_query ops. snd (snd (snd e)) \<noteq> Child ref} \<union> {(oid, obj, key, Child ref)}"
-  sorry
+  using assms(1) apply(unfold unconditional_query_def)
+  apply safe
+                      apply force+
+  apply(clarsimp)
+  apply(intro conjI)
+  using assms(2) apply fastforce
+  apply auto
+  done
 
 lemma unconditional_Assign:
   assumes "\<forall>i \<in> fst ` ops. i < oid"
+    and "\<And>i ref. (i, Remove ref) \<in> ops \<Longrightarrow> ref < i"
   shows "unconditional_query (ops \<union> {(oid, Assign obj key val)}) =
     unconditional_query ops \<union> {(oid, obj, key, Val val)}"
-  sorry
+  using assms by(force simp add: unconditional_query_def)
 
 lemma unconditional_Remove:
   assumes "\<forall>i \<in> fst ` ops. i < oid"
   shows "unconditional_query (ops \<union> {(oid, Remove ref)}) =
     {e \<in> unconditional_query ops. fst e \<noteq> ref}"
-  sorry
-
+  using assms by(auto simp add: unconditional_query_def)
 
 theorem unconditional_equiv:
   assumes "sorted (map fst ops)" and "distinct (map fst ops)"
@@ -198,7 +211,7 @@ using assms proof(induction ops rule: List.rev_induct, simp add: unconditional_q
         {e \<in> unconditional_query (set xs). snd (snd (snd e)) \<noteq> Child ref} \<union> {(oid, obj, key, Child ref)}"
       by (simp add: do_move_def)
     moreover have "... = unconditional_query (set xs \<union> {(oid, Move obj key ref)})"
-      using unconditional_Move id_max by fastforce
+      using unconditional_Move id_max remove_less by(metis (mono_tags, lifting) Collect_cong)
     ultimately show ?thesis
       by blast
   next
@@ -207,7 +220,7 @@ using assms proof(induction ops rule: List.rev_induct, simp add: unconditional_q
         (unconditional_query (set xs)) \<union> {(oid, obj, key, Val val)}"
       by simp
     moreover have "... = unconditional_query (set xs \<union> {(oid, Assign obj key val)})"
-      using unconditional_Assign id_max by fastforce
+      using unconditional_Assign id_max remove_less by metis
     ultimately show ?thesis
       by blast
   next
@@ -234,7 +247,7 @@ fun tree_spec :: "('oid, 'key, 'val) tree_state \<Rightarrow> ('oid \<times> ('o
   "tree_spec E (oid, Assign obj key val) = E \<union> { (oid, obj, key, Val val) }" |
   "tree_spec E (oid, Remove ref) = { e \<in> E. fst e \<noteq> ref }"
 
-fun tree_query ::
+function (domintros) tree_query ::
   "('oid::{linorder} \<times> ('oid, 'key, 'val) tree_op) set \<Rightarrow> ('oid, 'key, 'val) tree_state" where
   "tree_query ops = {e.
      (\<exists>oid obj key ref. e = (oid, obj, key, Child ref) \<and>
@@ -243,8 +256,20 @@ fun tree_query ::
             (case obj of Root \<Rightarrow> True | Ref parent \<Rightarrow>
             \<not>ancestor (tree_query {oper \<in> ops. fst oper < oid}) (Ref ref) parent)) \<and>
            (\<nexists>i. (i, Remove oid) \<in> ops) \<and>
-           (\<nexists>i. oid < i \<and> (\<exists>obj' key'. (i, Move obj' key' ref) \<in> ops))) \<or>
+           (\<nexists>i. oid < i \<and> (\<exists>obj' key'. (i, Move obj' key' ref) \<in> ops \<and> (case obj' of Root \<Rightarrow> True | Ref parent \<Rightarrow>
+            \<not>ancestor (tree_query {oper \<in> ops. fst oper < i}) (Ref ref) parent)))) \<or>
      (\<exists>oid obj key val. e = (oid, obj, key, Val val) \<and>
            (oid, Assign obj key val) \<in> ops \<and> (\<nexists>i. (i, Remove oid) \<in> ops))}"
+  by pat_completeness auto
+
+lemma tree_query_termination:
+  assumes "finite S"
+  shows "tree_query_dom S"
+  using assms
+  apply -
+  apply(rule tree_query.domintros)
+  sorry
+
+lemmas tree_query_simps = tree_query.psimps[OF tree_query_termination]
 
 end
