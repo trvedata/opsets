@@ -1,4 +1,8 @@
 \documentclass[sigconf]{acmart}
+\usepackage{amssymb}
+\usepackage{setspace}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
 
 \copyrightyear{2019}
 \acmYear{2019}
@@ -72,7 +76,238 @@ TODO
 \maketitle
 
 \section{Introduction}
-CRDTs \cite{Shapiro:2011wy,Shapiro:2011un} are cool.
+
+In collaborative software, several users may contribute to a project by creating and editing shared documents, such as text documents, spreadsheets, graphics files, or presentations.
+When a user wishes to view a document, a copy of that document is loaded on the user's computer (e.g.\ in a tab of their web browser, or in a native app on their device).
+When a user wishes to modify a document, their changes are immediately applied to the copy of the document on the user's computer, and then asynchronously sent to any other users who have a copy of the document (possibly via a server, which may also store a copy).
+
+At a high level, there are two possible ways of organising modifications to documents: either the system enforces that only one user at a time may edit a particular document (for example, by obtaining a lock on the file before allowing any modifications), or the system allows multiple users to edit a document concurrently.
+In the latter case, it can happen that several users make changes at the same time
+
+Conflict-free Replicated Data Types, or CRDTs \cite{Shapiro:2011wy,Shapiro:2011un}
+
+\begin{figure*}
+  \centering
+  \begin{tikzpicture}[auto,scale=1.0]
+    \tikzstyle{box}=[rectangle,draw,inner xsep=6pt,text height=9pt,text depth=2pt]
+	\tikzstyle{leftevent}=[left,inner xsep=6pt,text width=4cm,text ragged left,midway]
+	\tikzstyle{rightevent}=[right,inner xsep=6pt,text width=4cm,text ragged,midway]
+	\tikzstyle{time}=[thick,->]
+	\tikzstyle{network}=[thick,dashed,blue,-{Stealth[length=3mm]}]
+	\node (left0)  at (0,6.0) {User 1:};
+	\node (left1)  at (0,5.0) [box] {\texttt{Hello!}};
+	\node (left2)  at (0,2.5) [box] {\texttt{Hello World!}};
+	\node (left3)  at (0,0.0) [box] {\texttt{Hello World! :)}};
+	\node (right0) at (6,6.0) {User 2:};
+	\node (right1) at (6,5.0) [box] {\texttt{Hello!}};
+	\node (right2) at (6,2.5) [box] {\texttt{Hello! :)}};
+	\node (right3) at (6,0.0) [box] {\texttt{Hello World! :)}};
+	\draw [time] (left1)  -- (left2)  node (send1) [leftevent]  {Insert \texttt{`~World'}\\between \texttt{`Hello'} and \texttt{`!'}};
+	\draw [time] (right1) -- (right2) node (send2) [rightevent] {Insert \texttt{` :)'} after \texttt{`!'}};
+    \draw [time] (left2)  -- (left3)  node (recv2) [leftevent]  {Insert \texttt{` :)'} after \texttt{`!'}};
+    \draw [time] (right2) -- (right3) node (recv1) [rightevent] {Insert \texttt{`~World'}\\between \texttt{`Hello'} and \texttt{`!'}};
+    \draw [network] (send1.east) to [out=0,in=180] (recv1.west);
+    \draw [network] (send2.west) to [out=180,in=0] (recv2.east);
+	\path [draw,dotted] (3,-0.5) -- (3,6.3);
+  \end{tikzpicture}
+  \caption{Simple example of concurrent text editing. Solid black lines indicate state changes over time, while dashed blue arrows indicate network communication.}
+  \label{fig:hello-world}
+\end{figure*}
+
+\begin{figure*}
+  \centering
+  \begin{tikzpicture}[auto,scale=1.0]
+    \tikzstyle{box}=[rectangle,draw,inner xsep=6pt,text height=9pt,text depth=2pt]
+	\tikzstyle{leftevent}=[left,inner xsep=6pt,text width=4cm,text ragged left,midway]
+	\tikzstyle{rightevent}=[right,inner xsep=6pt,text width=4cm,text ragged,midway]
+	\tikzstyle{time}=[thick,->]
+	\tikzstyle{network}=[thick,dashed,blue,-{Stealth[length=3mm]}]
+	\node (left0)  at (0,6.0) {User 1:};
+	\node (left1)  at (0,5.0) [box] {\texttt{Hello!}};
+	\node (left2)  at (0,2.5) [box] {\texttt{Hello Alice!}};
+	\node (left3)  at (0,0.0) [box] {\texttt{Hello Al Ciharcliee!}};
+	\node (right0) at (6,6.0) {User 2:};
+	\node (right1) at (6,5.0) [box] {\texttt{Hello!}};
+	\node (right2) at (6,2.5) [box] {\texttt{Hello Charlie!}};
+	\node (right3) at (6,0.0) [box] {\texttt{Hello Al Ciharcliee!}};
+	\draw [time] (left1)  -- (left2)  node (send1) [leftevent]  {Insert \texttt{`~Alice'}\\between \texttt{`Hello'} and \texttt{`!'}};
+	\draw [time] (right1) -- (right2) node (send2) [rightevent] {Insert \texttt{`~Charlie'}\\between \texttt{`Hello'} and \texttt{`!'}};
+    \draw [time] (left2)  -- (left3)  node (recv2) [leftevent]  {Insert \texttt{`~Charlie'}\\between \texttt{`Hello'} and \texttt{`!'}};
+    \draw [time] (right2) -- (right3) node (recv1) [rightevent] {Insert \texttt{`~Alice'}\\between \texttt{`Hello'} and \texttt{`!'}};
+    \draw [network] (send1.east) to [out=0,in=180] (recv1.west);
+    \draw [network] (send2.west) to [out=180,in=0] (recv2.east);
+	\path [draw,dotted] (3,-0.5) -- (3,6.3);
+  \end{tikzpicture}
+  \caption{Two concurrent insertions at the same position are interleaved.}
+  \label{fig:bad-merge}
+\end{figure*}
+
+\begin{figure*}
+  \centering
+  \begin{tikzpicture}[auto,scale=1.0]
+    \tikzstyle{box}=[rectangle,draw,inner xsep=6pt,text height=9pt,text depth=2pt]
+	\tikzstyle{state}=[matrix,column sep={20pt,between origins}]
+	\tikzstyle{val}=[draw,anchor=base,minimum width=20pt,text height=8pt,text depth=3pt]
+	\tikzstyle{oid}=[anchor=base]
+	\tikzstyle{leftevent}=[left,inner xsep=6pt,text width=4cm,text ragged left,midway]
+	\tikzstyle{rightevent}=[right,inner xsep=6pt,text width=4cm,text ragged,midway]
+	\tikzstyle{time}=[thick,->]
+	\tikzstyle{network}=[thick,dashed,blue,-{Stealth[length=3mm]}]
+	\node (hello) at (4,5) [state] {
+		\node [val] {\texttt{H}}; &
+		\node [val] {\texttt{e}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{o}}; &
+		\node [val] {\texttt{!}}; \\
+		\node [oid] {0.18}; & % H
+		\node [oid] {0.26}; & % e
+		\node [oid] {0.32}; & % l
+		\node [oid] {0.49}; & % l
+		\node [oid] {0.64}; & % o
+		\node [oid] {0.95}; \\ % !
+	};
+	\node (alice) at (0,3.5) [state] {
+		\node [val] {\texttt{H}}; &
+		\node [val] {\texttt{e}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{o}}; &
+		\node [val] {\texttt{ }}; &
+		\node [val] {\texttt{A}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{i}}; &
+		\node [val] {\texttt{c}}; &
+		\node [val] {\texttt{e}}; &
+		\node [val] {\texttt{!}}; \\
+		\node [oid] {0.18}; & % H
+		\node [oid] {0.26}; & % e
+		\node [oid] {0.32}; & % l
+		\node [oid] {0.49}; & % l
+		\node [oid] {0.64}; & % o
+		\node [oid] {0.69}; & %
+		\node [oid] {0.71}; & % A
+		\node [oid] {0.74}; & % l
+		\node [oid] {0.79}; & % i
+		\node [oid] {0.86}; & % c
+		\node [oid] {0.93}; & % e
+		\node [oid] {0.95}; \\ % !
+	};
+	\node (charlie) at (8,2) [state] {
+		\node [val] {\texttt{H}}; &
+		\node [val] {\texttt{e}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{o}}; &
+		\node [val] {\texttt{ }}; &
+		\node [val] {\texttt{C}}; &
+		\node [val] {\texttt{h}}; &
+		\node [val] {\texttt{a}}; &
+		\node [val] {\texttt{r}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{i}}; &
+		\node [val] {\texttt{e}}; &
+		\node [val] {\texttt{!}}; \\
+		\node [oid] {0.18}; & % H
+		\node [oid] {0.26}; & % e
+		\node [oid] {0.32}; & % l
+		\node [oid] {0.49}; & % l
+		\node [oid] {0.64}; & % o
+		\node [oid] {0.75}; & %
+		\node [oid] {0.77}; & % C
+		\node [oid] {0.80}; & % h
+		\node [oid] {0.83}; & % a
+		\node [oid] {0.85}; & % r
+		\node [oid] {0.87}; & % l
+		\node [oid] {0.89}; & % i
+		\node [oid] {0.91}; & % e
+		\node [oid] {0.95}; \\ % !
+	};
+	\node (interleaved) at (4,0) [state] {
+		\node [val] {\texttt{H}}; &
+		\node [val] {\texttt{e}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{o}}; &
+		\node [val] {\texttt{ }}; &
+		\node [val] {\texttt{A}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{ }}; &
+		\node [val] {\texttt{C}}; &
+		\node [val] {\texttt{i}}; &
+		\node [val] {\texttt{h}}; &
+		\node [val] {\texttt{a}}; &
+		\node [val] {\texttt{r}}; &
+		\node [val] {\texttt{c}}; &
+		\node [val] {\texttt{l}}; &
+		\node [val] {\texttt{i}}; &
+		\node [val] {\texttt{e}}; &
+		\node [val] {\texttt{e}}; &
+		\node [val] {\texttt{!}}; \\
+		\node [oid] {0.18}; & % H
+		\node [oid] {0.26}; & % e
+		\node [oid] {0.32}; & % l
+		\node [oid] {0.49}; & % l
+		\node [oid] {0.64}; & % o
+		\node [oid] {0.69}; & %
+		\node [oid] {0.71}; & % A
+		\node [oid] {0.74}; & % l
+		\node [oid] {0.75}; & %
+		\node [oid] {0.77}; & % C
+		\node [oid] {0.79}; & % i
+		\node [oid] {0.80}; & % h
+		\node [oid] {0.83}; & % a
+		\node [oid] {0.85}; & % r
+		\node [oid] {0.86}; & % c
+		\node [oid] {0.87}; & % l
+		\node [oid] {0.89}; & % i
+		\node [oid] {0.91}; & % e
+		\node [oid] {0.93}; & % e
+		\node [oid] {0.95}; \\ % !
+	};
+	\draw [network] (hello.west)    to [out=180,in=90] (alice.north);
+	\draw [network] (hello.east)    to [out=0,in=90]   (charlie.north);
+	\draw [network] (alice.south)   to [out=270,in=90] (interleaved.170);
+	\draw [network] (charlie.south) to [out=270,in=90] (interleaved.9);
+  \end{tikzpicture}
+  \caption{Interleaving occurs because characters are assigned positions in a dense identifier space, e.g.\ the real numbers $\mathbb{R}$.}
+  \label{fig:real-numbers}
+\end{figure*}
+
+\begin{figure*}
+  \centering
+  \begin{tikzpicture}[auto,scale=1.0]
+    \tikzstyle{box}=[rectangle,draw,inner xsep=6pt,text height=9pt,text depth=2pt]
+	\tikzstyle{leftevent}=[left,inner xsep=6pt,text width=4cm,text ragged left,midway]
+	\tikzstyle{rightevent}=[right,inner xsep=6pt,text width=4cm,text ragged,midway]
+	\tikzstyle{time}=[thick,->]
+	\tikzstyle{network}=[thick,dashed,blue,-{Stealth[length=3mm]}]
+	\node (left0)  at (0,8.5) {User 1:};
+	\node (left1)  at (0,7.5) [box] {\texttt{Hello!}};
+	\node (left2)  at (0,5.0) [box] {\texttt{Hello reader!}};
+	\node (left3)  at (0,2.5) [box] {\texttt{Hello dear reader!}};
+	\node (left4)  at (0,0.0) [box] {\texttt{Hello dear Alice reader!}};
+	\node (right0) at (6,8.5) {User 2:};
+	\node (right1) at (6,7.5) [box] {\texttt{Hello!}};
+	\node (right2) at (6,5.0) [box] {\texttt{Hello Alice!}};
+	\node (right3) at (6,2.5) [box] {\texttt{Hello Alice reader!}};
+	\node (right4) at (6,0.0) [box] {\texttt{Hello dear Alice reader!}};
+	\draw [time] (left1)  -- (left2)  node (send1) [leftevent]  {Insert \texttt{`~reader'}\\between \texttt{`Hello'} and \texttt{`!'}};
+    \draw [time] (left2)  -- (left3)  node (send2) [leftevent]  {Insert \texttt{`~dear'}\\between \texttt{`Hello'}\\and \texttt{` reader!'}};
+    \draw [time] (left3)  -- (left4)  node (recv3) [leftevent]  {Insert \texttt{`~Alice'}\\between \texttt{`Hello'} and \texttt{`!'}};
+	\draw [time] (right1) -- (right2) node (send3) [rightevent] {Insert \texttt{`~Alice'}\\between \texttt{`Hello'} and \texttt{`!'}};
+    \draw [time] (right2) -- (right3) node (recv1) [rightevent] {Insert \texttt{`~reader'}\\between \texttt{`Hello'} and \texttt{`!'}};
+    \draw [time] (right3) -- (right4) node (recv2) [rightevent] {Insert \texttt{`~dear'}\\between \texttt{`Hello'}\\and \texttt{` reader!'}};
+    \draw [network] (send1.east) to [out=0,in=180] (recv1.west);
+    \draw [network] (send2.east) to [out=0,in=180] (recv2.west);
+    \draw [network] (send3.west) to [out=180,in=0] (recv3.east);
+	\path [draw,dotted] (3,-0.5) -- (3,8.8);
+  \end{tikzpicture}
+  \caption{The lesser interleaving anomaly that can occur with RGA.}
+  \label{fig:rga-interleaving}
+\end{figure*}
+
+
 
 \begin{acks}
 This work was supported by The Boeing Company and the EPSRC ``REMS: Rigorous Engineering for Mainstream Systems'' programme grant (EP/K008528).
