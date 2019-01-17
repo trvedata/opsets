@@ -68,3 +68,6 @@ However, the resulting datatype is not strictly a CRDT, since some operations re
 
 To our knowledge, our move semantics specified in \S~\ref{sec:tree} is the first definition of such an operation on a fully asynchronous tree CRDT.
 We avoid the apparent contradiction with Najafzadeh's assertion by evaluating the precondition $(\mathit{val},\, \mathit{obj}) \notin \mathsf{ancestor}(E)$ at the same time as applying the operation, rather than at the time when the operation is generated, and by applying all operations in the OpSet in a deterministic order.
+
+% Move operation on text docs (in Papers):
+% Mehdi Ahmed-Nacer, Pascal Urso, Valter Balegas, and Nuno Preguiça: “Concurrency Control and Awareness Support for Multi-synchronous Collaborative Editing,” at 9th IEEE International Conference on Collaborative Computing, 2013. 
