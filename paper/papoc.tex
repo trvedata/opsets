@@ -80,11 +80,13 @@ TODO
 In collaborative software, several users may contribute to a project by creating and editing shared documents, such as text documents, spreadsheets, graphics files, or presentations.
 When a user wishes to view a document, a copy of that document is loaded on the user's computer (e.g.\ in a tab of their web browser, or in a native app on their device).
 When a user wishes to modify a document, their changes are immediately applied to the copy of the document on the user's computer, and then asynchronously sent to any other users who have a copy of the document (possibly via a server, which may also store a copy).
+This collaboration scenario is very similar to the problem of replication in distributed databases: in this context, the shared data is a database rather than a document, and each node that has a copy of the data is called a \emph{replica}.
 
-At a high level, there are two possible ways of organising modifications to documents: either the system enforces that only one user at a time may edit a particular document (for example, by obtaining a lock on the file before allowing any modifications), or the system allows multiple users to edit a document concurrently.
-In the latter case, it can happen that several users make changes at the same time
-
-Conflict-free Replicated Data Types, or CRDTs \cite{Shapiro:2011wy,Shapiro:2011un}
+At a high level, there are two possible ways of managing modifications to documents: either the system enforces that only one user at a time may edit a particular document (for example by obtaining a lock on the file before allowing any modifications), or the system allows multiple users to edit a document concurrently.
+The latter case is known as \emph{optimistic replication}.
+In an optimistic replication setting, it can happen that several users make changes at the same time, leading the state of these users' documents to diverge.
+This is illustrated in Figure~\ref{fig:hello-world}, where one user changes the document \texttt{`Hello!'} to \texttt{`Hello World!'}, while another user concurrently changes it to \texttt{`Hello! :)'}.
+In order to ensure that no user input is lost, these concurrent changes must be merged into a consistent document~-- in this example, \texttt{`Hello World! :)'}.
 
 \begin{figure*}
   \centering
@@ -113,6 +115,35 @@ Conflict-free Replicated Data Types, or CRDTs \cite{Shapiro:2011wy,Shapiro:2011u
   \caption{Simple example of concurrent text editing. Solid black lines indicate state changes over time, while dashed blue arrows indicate network communication.}
   \label{fig:hello-world}
 \end{figure*}
+
+This kind of merge can either be performed manually (the approach employed by most version control systems, such as git), or it can be automated.
+Conflict-free Replicated Data Types, or CRDTs~\cite{Shapiro:2011wy,Shapiro:2011un}, have been developed to automate such merges.
+A CRDT is an abstract datatype whose state can be modified by performing certain operations (for example, a datatype for text editing may allow characters to be inserted or deleted anywhere in the document).
+It allows arbitrary operations to be performed on different replicas; either the updated state or the operations or the operations are then sent over the network and applied or merged into copies of the document on other replicas.
+
+\subsection{Consistency for Optimistic Replication}
+
+CRDTs provide a consistency model called \emph{strong eventual consistency}~\cite{Shapiro:2011un,Gomes:2017gy}, which is defined by the following properties:
+\begin{description}
+\item[Eventual delivery]: An update applied on one correct replica is eventually applied on all correct replicas.
+\item[Convergence]: If the same set of updates have been applied on two replicas, those replicas have equivalent state.
+\item[Termination]: All method executions terminate.
+\end{description}
+In operation-based CRDTs the convergence property is implemented by ensuring that concurrent operations commute.
+For example, in Figure~\ref{fig:hello-world}, User 1 first applies the insertion of \texttt{` World'} and then the insertion of \texttt{` :)'}, while User 2 applies the insertions in the opposite order.
+Commutativity of the insertion ensures that the outcome is the same in both cases.
+
+When replicas mutually merge each others' changes, the convergence property ensures that those replicas end up in the same state.
+However, nothing so far has specified what that state should be.
+This means that, although strong eventual consistency is necessary, it is not sufficient, as it does not capture all of the consistency properties that we require in a collaborative application.
+
+In this paper we examine a particular consistency property for collaborative text editors that has so far been overlooked in the literature.
+A failure to satisfy this property may result in arbitrary text interleaving, potentially resulting in an undesirable document state.
+We highlight existing CRDT algorithms and a specification that exhibit this anomaly, and compare them to other approaches that do not suffer from this anomaly, or only a lesser variant.
+
+
+\section{The Interleaving Anomaly}
+
 
 \begin{figure*}
   \centering
