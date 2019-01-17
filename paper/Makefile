@@ -1,6 +1,6 @@
 .SUFFIXES: .tex .bib .aux .bbl .dvi .ps .pdf .thy
 
-all:	opsets.pdf
+all:	opsets.pdf papoc.pdf
 
 %.pdf:	%.bbl
 	pdflatex $(@:.pdf=)

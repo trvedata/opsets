@@ -8,6 +8,11 @@
 /paper/opsets.ps
 /paper/opsets.pdf
 /paper/opsets.vtc
+/paper/comment.cut
+/paper/papoc.blg
+/paper/papoc.log
+/paper/papoc.out
+/paper/papoc.pdf
 /paper/*-arxiv.tex
 *~
 .DS_Store
