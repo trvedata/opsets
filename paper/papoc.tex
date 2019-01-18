@@ -1,6 +1,7 @@
 \documentclass[sigconf]{acmart}
+\usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{setspace}
+\usepackage{csquotes} % displayquote environment
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta}
 
@@ -62,7 +63,9 @@
 }
 
 \begin{abstract}
-TODO
+  Several published algorithms for collaborative text editing exhibit an undesirable anomaly, in which concurrently inserted portions of text may be interleaved on a character-by-character basis, resulting in an unreadable jumble of letters.
+  We highlight algorithms that suffer from this problem, explain its cause, and also identify a lesser variant of the anomaly that occurs in other algorithms.
+  Finally, we propose a solution that can, in some cases, prevent the interleaving anomaly.
 \end{abstract}
 
 %
@@ -119,19 +122,19 @@ In order to ensure that no user input is lost, these concurrent changes must be 
 This kind of merge can either be performed manually (the approach employed by most version control systems, such as git), or it can be automated.
 Conflict-free Replicated Data Types, or CRDTs~\cite{Shapiro:2011wy,Shapiro:2011un}, have been developed to automate such merges.
 A CRDT is an abstract datatype whose state can be modified by performing certain operations (for example, a datatype for text editing may allow characters to be inserted or deleted anywhere in the document).
-It allows arbitrary operations to be performed on different replicas; either the updated state or the operations or the operations are then sent over the network and applied or merged into copies of the document on other replicas.
+It allows arbitrary operations to be performed on different replicas; either the updated state or the operations are then sent over the network and applied or merged into copies of the document on other replicas.
 
 \subsection{Consistency for Optimistic Replication}
 
-CRDTs provide a consistency model called \emph{strong eventual consistency}~\cite{Shapiro:2011un,Gomes:2017gy}, which is defined by the following properties:
+CRDTs implement a consistency model called \emph{strong eventual consistency}~\cite{Shapiro:2011un,Gomes:2017gy}, which is defined by the following properties:
 \begin{description}
-\item[Eventual delivery]: An update applied on one correct replica is eventually applied on all correct replicas.
-\item[Convergence]: If the same set of updates have been applied on two replicas, those replicas have equivalent state.
-\item[Termination]: All method executions terminate.
+\item[Eventual delivery:] An update applied on one correct replica is eventually applied on all correct replicas.
+\item[Convergence:] If the same set of updates have been applied on two replicas, those replicas have equivalent state.
+\item[Termination:] All method executions terminate.
 \end{description}
 In operation-based CRDTs the convergence property is implemented by ensuring that concurrent operations commute.
 For example, in Figure~\ref{fig:hello-world}, User 1 first applies the insertion of \texttt{` World'} and then the insertion of \texttt{` :)'}, while User 2 applies the insertions in the opposite order.
-Commutativity of the insertion ensures that the outcome is the same in both cases.
+Commutativity of the insertions ensures that the outcome is the same in both cases.
 
 When replicas mutually merge each others' changes, the convergence property ensures that those replicas end up in the same state.
 However, nothing so far has specified what that state should be.
@@ -142,8 +145,34 @@ A failure to satisfy this property may result in arbitrary text interleaving, po
 We highlight existing CRDT algorithms and a specification that exhibit this anomaly, and compare them to other approaches that do not suffer from this anomaly, or only a lesser variant.
 
 
-\section{The Interleaving Anomaly}
+\section{The Interleaving Anomaly}\label{sec:anomaly}
 
+Several CRDTs for text documents have been developed, including RGA \cite{Roh:2011dw}, Treedoc \cite{Preguica:2009fz}, WOOT \cite{Oster:2006wj}, Logoot \cite{Weiss:2009ht,Weiss:2010hx}, and LSEQ \cite{Nedelec:2013ky,Nedelec:2016eo}.
+In this section we show that two of these algorithms, Logoot and LSEQ, suffer from an anomaly that can lead to undesirable outcomes in some collaborative editing scenarios.
+In prior work~\cite{ExtendedVersion,AFP} we proved formally that RGA does not suffer from this problem; however, RGA can exhibit a lesser variant of the anomaly, which we describe in Section~\ref{sec:lesser}.
+We conjecture that Treedoc and WOOT do not suffer from either anomaly, but we leave a rigorous proof of this claim for future work.
+
+The anomaly arises when two users concurrently insert text at the same position in a document.
+For example, in Figure~\ref{fig:bad-merge}, two users are editing a text document that initially reads \texttt{`Hello!'}.
+User 1 changes it to read \texttt{`Hello Alice!'}, while concurrently User 2 changes it to \texttt{`Hello Charlie!'}.
+However, when the concurrent edits are merged, the algorithm randomly interleaves the two insertions of ``~Alice'' and ``~Charlie'' character by character, resulting in an unreadable jumble of characters.
+
+The reason why this anomaly occurs with Logoot and LSEQ is illustrated in Figure~\ref{fig:real-numbers}.
+Conceptually, these algorithms work by assigning every character of the text a unique identifier from a \emph{dense} space; that is, for any two given identifiers we can create a new, distinct identifier that lies between the two.
+The order of characters in the text is then given by the order of these identifiers.
+In Figure~\ref{fig:real-numbers} we use real numbers between 0.0 and 1.0 as identifiers (in reality, identifiers in Logoot and LSEQ are paths through a tree, but the effect is equivalent).
+
+We can see in Figure~\ref{fig:real-numbers} that identifiers are assigned correctly by each of the users: the characters of \texttt{` Alice'} and \texttt{` Charlie'} are all assigned numbers between 0.64 and 0.95 (the identifier interval between the preceding \texttt{`Hello'} and the following \texttt{`!'}), in increasing order.
+However, the exact values assigned to each character vary randomly, and since neither user knows about the other user's concurrent insertion, both users spread the identifiers of their insertions across the interval (0.64, 0.95).
+When merged, the resulting character sequence is a random interleaving of the two insertions.
+
+We performed tests with open source implementations of Logoot \cite{AhmedNacer:2011ke,ReplicationBenchmark} and LSEQ \cite{LSEQTree,Nedelec:2016eo}, and observed this interleaving anomaly occurring in practice.
+The problem is even worse if the concurrent insertions are not just a single word, but an entire paragraph or section.
+In these cases, interleaving the users' insertions would most likely result in an entirely incomprehensible text that would have to be deleted and rewritten.
+Even though the merge in Figure~\ref{fig:bad-merge} is so obviously undesirable, to our knowledge our work~\cite{ExtendedVersion} was the first to point out this anomaly.
+
+This problem does not occur in the example of Figure~\ref{fig:hello-world}.
+Here, the merged outcome is unambiguous because the relative ordering of all parts of the text is clear: \texttt{` World'} is inserted before the exclamation mark, while the \texttt{` :)'} is inserted after it.
 
 \begin{figure*}
   \centering
@@ -304,6 +333,35 @@ We highlight existing CRDT algorithms and a specification that exhibit this anom
   \caption{Interleaving occurs because characters are assigned positions in a dense identifier space, e.g.\ the real numbers $\mathbb{R}$.}
   \label{fig:real-numbers}
 \end{figure*}
+
+\subsection{Attiya et al.'s Specification}
+
+In 2016, Attiya et al.~\cite{Attiya:2016kh} proposed $\mathcal{A}_\textsf{strong}$, an implementation-independent specification of collaborative text editing.
+However, this specification also allows the interleaving anomaly.
+The definition of $\mathcal{A}_\textsf{strong}$ is as follows~\cite{Attiya:2016kh}:
+
+\begin{displayquote}
+  An abstract execution $A = (H, \textsf{vis})$ belongs to the \emph{strong list specification} $\mathcal{A}_\textsf{strong}$ if and only if there is a relation $\textsf{lo} \subseteq \textsf{elems}(A) \times \textsf{elems}(A)$, called the \emph{list order}, such that:
+  \begin{enumerate}
+    \item Each event $e = \mathit{do}(\mathit{op}, w) \in H$ returns a sequence of elements $w=a_0 \dots a_{n-1}$, where $a_i \in \textsf{elems}(A)$, such that
+    \begin{enumerate}
+      \item $w$ contains exactly the elements visible to $e$ that have been inserted, but not deleted:
+	    \begin{align*}
+          \quad\forall a.\; a \in w \quad\Longleftrightarrow\quad &
+		  (\mathit{do}(\textsf{ins}(a, \_), \_) \le_\textsf{vis} e) \;\wedge\\ &
+		  \neg(\mathit{do}(\textsf{del}(a), \_) \le_\textsf{vis} e).
+		\end{align*}
+      \item The order of the elements is consistent with the list order:
+        \[ \forall i, j.\; (i < j) \;\Longrightarrow\; (a_i, a_j) \in \textsf{lo}. \]
+      \item Elements are inserted at the specified position:
+        if $\mathit{op} = \textsf{ins}(a, k)$, then $a = a_{\mathrm{min} \{k,\; n-1\}}$.
+    \end{enumerate}
+    \item The list order $\textsf{lo}$ is transitive, irreflexive and total, and thus determines the order of all insert operations in the execution.
+  \end{enumerate}
+\end{displayquote}
+
+
+\section{The Lesser Interleaving Anomaly}\label{sec:lesser}
 
 \begin{figure*}
   \centering
