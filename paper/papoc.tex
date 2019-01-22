@@ -445,7 +445,7 @@ Thus, in this example, RGA allows three possible outcomes of the merge:
 \item \texttt{`Hello dear Alice reader!'}
 \item \texttt{`Hello Alice dear reader!'}
 \end{enumerate}
-Although RGA rules out random character-by-character interleaving in this case, it still allows the word \texttt{`Alice'} to be interleaved between the two insertion sequences by User 1 which we characterise as a lesser form of the anomaly described in Section~\ref{sec:anomaly}.
+Although RGA rules out random character-by-character interleaving in this case, it does still allows the word \texttt{`Alice'} to be interleaved between the two insertion sequences by User 1 which we characterise as a lesser form of the anomaly described in Section~\ref{sec:anomaly}.
 
 The worst case for RGA occurs if the user types all characters in the reverse order of their appearance in the document, i.e.\ if the document is typed from back to front.
 In this case, each character would be treated as a separate insertion sequence, and thus arbitrary character-level interleaving could occur.
@@ -453,15 +453,15 @@ Although this editing pattern is unlikely to occur in realistic text editing sce
 
 \subsection{Fixing interleaving in RGA}\label{sec:fixing-rga}
 
-We now propose an approach that removes the lesser interleaving anomaly in RGA.
+We now propose an approach that removes this lesser interleaving anomaly in RGA.
 
 Recall that RGA assigns a unique logical timestamp to every operation, and treats that timestamp as the identifier for that operation.
-When a document contains two or more character insertions that are anchored to the same reference character, RGA determines the order of those insertions by sorting them according to their timestamp~\cite{Attiya:2016kh,Gomes:2017gy}.
+When a document contains two or more character insertions that are anchored to the same reference character RGA determines the order of those insertions by sorting them according to their timestamp~\cite{Attiya:2016kh,Gomes:2017gy}.
 Roh et al.'s original definition of RGA used a custom S4Vector datatype as timestamp~\cite{Roh:2011dw}, and subsequent presentations of the algorithm~\cite{Shapiro:2011wy} have used Lamport timestamps~\cite{Lamport:1978jq} instead.
 Our fix for RGA works by changing the algorithm to use a new timestamp definition.
 
-In Attiya et al.'s formulation of RGA~\cite{Attiya:2016kh}, an insertion operation is represented by a triple $(a, t, r)$ where $a$ is the character being inserted, $t$ is the timestamp of the operation, and $r$ is the timestamp of the \emph{reference character} (the timestamp of the operation that inserted the immediate predecessor character at the time the insertion was performed, or $\bot$ if the insertion was performed at the beginning of the document).
-Deletion operations are performed by marking a character as deleted, but retaining its position in the document as a tombstone.
+In Attiya et al.'s formulation of RGA~\cite{Attiya:2016kh}, an insertion operation is represented by a triple $(a, t, r)$ where $a$ is the character being inserted, $t$ is the timestamp of the operation, and $r$ is the timestamp of the \emph{reference character} (the timestamp of the operation that inserted the immediate predecessor character at the time the insertion was performed, or the distinguished value $\bot$ if the insertion was performed at the beginning of the document).
+Deletion operations are performed by marking a character as deleted but retaining its position in the document as a tombstone.
 Since deletions do not affect the order of identifiers in the document, we can ignore them in the rest of this discussion.
 
 We now extend this definition to represent each insertion operation by a 4-tuple $(a, t, r, e)$ where $a$, $t$ and $r$ are defined as before, and $e$ is the set of timestamps of all insertion operations with the same reference element $r$ at the time the insertion was performed (not including $t$ itself).
