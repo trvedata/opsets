@@ -334,15 +334,15 @@ When merged, the resulting character sequence is an arbitrary interleaving of th
 We performed tests with open source implementations of Logoot \cite{AhmedNacer:2011ke,ReplicationBenchmark} and LSEQ \cite{LSEQTree,Nedelec:2016eo}, and observed this interleaving anomaly occurring in practice.
 The problem is even worse if the concurrent insertions are comprised of not just a single word but a paragraph or section.
 In these cases, interleaving the users' insertions would most likely result in an incomprehensible text that would have to be deleted and rewritten.
-Yet, despite the merge in Figure~\ref{fig:bad-merge} being particularly undesirable, to our knowledge our draft manuscript~\cite{ExtendedVersion} was the first to point out this anomaly.
+Yet, despite the merge in Figure~\ref{fig:bad-merge} being particularly undesirable, to our knowledge our unpublished draft manuscript~\cite{ExtendedVersion} was the first to point out this anomaly.
 
 Note, however, that this problem does not occur in the example of Figure~\ref{fig:hello-world}.
 Here, the merged outcome is unambiguous as the relative ordering of all parts of the text is clear: \texttt{` World'} is inserted before the exclamation mark, while the \texttt{` :)'} is inserted after it.
 
 \subsection{Attiya et al.'s specification}\label{sec:attiya-spec}
 
-In 2016, Attiya et al.~\cite{Attiya:2016kh} proposed $\mathcal{A}_\textsf{strong}$, an implementation-independent specification of collaborative text editing.
-However, this specification also allows the interleaving anomaly.
+In 2016 Attiya et al.~\cite{Attiya:2016kh} proposed $\mathcal{A}_\textsf{strong}$, an implementation-independent specification of collaborative text editing.
+However, this specification also permits the interleaving anomaly and we argue is therefore too weak to be a suitable specification for collaborative text editing.
 The definition of $\mathcal{A}_\textsf{strong}$ is as follows~\cite{Attiya:2016kh}:
 
 \begin{displayquote}
@@ -430,15 +430,14 @@ We can correct this flaw in the $\mathcal{A}_\textsf{strong}$ specification and 
 
 The RGA algorithm for collaborative text editing~\cite{Roh:2011dw} does not suffer from the anomaly described in Section~\ref{sec:anomaly}~\cite{ExtendedVersion,AFP}.
 In particular, if the insertions are made in sequential order (e.g. the string \texttt{` Alice'} is inserted by first typing a space, then the letter \texttt{`A'}, then the letter \texttt{`l'}, etc.), then RGA guarantees no interleaving.
-In the scenario of Figure~\ref{fig:bad-merge}, assuming sequential insertions, RGA allows only two possible outcomes of the merge: either \texttt{`Hello Alice Charlie!'} or \texttt{`Hello Charlie Alice!'}, but no mixture of the two.
+In the scenario of Figure~\ref{fig:bad-merge}, assuming sequential insertions, RGA allows only two possible outcomes of the merge: either \texttt{`Hello Alice Charlie!'} or \texttt{`Hello Charlie Alice!'} with no mixture of the two permitted.
 
 However, RGA does not satisfy the revised specification of Section~\ref{sec:attiya-spec} because it allows a lesser anomaly: text may be interleaved if insertions are not sequential.
 This lesser anomaly is illustrated in Figure~\ref{fig:rga-interleaving}.
-In this example, User 1 first positions the cursor between \texttt{`Hello'} and the exclamation mark, and types the word \texttt{` reader'}.
-Then User 1 \emph{moves the cursor back} to a position immediately after \texttt{`Hello'}, and types the word \texttt{` dear'}.
+In this example, User 1 first positions the cursor between \texttt{`Hello'} and the exclamation mark, and types the word \texttt{` reader'} and then \emph{moves the cursor back} to a position immediately after \texttt{`Hello'}, and types the word \texttt{` dear'}.
 
-In RGA, each insertion is anchored to the existing character that immediately precedes the inserted character.
-Thus, in the example of Figure~\ref{fig:rga-interleaving}, the first character of \texttt{` reader'} and the first character of \texttt{` dear'} are both anchored to the last character of \texttt{`Hello'}.
+Note that in RGA an insertion is anchored to the existing character that immediately precedes the inserted character.
+Thus, in Figure~\ref{fig:rga-interleaving}, the first character of \texttt{` reader'} and the first character of \texttt{` dear'} are both anchored to the last character of \texttt{`Hello'}.
 When User 2 makes a concurrent insertion of \texttt{` Alice'}, also anchored to the last character of \texttt{`Hello'}, that insertion is ordered arbitrarily relative to other insertions with the same anchor.
 Thus, in this example, RGA allows three possible outcomes of the merge:
 \begin{enumerate}
@@ -446,7 +445,7 @@ Thus, in this example, RGA allows three possible outcomes of the merge:
 \item \texttt{`Hello dear Alice reader!'}
 \item \texttt{`Hello Alice dear reader!'}
 \end{enumerate}
-Although RGA rules out random character-by-character interleaving in this case, it still allows the word \texttt{`Alice'} to be interleaved between the two insertion sequences by User 1, and thus a lesser form of the anomaly is still present.
+Although RGA rules out random character-by-character interleaving in this case, it still allows the word \texttt{`Alice'} to be interleaved between the two insertion sequences by User 1 which we characterise as a lesser form of the anomaly described in Section~\ref{sec:anomaly}.
 
 The worst case for RGA occurs if the user types all characters in the reverse order of their appearance in the document, i.e.\ if the document is typed from back to front.
 In this case, each character would be treated as a separate insertion sequence, and thus arbitrary character-level interleaving could occur.
