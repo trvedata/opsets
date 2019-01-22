@@ -334,7 +334,7 @@ Even though the merge in Figure~\ref{fig:bad-merge} is so obviously undesirable,
 This problem does not occur in the example of Figure~\ref{fig:hello-world}.
 Here, the merged outcome is unambiguous because the relative ordering of all parts of the text is clear: \texttt{` World'} is inserted before the exclamation mark, while the \texttt{` :)'} is inserted after it.
 
-\subsection{Attiya et al.'s Specification}
+\subsection{Attiya et al.'s Specification}\label{sec:attiya-spec}
 
 In 2016, Attiya et al.~\cite{Attiya:2016kh} proposed $\mathcal{A}_\textsf{strong}$, an implementation-independent specification of collaborative text editing.
 However, this specification also allows the interleaving anomaly.
@@ -374,7 +374,7 @@ We can correct this flaw in the $\mathcal{A}_\textsf{strong}$ specification and 
       \end{align*}
       such that all operations in $X$ and $Y$ are concurrent:
       \[ \forall x \in X.\; \forall y \in Y.\; \neg(x \le_\textsf{vis} y) \wedge \neg(y \le_\textsf{vis} x) \]
-      if the insertions are in the same document interval:
+      if the insertions are at the same location in the document:
       \[ \exists i,j.\; \{a_k \mid i < k < j\} = \{a \mid \mathit{do}(\textsf{ins}(a, \_), \_) \in X \cup Y\} \]
       then we have either
       \begin{align*}
@@ -387,8 +387,6 @@ We can correct this flaw in the $\mathcal{A}_\textsf{strong}$ specification and 
   \end{enumerate}
   \item as before.
 \end{enumerate}
-
-\section{The Lesser Interleaving Anomaly}\label{sec:lesser}
 
 \begin{figure*}
   \centering
@@ -423,7 +421,86 @@ We can correct this flaw in the $\mathcal{A}_\textsf{strong}$ specification and 
   \label{fig:rga-interleaving}
 \end{figure*}
 
+\section{The Lesser Interleaving Anomaly}\label{sec:lesser}
 
+The RGA algorithm for collaborative text editing~\cite{Roh:2011dw} does not suffer from the anomaly described in Section~\ref{sec:anomaly}~\cite{ExtendedVersion,AFP}.
+In particular, if the insertions are made in sequential order (e.g. the string \texttt{` Alice'} is inserted by first typing a space, then the letter \texttt{`A'}, then the letter \texttt{`l'}, etc.), then RGA guarantees no interleaving.
+In the scenario of Figure~\ref{fig:bad-merge}, assuming sequential insertions, RGA allows only two possible outcomes of the merge: either \texttt{`Hello Alice Charlie!'} or \texttt{`Hello Charlie Alice!'}, but no mixture of the two.
+
+However, RGA does not satisfy the revised specification of Section~\ref{sec:attiya-spec} because it allows a lesser anomaly: text may be interleaved if insertions are not sequential.
+This lesser anomaly is illustrated in Figure~\ref{fig:rga-interleaving}.
+In this example, User 1 first positions the cursor between \texttt{`Hello'} and the exclamation mark, and types the word \texttt{` reader'}.
+Then User 1 \emph{moves the cursor back} to a position immediately after \texttt{`Hello'}, and types the word \texttt{` dear'}.
+
+In RGA, each insertion is anchored to the existing character that immediately precedes the inserted character.
+Thus, in the example of Figure~\ref{fig:rga-interleaving}, the first character of \texttt{` reader'} and the first character of \texttt{` dear'} are both anchored to the last character of \texttt{`Hello'}.
+When User 2 makes a concurrent insertion of \texttt{` Alice'}, also anchored to the last character of \texttt{`Hello'}, that insertion is ordered arbitrarily relative to other insertions with the same anchor.
+Thus, in this example, RGA allows three possible outcomes of the merge:
+\begin{enumerate}
+\item \texttt{`Hello dear reader Alice!'}
+\item \texttt{`Hello dear Alice reader!'}
+\item \texttt{`Hello Alice dear reader!'}
+\end{enumerate}
+Although RGA rules out random character-by-character interleaving in this case, it still allows the word \texttt{`Alice'} to be interleaved between the two insertion sequences by User 1, and thus a lesser form of the anomaly is still present.
+
+The worst case for RGA occurs if the user types all characters in the reverse order of their appearance in the document, i.e.\ if the document is typed from back to front.
+In this case, each character would be treated as a separate insertion sequence, and thus arbitrary character-level interleaving could occur.
+Although this editing pattern is unlikely to occur in realistic text editing scenarios, it is a case that must be considered by formal consistency models for collaborative text editors.
+
+\subsection{Fixing Interleaving in RGA}\label{sec:fixing-rga}
+
+We now propose an approach that removes the lesser interleaving anomaly in RGA.
+
+Recall that RGA assigns a unique logical timestamp to every operation, and treats that timestamp as the identifier for that operation.
+When a document contains two or more character insertions that are anchored to the same reference character, RGA determines the order of those insertions by sorting them according to their timestamp~\cite{Attiya:2016kh,Gomes:2017gy}.
+Roh et al.'s original definition of RGA used a custom S4Vector datatype as timestamp~\cite{Roh:2011dw}, and subsequent presentations of the algorithm~\cite{Shapiro:2011wy} have used Lamport timestamps~\cite{Lamport:1978jq} instead.
+Our fix for RGA works by changing the algorithm to use a new timestamp definition.
+
+In Attiya et al.'s formulation of RGA~\cite{Attiya:2016kh}, an insertion operation is represented by a triple $(a, t, r)$ where $a$ is the character being inserted, $t$ is the timestamp of the operation, and $r$ is the timestamp of the \emph{reference character} (the timestamp of the operation that inserted the immediate predecessor character at the time the insertion was performed, or $\bot$ if the insertion was performed at the beginning of the document).
+Deletion operations are performed by marking a character as deleted, but retaining its position in the document as a tombstone.
+Since deletions do not affect the order of identifiers in the document, we can ignore them in the rest of this discussion.
+
+We now extend this definition to represent each insertion operation by a 4-tuple $(a, t, r, e)$ where $a$, $t$ and $r$ are defined as before, and $e$ is the set of timestamps of all insertion operations with the same reference element $r$ at the time the insertion was performed (not including $t$ itself).
+Let $I$ be the set of insertion operations that have been performed on a document at a particular point in time.
+To insert a new character $a$ after reference character $r$ in this document, we generate a new timestamp $t$, create an insertion operation, and add it to $I$:
+\[ I' = I \;\cup\; \big\{\,(a,\, t,\, r,\, \{t' \mid \exists a', e'.\; (a', t', r, e') \in I \}\,)\,\big\} \]
+
+In order to use this insertion 4-tuple in RGA we need to define a total order that is used to sort insertions with the same reference character.
+Consider two distinct insertion operations $\mathit{ins}_1$ and $\mathit{ins}_2$ with the same reference character $r$:
+\[ \mathit{ins}_1 = (a_1, t_1, r, e_1) \quad\text{and}\quad \mathit{ins}_2 = (a_2, t_2, r, e_2). \]
+First observe that if $\mathit{ins}_1$ happened before $\mathit{ins}_2$ we must have $t_1 \in e_2$, and vice versa.
+In this case we make the ordering of operations consistent with the happens-before relation:
+\begin{align*}
+(a_1, t_1, r, e_1) < (a_2, t_2, r, e_2) &\quad\text{if } t_1 \in e_2 \\
+(a_2, t_2, r, e_2) < (a_1, t_1, r, e_1) &\quad\text{if } t_2 \in e_1
+\end{align*}
+Otherwise $\mathit{ins}_1$ and $\mathit{ins}_2$ are concurrent, and we have $t_1 \notin e_2$ and $t_2 \notin e_1$.
+From this and from $t_1 \ne t_2$ we can conclude that
+\begin{align*}
+(e_1 \cup \{t_1\}) - (e_2 \cup \{t_2\}) &\ne \{\} \quad\text{and}\\
+(e_2 \cup \{t_2\}) - (e_1 \cup \{t_1\}) &\ne \{\}.
+\end{align*}
+Since these set differences are nonempty and since we have a total ordering on timestamps, each of the set differences has a unique minimal element:
+\begin{align*}
+m_1 &= \mathrm{min}\big( (e_1 \cup \{t_1\}) - (e_2 \cup \{t_2\}) \big) \\
+m_2 &= \mathrm{min}\big( (e_2 \cup \{t_2\}) - (e_1 \cup \{t_1\}) \big)
+\end{align*}
+The two timestamps $m_1$ and $m_2$ identify the first operations at which the editing histories of $\mathit{ins}_1$ and $\mathit{ins}_2$ diverged.
+From the definition above it follows that $m_1 \ne m_2$.
+We can now define the ordering of concurrent operations based on the relative ordering of $m_1$ and $m_2$:
+\begin{align*}
+(a_1, t_1, r, e_1) < (a_2, t_2, r, e_2) &\quad\text{if } m_1 < m_2 \\
+(a_2, t_2, r, e_2) < (a_1, t_1, r, e_1) &\quad\text{if } m_2 < m_1
+\end{align*}
+This order has the property that all of the operations in a particular editing session are grouped together, so that they are either all less than or all greater than the operations in a different, concurrent editing session.
+Hence, all characters inserted during a particular editing session are also grouped together in the final document, and interleaving of insertions from concurrent editing sessions is prevented.
+We conjecture that applying this construction to RGA results in a CRDT that prevents all interleaving, as required by our revised specification of Section~\ref{sec:attiya-spec}.
+However, we leave a formal proof of this conjecture to future work.
+
+\section{Related Work}\label{sec:relwork}
+
+The interleaving anomaly in Logoot and LSEQ has been independently pointed out in our prior work~\cite{ExtendedVersion}, by Sun et al.~\cite{Sun:2018wb}, and by a Stack Overflow user~\cite{StackOverflowInterleaving}.
+From conversations with various members of the CRDT community it appears that the anomaly has been known in the community folklore for some time, but to our knowledge there is no published work that clearly explains the problem or proposes solutions.
 
 \begin{acks}
 This work was supported by The Boeing Company and the EPSRC ``REMS: Rigorous Engineering for Mainstream Systems'' programme grant (EP/K008528).
