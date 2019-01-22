@@ -89,11 +89,11 @@ When a user wishes to view a document, a copy of that document is loaded on the 
 Thereafter, the user's changes are immediately applied to the local copy of the document on the user's computer, and then asynchronously sent to any other users who have a copy of the document---possibly via a server, which may also store a copy.
 This collaboration scenario is very similar to the problem of replication in distributed databases: in this context, the shared data is a database rather than a document, and each node that has a copy of the data is called a \emph{replica}.
 
-At a high level, there are two possible ways of managing modifications to documents: either the system enforces that only one user at a time may edit a particular document using a synchronization mechanism (locks, for example), or the system allows multiple users to edit a document concurrently.
+At a high level, there are two possible ways of managing modifications to documents: either the system enforces that only one user at a time may edit a particular document using a synchronization mechanism (e.g. locks), or the system allows multiple users to edit a document concurrently.
 This latter case is known as \emph{optimistic replication}.
 In an optimistic replication setting, it can happen that several users make changes at the same time leading the state of these users' documents to diverge.
 This is illustrated in Figure~\ref{fig:hello-world}, where one user changes the text of their document from \texttt{`Hello!'} to \texttt{`Hello World!'}, whilst another user concurrently edits the text of their document to read \texttt{`Hello! :)'}.
-In order to ensure that no user input is lost these concurrent changes must be \emph{merged} into a consistent document---in this example, \texttt{`Hello World! :)'}.
+In order to ensure that no user input is lost these concurrent changes must be \emph{merged} into a consistent document---in this example \texttt{`Hello World! :)'}.
 
 \begin{figure*}[p]
   \centering
@@ -284,11 +284,11 @@ In order to ensure that no user input is lost these concurrent changes must be \
 \end{figure*}
 
 Merge operations can either be performed manually---the approach employed by most version control systems, such as \texttt{git}---or can be automated.
-Conflict-free Replicated Data Types, or CRDTs~\cite{Shapiro:2011wy,Shapiro:2011un}, have been developed to automate such merges.
-A CRDT is an abstract datatype whose state can be modified by performing certain operations (for example, a datatype for text editing may allow characters to be inserted or deleted anywhere in the document).
-It allows arbitrary operations to be performed on different replicas; either the updated state or the operations are then sent over the network and applied or merged into copies of the document on other replicas.
+Conflict-free Replicated Data Types, or CRDTs henceforth~\cite{Shapiro:2011wy,Shapiro:2011un}, have been developed to automate such merges.
+A CRDT is an abstract datatype whose state can be modified by performing certain operations: a datatype for text editing may allow characters to be inserted or deleted anywhere in the document, for example.
+Moreover, local changes are propagated to other replicas, with updated states packaged up or operations to be applied encoded and thereafter sent over the network to be applied or merged into remote copies of the document.
 
-\subsection{Consistency for Optimistic Replication}
+\subsection{Consistency for optimistic replication}
 
 CRDTs implement a consistency model called \emph{strong eventual consistency}~\cite{Shapiro:2011un,Gomes:2017gy}, which is defined by the following properties:
 \begin{description}
@@ -309,7 +309,7 @@ A failure to satisfy this property may result in arbitrary text interleaving, po
 We highlight existing CRDT algorithms and a specification that exhibit this anomaly, and compare them to other approaches that do not suffer from this anomaly, or only a lesser variant.
 
 
-\section{The Interleaving Anomaly}\label{sec:anomaly}
+\section{The interleaving anomaly}\label{sec:anomaly}
 
 Several CRDTs for text documents have been developed, including RGA \cite{Roh:2011dw}, Treedoc \cite{Preguica:2009fz}, WOOT \cite{Oster:2006wj}, Logoot \cite{Weiss:2009ht,Weiss:2010hx}, and LSEQ \cite{Nedelec:2013ky,Nedelec:2016eo}.
 In this section we show that two of these algorithms, Logoot and LSEQ, suffer from an anomaly that can lead to undesirable outcomes in some collaborative editing scenarios.
@@ -338,7 +338,7 @@ Even though the merge in Figure~\ref{fig:bad-merge} is so obviously undesirable,
 This problem does not occur in the example of Figure~\ref{fig:hello-world}.
 Here, the merged outcome is unambiguous because the relative ordering of all parts of the text is clear: \texttt{` World'} is inserted before the exclamation mark, while the \texttt{` :)'} is inserted after it.
 
-\subsection{Attiya et al.'s Specification}\label{sec:attiya-spec}
+\subsection{Attiya et al.'s specification}\label{sec:attiya-spec}
 
 In 2016, Attiya et al.~\cite{Attiya:2016kh} proposed $\mathcal{A}_\textsf{strong}$, an implementation-independent specification of collaborative text editing.
 However, this specification also allows the interleaving anomaly.
@@ -425,7 +425,7 @@ We can correct this flaw in the $\mathcal{A}_\textsf{strong}$ specification and 
   \label{fig:rga-interleaving}
 \end{figure*}
 
-\section{The Lesser Interleaving Anomaly}\label{sec:lesser}
+\section{The lesser interleaving anomaly}\label{sec:lesser}
 
 The RGA algorithm for collaborative text editing~\cite{Roh:2011dw} does not suffer from the anomaly described in Section~\ref{sec:anomaly}~\cite{ExtendedVersion,AFP}.
 In particular, if the insertions are made in sequential order (e.g. the string \texttt{` Alice'} is inserted by first typing a space, then the letter \texttt{`A'}, then the letter \texttt{`l'}, etc.), then RGA guarantees no interleaving.
@@ -451,7 +451,7 @@ The worst case for RGA occurs if the user types all characters in the reverse or
 In this case, each character would be treated as a separate insertion sequence, and thus arbitrary character-level interleaving could occur.
 Although this editing pattern is unlikely to occur in realistic text editing scenarios, it is a case that must be considered by formal consistency models for collaborative text editors.
 
-\subsection{Fixing Interleaving in RGA}\label{sec:fixing-rga}
+\subsection{Fixing interleaving in RGA}\label{sec:fixing-rga}
 
 We now propose an approach that removes the lesser interleaving anomaly in RGA.
 
@@ -501,7 +501,7 @@ Hence, all characters inserted during a particular editing session are also grou
 We conjecture that applying this construction to RGA results in a CRDT that prevents all interleaving, as required by our revised specification of Section~\ref{sec:attiya-spec}.
 However, we leave a formal proof of this conjecture to future work.
 
-\section{Related Work}\label{sec:relwork}
+\section{Related work}\label{sec:relwork}
 
 The interleaving anomaly in Logoot and LSEQ has been independently pointed out in our prior work~\cite{ExtendedVersion}, by Sun et al.~\cite{Sun:2018wb}, and by a Stack Overflow user~\cite{StackOverflowInterleaving}.
 From conversations with various members of the CRDT community it appears that the anomaly has been known in the community folklore for some time, but to our knowledge there is no published work that clearly explains the problem or proposes solutions.
