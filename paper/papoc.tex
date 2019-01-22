@@ -315,7 +315,7 @@ We conjecture that Treedoc and WOOT do not suffer from either anomaly, but we le
 The anomaly arises when two users concurrently insert text at the same position in a document.
 For example, in Figure~\ref{fig:bad-merge}, two users are editing a text document that initially reads \texttt{`Hello!'}.
 User 1 changes it to read \texttt{`Hello Alice!'}, while concurrently User 2 changes it to \texttt{`Hello Charlie!'}.
-However, when the concurrent edits are merged, the algorithm randomly interleaves the two insertions of ``~Alice'' and ``~Charlie'' character by character, resulting in an unreadable jumble of characters.
+However, when the concurrent edits are merged, the algorithm randomly interleaves the two insertions of \texttt{`~Alice'} and \texttt{`~Charlie'} character by character, resulting in an unreadable jumble of characters.
 
 The reason why this anomaly occurs with Logoot and LSEQ is illustrated in Figure~\ref{fig:real-numbers}.
 Conceptually, these algorithms work by assigning every character of the text a unique position identifier from a \emph{dense} space; that is, for any two given identifiers we can create a new, distinct identifier that lies between the two.
@@ -359,7 +359,34 @@ The definition of $\mathcal{A}_\textsf{strong}$ is as follows~\cite{Attiya:2016k
     \item The list order $\textsf{lo}$ is transitive, irreflexive and total, and thus determines the order of all insert operations in the execution.
   \end{enumerate}
 \end{displayquote}
+It is easy to see that the list order relation $\textsf{lo}$ plays the same role as the position identifiers in Figure~\ref{fig:real-numbers}, and hence that this specification allows the same interleaving anomaly.
+We can correct this flaw in the $\mathcal{A}_\textsf{strong}$ specification and rule out interleaving by introducing an additional clause 1(d):
 
+\begin{enumerate}
+  \item Each event $e = \mathit{do}(\mathit{op}, w) \in H$ returns a sequence of elements $w=a_0 \dots a_{n-1}$, where $a_i \in \textsf{elems}(A)$, such that
+  \begin{enumerate}
+    \item \dots~(c): as before;
+    \setcounter{enumii}{3}
+    \item Concurrent insertions are not interleaved: that is, for any two sets of insertions $X$ and $Y$
+      \begin{align*}
+        X = \{x \mid \exists a.\; &x = \mathit{do}(\textsf{ins}(a, \_), \_) \,\wedge\, x \le_\textsf{vis} e\}\\
+        Y = \{y \mid \exists a.\; &y = \mathit{do}(\textsf{ins}(a, \_), \_) \,\wedge\, y \le_\textsf{vis} e\}
+      \end{align*}
+      such that all operations in $X$ and $Y$ are concurrent:
+      \[ \forall x \in X.\; \forall y \in Y.\; \neg(x \le_\textsf{vis} y) \wedge \neg(y \le_\textsf{vis} x) \]
+      if the insertions are in the same document interval:
+      \[ \exists i,j.\; \{a_k \mid i < k < j\} = \{a \mid \mathit{do}(\textsf{ins}(a, \_), \_) \in X \cup Y\} \]
+      then we have either
+      \begin{align*}
+        \forall i, j.\; & \mathit{do}(\textsf{ins}(a_i, \_), \_) \in X \;\wedge\; \mathit{do}(\textsf{ins}(a_j, \_), \_) \in Y\\
+        & \Longrightarrow\; i < j \quad\text{or}\\
+        \forall i, j.\; & \mathit{do}(\textsf{ins}(a_i, \_), \_) \in X \;\wedge\; \mathit{do}(\textsf{ins}(a_j, \_), \_) \in Y\\
+        & \Longrightarrow\; j < i.
+      \end{align*}
+      That is, either all $X$ insertions appear before all $Y$ insertions in the document $w=a_0 \dots a_{n-1}$, or vice versa, but they are never interleaved.
+  \end{enumerate}
+  \item as before.
+\end{enumerate}
 
 \section{The Lesser Interleaving Anomaly}\label{sec:lesser}
 
