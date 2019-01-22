@@ -46,7 +46,10 @@
 \orcid{0000-0003-4643-3541}
 \affiliation{%
   \institution{Arm Research}
+  \streetaddress{110 Fulbourn Road}
   \city{Cambridge}
+  \state{}
+  \postcode{CB1 9NJ}
   \country{UK}
 }
 
@@ -63,9 +66,10 @@
 }
 
 \begin{abstract}
-  Several published algorithms for collaborative text editing exhibit an undesirable anomaly, in which concurrently inserted portions of text may be interleaved on a character-by-character basis, resulting in an unreadable jumble of letters.
-  We highlight algorithms that suffer from this problem, explain its cause, and also identify a lesser variant of the anomaly that occurs in other algorithms.
-  Finally, we propose a solution that can, in some cases, prevent the interleaving anomaly.
+Several published algorithms for collaborative text editing exhibit an undesirable anomaly in which concurrently inserted portions of text may be interleaved on a character-by-character basis, resulting in an unreadable jumble of letters.
+We highlight algorithms that suffer from this problem, explain its cause, and also identify a lesser variant of the anomaly that occurs in some other well known algorithms.
+Finally, we propose a solution that can---in some cases---prevent the interleaving anomaly.
+To our knowledge this is the first acknowledgment and discussion of this anomaly in print.
 \end{abstract}
 
 %
@@ -80,16 +84,16 @@
 
 \section{Introduction}
 
-In collaborative software, several users may contribute to a project by creating and editing shared documents, such as text documents, spreadsheets, graphics files, or presentations.
-When a user wishes to view a document, a copy of that document is loaded on the user's computer (e.g.\ in a tab of their web browser, or in a native app on their device).
-When a user wishes to modify a document, their changes are immediately applied to the copy of the document on the user's computer, and then asynchronously sent to any other users who have a copy of the document (possibly via a server, which may also store a copy).
+In collaborative software several users may contribute to a project by creating and editing shared documents such as text documents, spreadsheets, graphics files, or presentations.
+When a user wishes to view a document, a copy of that document is loaded on the user's computer in a tab of their web browser, or in a native app on their device, for example.
+Thereafter, the user's changes are immediately applied to the local copy of the document on the user's computer, and then asynchronously sent to any other users who have a copy of the document---possibly via a server, which may also store a copy.
 This collaboration scenario is very similar to the problem of replication in distributed databases: in this context, the shared data is a database rather than a document, and each node that has a copy of the data is called a \emph{replica}.
 
-At a high level, there are two possible ways of managing modifications to documents: either the system enforces that only one user at a time may edit a particular document (for example by obtaining a lock on the file before allowing any modifications), or the system allows multiple users to edit a document concurrently.
-The latter case is known as \emph{optimistic replication}.
-In an optimistic replication setting, it can happen that several users make changes at the same time, leading the state of these users' documents to diverge.
-This is illustrated in Figure~\ref{fig:hello-world}, where one user changes the document \texttt{`Hello!'} to \texttt{`Hello World!'}, while another user concurrently changes it to \texttt{`Hello! :)'}.
-In order to ensure that no user input is lost, these concurrent changes must be merged into a consistent document~-- in this example, \texttt{`Hello World! :)'}.
+At a high level, there are two possible ways of managing modifications to documents: either the system enforces that only one user at a time may edit a particular document using a synchronization mechanism (locks, for example), or the system allows multiple users to edit a document concurrently.
+This latter case is known as \emph{optimistic replication}.
+In an optimistic replication setting, it can happen that several users make changes at the same time leading the state of these users' documents to diverge.
+This is illustrated in Figure~\ref{fig:hello-world}, where one user changes the text of their document from \texttt{`Hello!'} to \texttt{`Hello World!'}, whilst another user concurrently edits the text of their document to read \texttt{`Hello! :)'}.
+In order to ensure that no user input is lost these concurrent changes must be \emph{merged} into a consistent document---in this example, \texttt{`Hello World! :)'}.
 
 \begin{figure*}[p]
   \centering
@@ -279,7 +283,7 @@ In order to ensure that no user input is lost, these concurrent changes must be 
   \label{fig:real-numbers}
 \end{figure*}
 
-This kind of merge can either be performed manually (the approach employed by most version control systems, such as git), or it can be automated.
+Merge operations can either be performed manually---the approach employed by most version control systems, such as \texttt{git}---or can be automated.
 Conflict-free Replicated Data Types, or CRDTs~\cite{Shapiro:2011wy,Shapiro:2011un}, have been developed to automate such merges.
 A CRDT is an abstract datatype whose state can be modified by performing certain operations (for example, a datatype for text editing may allow characters to be inserted or deleted anywhere in the document).
 It allows arbitrary operations to be performed on different replicas; either the updated state or the operations are then sent over the network and applied or merged into copies of the document on other replicas.
