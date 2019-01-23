@@ -501,7 +501,7 @@ We can now define the ordering of concurrent operations based on the relative or
 This order has the property that all of the operations in a particular editing session are grouped, so that they are either all less than or all greater than the operations in a different, concurrent editing session.
 Hence, all characters inserted during a particular editing session are grouped together in the final document, and interleaving of insertions from concurrent editing sessions is prevented.
 We conjecture that applying this construction to RGA results in a CRDT without interleaving, as required by our specification in Section~\ref{sec:attiya-spec}.
-A formal proof of this is left for future work.
+A formal proof of this conjecture is left for future work.
 
 \section{Related work}\label{sec:relwork}
 
