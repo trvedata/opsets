@@ -293,7 +293,7 @@ Local changes are propagated to other replicas, with updated states packaged up 
 
 \subsection{Consistency for optimistic replication}
 
-CRDTs implement a consistency model called \emph{strong eventual consistency}~\cite{Shapiro:2011un,Gomes:2017gy} which is defined by the following properties:
+CRDTs implement a consistency model called \emph{strong eventual consistency}~\cite{Shapiro:2011un,Gomes:2017gy}, defined by the following properties:
 \begin{description}
 \item[Eventual delivery:] An update applied on one correct replica is eventually applied on all correct replicas.
 \item[Convergence:] If the same set of updates have been applied on two replicas then those two replicas have equivalent state.
@@ -451,9 +451,9 @@ Thus, in this example, RGA allows three possible outcomes of the merge:
 Although RGA rules out random character-by-character interleaving it does still allows the word \texttt{`Alice'} to be interleaved between the two insertion sequences by User 1.
 We characterise this as a lesser form of the anomaly described in Section~\ref{sec:anomaly}.
 
-The worst case for RGA occurs if the user types all characters in the reverse order of their appearance in the document, i.e.\ if the document is typed from back to front.
-In this case, each character would be treated as a separate insertion sequence, and thus arbitrary character-level interleaving could occur.
-Although this editing pattern is unlikely to occur in realistic text editing scenarios, it is a case that must be considered by formal consistency models for collaborative text editors.
+The worst case for RGA occurs if the user types all characters in the reverse order of their appearance in the document, i.e.\ the document is typed back to front.
+Then, each character would be treated as a separate insertion sequence, and thus arbitrary character-level interleaving could occur.
+Whilst this editing pattern is unlikely to occur in realistic editing scenarios, it is a case that must be considered by formal consistency models for collaborative text editors.
 
 \subsection{Fixing interleaving in RGA}\label{sec:fixing-rga}
 
@@ -464,11 +464,11 @@ Our RGA fix works by changing the algorithm to use a new timestamp definition.
 
 In Attiya et al.'s formulation of RGA~\cite{Attiya:2016kh}, an insertion operation is represented by a triple $(a, t, r)$ where $a$ is the character being inserted, $t$ is the timestamp of the operation, and $r$ is the timestamp of the \emph{reference character} (the timestamp of the operation that inserted the immediate predecessor character at the time the insertion was performed, or the distinguished value $\bot$ if the insertion was performed at the beginning of the document).
 Deletion operations are performed by marking a character as deleted but retaining its position in the document as a \emph{tombstone}.
-Since deletions do not affect the order of identifiers in the document, we can ignore them in the rest of this discussion.
+Since deletions do not affect identifier order in the document, we ignore them henceforth.
 
-We now extend this definition to represent each insertion operation by a 4-tuple $(a, t, r, e)$ where $a$, $t$ and $r$ are defined as before, and $e$ is the set of timestamps of all insertion operations with the same reference element $r$ at the time the insertion was performed (not including $t$ itself).
-Let $I$ be the set of insertion operations that have been performed on a document at a particular point in time.
-To insert a new character $a$ after reference character $r$ in this document, we generate a new timestamp $t$, create an insertion operation, and then add it to $I$:
+We extend this definition to represent each insertion operation by a 4-tuple $(a, t, r, e)$ where $a$, $t$ and $r$ are defined as before, and $e$ is the set of timestamps of all insertion operations with the same reference element $r$ at the time the insertion was performed (not including $t$ itself).
+Let $I$ be the set of insertion operations that have been performed on a document at a given point in time.
+To insert a character $a$ after reference character $r$ in this document, we create a new timestamp $t$, create an insertion operation, and add it to $I$:
 \[ I' = I \;\cup\; \big\{\,(a,\, t,\, r,\, \{t' \mid \exists a', e'.\; (a', t', r, e') \in I \}\,)\,\big\} \]
 
 In order to use this insertion 4-tuple in RGA we need to define a total order that is used to sort insertions with the same reference character.
@@ -486,22 +486,22 @@ From this and from $t_1 \ne t_2$ we can conclude that
 (e_1 \cup \{t_1\}) - (e_2 \cup \{t_2\}) &\ne \{\} \quad\text{and}\\
 (e_2 \cup \{t_2\}) - (e_1 \cup \{t_1\}) &\ne \{\}.
 \end{align*}
-Since these set differences are nonempty and since we have a total ordering on timestamps, each of the set differences has a unique minimal element:
+As these sets are nonempty and we have a total ordering on timestamps, each of them has a unique minimal element:
 \begin{align*}
 m_1 &= \mathrm{min}\big( (e_1 \cup \{t_1\}) - (e_2 \cup \{t_2\}) \big) \\
 m_2 &= \mathrm{min}\big( (e_2 \cup \{t_2\}) - (e_1 \cup \{t_1\}) \big)
 \end{align*}
-The two timestamps $m_1$ and $m_2$ identify the first operations at which the editing histories of $\mathit{ins}_1$ and $\mathit{ins}_2$ diverged.
+The timestamps $m_1$ and $m_2$ identify the first operations at which the editing histories of $\mathit{ins}_1$ and $\mathit{ins}_2$ diverged.
 From the definition above it follows that $m_1 \ne m_2$.
 We can now define the ordering of concurrent operations based on the relative ordering of $m_1$ and $m_2$:
 \begin{align*}
 (a_1, t_1, r, e_1) < (a_2, t_2, r, e_2) &\quad\text{if } m_1 < m_2 \\
 (a_2, t_2, r, e_2) < (a_1, t_1, r, e_1) &\quad\text{if } m_2 < m_1
 \end{align*}
-This order has the property that all of the operations in a particular editing session are grouped together, so that they are either all less than or all greater than the operations in a different, concurrent editing session.
-Hence, all characters inserted during a particular editing session are also grouped together in the final document, and interleaving of insertions from concurrent editing sessions is prevented.
-We conjecture that applying this construction to RGA results in a CRDT that prevents all interleaving, as required by our revised specification of Section~\ref{sec:attiya-spec}.
-However, we leave a formal proof of this conjecture to future work.
+This order has the property that all of the operations in a particular editing session are grouped, so that they are either all less than or all greater than the operations in a different, concurrent editing session.
+Hence, all characters inserted during a particular editing session are grouped together in the final document, and interleaving of insertions from concurrent editing sessions is prevented.
+We conjecture that applying this construction to RGA results in a CRDT without interleaving, as required by our specification in Section~\ref{sec:attiya-spec}.
+A formal proof of this is left for future work.
 
 \section{Related work}\label{sec:relwork}
 
