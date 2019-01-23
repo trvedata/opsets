@@ -453,7 +453,7 @@ Although this editing pattern is unlikely to occur in realistic text editing sce
 
 \subsection{Fixing interleaving in RGA}\label{sec:fixing-rga}
 
-We now propose an approach that removes this lesser interleaving anomaly in RGA.
+We now propose a way to remove the lesser interleaving anomaly in RGA.
 
 Recall that RGA assigns a unique logical timestamp to every operation, and treats that timestamp as the identifier for that operation.
 When a document contains two or more character insertions that are anchored to the same reference character RGA determines the order of those insertions by sorting them according to their timestamp~\cite{Attiya:2016kh,Gomes:2017gy}.
@@ -461,19 +461,19 @@ Roh et al.'s original definition of RGA used a custom S4Vector datatype as times
 Our fix for RGA works by changing the algorithm to use a new timestamp definition.
 
 In Attiya et al.'s formulation of RGA~\cite{Attiya:2016kh}, an insertion operation is represented by a triple $(a, t, r)$ where $a$ is the character being inserted, $t$ is the timestamp of the operation, and $r$ is the timestamp of the \emph{reference character} (the timestamp of the operation that inserted the immediate predecessor character at the time the insertion was performed, or the distinguished value $\bot$ if the insertion was performed at the beginning of the document).
-Deletion operations are performed by marking a character as deleted but retaining its position in the document as a tombstone.
+Deletion operations are performed by marking a character as deleted but retaining its position in the document as a \emph{tombstone}.
 Since deletions do not affect the order of identifiers in the document, we can ignore them in the rest of this discussion.
 
 We now extend this definition to represent each insertion operation by a 4-tuple $(a, t, r, e)$ where $a$, $t$ and $r$ are defined as before, and $e$ is the set of timestamps of all insertion operations with the same reference element $r$ at the time the insertion was performed (not including $t$ itself).
 Let $I$ be the set of insertion operations that have been performed on a document at a particular point in time.
-To insert a new character $a$ after reference character $r$ in this document, we generate a new timestamp $t$, create an insertion operation, and add it to $I$:
+To insert a new character $a$ after reference character $r$ in this document, we generate a new timestamp $t$, create an insertion operation, and then add it to $I$:
 \[ I' = I \;\cup\; \big\{\,(a,\, t,\, r,\, \{t' \mid \exists a', e'.\; (a', t', r, e') \in I \}\,)\,\big\} \]
 
 In order to use this insertion 4-tuple in RGA we need to define a total order that is used to sort insertions with the same reference character.
 Consider two distinct insertion operations $\mathit{ins}_1$ and $\mathit{ins}_2$ with the same reference character $r$:
 \[ \mathit{ins}_1 = (a_1, t_1, r, e_1) \quad\text{and}\quad \mathit{ins}_2 = (a_2, t_2, r, e_2). \]
 First observe that if $\mathit{ins}_1$ happened before $\mathit{ins}_2$ we must have $t_1 \in e_2$, and vice versa.
-In this case we make the ordering of operations consistent with the happens-before relation:
+In this case we make the ordering of operations consistent with the \emph{happens-before} relation:
 \begin{align*}
 (a_1, t_1, r, e_1) < (a_2, t_2, r, e_2) &\quad\text{if } t_1 \in e_2 \\
 (a_2, t_2, r, e_2) < (a_1, t_1, r, e_1) &\quad\text{if } t_2 \in e_1
@@ -503,8 +503,8 @@ However, we leave a formal proof of this conjecture to future work.
 
 \section{Related work}\label{sec:relwork}
 
-The interleaving anomaly in Logoot and LSEQ has been independently pointed out in our prior work~\cite{ExtendedVersion}, by Sun et al.~\cite{Sun:2018wb}, and by a Stack Overflow user~\cite{StackOverflowInterleaving}.
-From conversations with various members of the CRDT community it appears that the anomaly has been known in the community folklore for some time, but to our knowledge there is no published work that clearly explains the problem or proposes solutions.
+The interleaving anomaly in Logoot and LSEQ has been independently pointed out in our unpublished prior work~\cite{ExtendedVersion}, by Sun et al.~\cite{Sun:2018wb}, and by a Stack Overflow user~\cite{StackOverflowInterleaving}.
+From conversations with various members of the CRDT community it appears that the anomaly has been known in the community ``folklore'' for some time, but to our knowledge there is no published work that clearly explains the problem or proposes solutions.
 
 \begin{acks}
 This work was supported by The Boeing Company and the EPSRC ``REMS: Rigorous Engineering for Mainstream Systems'' programme grant (EP/K008528).
