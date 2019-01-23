@@ -1,7 +1,10 @@
 \documentclass[sigconf]{acmart}
+
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage[english]{babel}
 \usepackage{csquotes} % displayquote environment
+\usepackage{microtype}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta}
 
@@ -21,55 +24,55 @@
 \email{mk428@cl.cam.ac.uk}
 \orcid{0000-0001-7252-6958}
 \affiliation{%
-  \institution{University of Cambridge}
-  \streetaddress{William Gates Building, 15 JJ Thomson Avenue}
-  \city{Cambridge}
-  \state{}
-  \postcode{CB3 0FD}
-  \country{UK}
+  \institution{University of Cambridge, UK}
+  %\streetaddress{William Gates Building, 15 JJ Thomson Avenue}
+  %\city{Cambridge}
+  %\state{}
+  %\postcode{CB3 0FD}
+  %\country{UK}
 }
 
 \author{Victor B.\ F.\ Gomes}
 \email{vb358@cl.cam.ac.uk}
 \orcid{0000-0002-2954-4648}
 \affiliation{%
-  \institution{University of Cambridge}
-  \streetaddress{William Gates Building, 15 JJ Thomson Avenue}
-  \city{Cambridge}
-  \state{}
-  \postcode{CB3 0FD}
-  \country{UK}
+  \institution{University of Cambridge, UK}
+  %\streetaddress{William Gates Building, 15 JJ Thomson Avenue}
+  %\city{Cambridge}
+  %\state{}
+  %\postcode{CB3 0FD}
+  %\country{UK}
 }
 
 \author{Dominic P.\ Mulligan}
 \email{Dominic.Mulligan@arm.com}
 \orcid{0000-0003-4643-3541}
 \affiliation{%
-  \institution{Arm Research}
-  \streetaddress{110 Fulbourn Road}
-  \city{Cambridge}
-  \state{}
-  \postcode{CB1 9NJ}
-  \country{UK}
+  \institution{Arm Research, UK}
+  %\streetaddress{110 Fulbourn Road}
+  %\city{Cambridge}
+  %\state{}
+  %\postcode{CB1 9NJ}
+  %\country{UK}
 }
 
 \author{Alastair R.\ Beresford}
 \email{arb33@cl.cam.ac.uk}
 \orcid{0000-0003-0818-6535}
 \affiliation{%
-  \institution{University of Cambridge}
-  \streetaddress{William Gates Building, 15 JJ Thomson Avenue}
-  \city{Cambridge}
-  \state{}
-  \postcode{CB3 0FD}
-  \country{UK}
+  \institution{University of Cambridge, UK}
+  %\streetaddress{William Gates Building, 15 JJ Thomson Avenue}
+  %\city{Cambridge}
+  %\state{}
+  %\postcode{CB3 0FD}
+  %\country{UK}
 }
 
 \begin{abstract}
-Several published algorithms for collaborative text editing exhibit an undesirable anomaly in which concurrently inserted portions of text may be interleaved on a character-by-character basis, resulting in an unreadable jumble of letters.
-We highlight algorithms that suffer from this problem, explain its cause, and also identify a lesser variant of the anomaly that occurs in some other well known algorithms.
-Finally, we propose a solution that can---in some cases---prevent the interleaving anomaly.
-To our knowledge this is the first acknowledgment and discussion of this anomaly in print.
+Several published algorithms for collaborative text editing exhibit an undesirable anomaly in which concurrently inserted text may be interleaved on a character-by-character basis, resulting in an unreadable jumble of letters.
+We highlight algorithms that suffer from this problem, explain its cause, and also identify a lesser variant of the anomaly that occurs in some other algorithms.
+Finally, we propose a solution that can---in some cases---prevent the anomaly.
+To our knowledge this is the discussion of this anomaly in print.
 \end{abstract}
 
 %
@@ -84,9 +87,9 @@ To our knowledge this is the first acknowledgment and discussion of this anomaly
 
 \section{Introduction}
 
-In collaborative software several users may contribute to a project by creating and editing shared documents such as text documents, spreadsheets, graphics files, or presentations.
-When a user wishes to view a document, a copy of that document is loaded on the user's computer in a tab of their web browser, or in a native app on their device, for example.
-Thereafter, the user's changes are immediately applied to the local copy of the document on the user's computer, and then asynchronously sent to any other users who have a copy of the document---possibly via a server, which may also store a copy.
+In collaborative software several users may contribute to a project by creating and editing shared documents such as text documents, spreadsheets, or similar.
+When a user wishes to view a document, a copy of that document is loaded on the user's computer in a web-browser tab, or in a native app on their device, for example.
+A user's changes are immediately applied to the local copy of the document on the user's computer, and then asynchronously sent to any other users who have a copy of the document---possibly via a server, which may also store a copy.
 This collaboration scenario is very similar to the problem of replication in distributed databases: in this context, the shared data is a database rather than a document, and each node that has a copy of the data is called a \emph{replica}.
 
 At a high level, there are two possible ways of managing modifications to documents: either the system enforces that only one user at a time may edit a particular document using a synchronization mechanism (e.g. locks), or the system allows multiple users to edit a document concurrently.
@@ -283,10 +286,10 @@ In order to ensure that no user input is lost these concurrent changes must be \
   \label{fig:real-numbers}
 \end{figure*}
 
-Merge operations can either be performed manually---the approach employed by most version control systems, such as \texttt{git}---or can be automated.
-Conflict-free Replicated Data Types, or CRDTs henceforth~\cite{Shapiro:2011wy,Shapiro:2011un}, have been developed to automate such merges.
+Merge operations can either be performed manually---the approach used by version control systems such as \texttt{git}---or can be automated.
+Conflict-free Replicated Data Types, or CRDTs~\cite{Shapiro:2011wy,Shapiro:2011un}, have been developed to automate such merges.
 A CRDT is an abstract datatype whose state can be modified by performing certain operations: a datatype for text editing may allow characters to be inserted or deleted anywhere in the document, for example.
-Moreover, local changes are propagated to other replicas, with updated states packaged up or operations to be applied encoded and thereafter sent over the network to be applied or merged into remote copies of the document.
+Local changes are propagated to other replicas, with updated states packaged up or operations to be applied encoded, and sent over the network to be merged into remote copies of the document.
 
 \subsection{Consistency for optimistic replication}
 
@@ -300,15 +303,13 @@ In operation-based CRDTs the convergence property is implemented by ensuring tha
 For example, consider Figure~\ref{fig:hello-world} wherein User 1 first applies the insertion of \texttt{` World'} and then applies the insertion of \texttt{` :)'} to the document whilst User 2 applies the insertions in the opposite order.
 Commutativity of the insertions ensures that the two replicas obtain the same state.
 
-When replicas mutually merge each others' changes, the convergence property ensures that those replicas end up in the same state.
-However, note that nothing that we have written so far has specified what that state should be!
-This means that, for the purposes of specifying what a collaborative text editing application should do, for instance, strong eventual consistency is merely necessary but it is not sufficient, as it does not capture all of the consistency properties that we require.
+When replicas mutually merge each others' changes, the convergence property ensures that those replicas obtain the same state.
+However, note we also need to specify what that state should be, and for the purposes of specifying what a collaborative text editing app should do, for instance, strong eventual consistency is merely necessary but it is not sufficient, as it does not capture all of the consistency properties that we require.
 More is needed.
 
 In this paper we examine a particular consistency property for collaborative text editors that has been overlooked in the literature.
 Notably, failing to satisfy this property may result in arbitrary text interleaving resulting in an undesirable garbled document state.
 We highlight existing CRDT algorithms and a specification that exhibit this anomaly, and compare them to other approaches that do not suffer from this anomaly, or only a lesser variant.
-
 
 \section{The interleaving anomaly}\label{sec:anomaly}
 
@@ -436,16 +437,19 @@ However, RGA does not satisfy the revised specification of Section~\ref{sec:atti
 This lesser anomaly is illustrated in Figure~\ref{fig:rga-interleaving}.
 In this example, User 1 first positions the cursor between \texttt{`Hello'} and the exclamation mark, and types the word \texttt{` reader'} and then \emph{moves the cursor back} to a position immediately after \texttt{`Hello'}, and types the word \texttt{` dear'}.
 
-Note that in RGA an insertion is anchored to the existing character that immediately precedes the inserted character.
+Note that in RGA an insertion is anchored to the existing character that immediately precedes the character to be inserted.
 Thus, in Figure~\ref{fig:rga-interleaving}, the first character of \texttt{` reader'} and the first character of \texttt{` dear'} are both anchored to the last character of \texttt{`Hello'}.
 When User 2 makes a concurrent insertion of \texttt{` Alice'}, also anchored to the last character of \texttt{`Hello'}, that insertion is ordered arbitrarily relative to other insertions with the same anchor.
 Thus, in this example, RGA allows three possible outcomes of the merge:
+
 \begin{enumerate}
 \item \texttt{`Hello dear reader Alice!'}
 \item \texttt{`Hello dear Alice reader!'}
 \item \texttt{`Hello Alice dear reader!'}
 \end{enumerate}
-Although RGA rules out random character-by-character interleaving in this case, it does still allows the word \texttt{`Alice'} to be interleaved between the two insertion sequences by User 1 which we characterise as a lesser form of the anomaly described in Section~\ref{sec:anomaly}.
+
+Although RGA rules out random character-by-character interleaving it does still allows the word \texttt{`Alice'} to be interleaved between the two insertion sequences by User 1.
+We characterise this as a lesser form of the anomaly described in Section~\ref{sec:anomaly}.
 
 The worst case for RGA occurs if the user types all characters in the reverse order of their appearance in the document, i.e.\ if the document is typed from back to front.
 In this case, each character would be treated as a separate insertion sequence, and thus arbitrary character-level interleaving could occur.
@@ -453,12 +457,10 @@ Although this editing pattern is unlikely to occur in realistic text editing sce
 
 \subsection{Fixing interleaving in RGA}\label{sec:fixing-rga}
 
-We now propose a way to remove the lesser interleaving anomaly in RGA.
-
-Recall that RGA assigns a unique logical timestamp to every operation, and treats that timestamp as the identifier for that operation.
-When a document contains two or more character insertions that are anchored to the same reference character RGA determines the order of those insertions by sorting them according to their timestamp~\cite{Attiya:2016kh,Gomes:2017gy}.
+RGA assigns a unique logical timestamp to every operation, and treats that timestamp as the identifier for that operation.
+When a document contains two or more character insertions that are anchored to the same reference character RGA determines the order of those insertions by sorting them via their timestamp~\cite{Attiya:2016kh,Gomes:2017gy}.
 Roh et al.'s original definition of RGA used a custom S4Vector datatype as timestamp~\cite{Roh:2011dw}, and subsequent presentations of the algorithm~\cite{Shapiro:2011wy} have used Lamport timestamps~\cite{Lamport:1978jq} instead.
-Our fix for RGA works by changing the algorithm to use a new timestamp definition.
+Our RGA fix works by changing the algorithm to use a new timestamp definition.
 
 In Attiya et al.'s formulation of RGA~\cite{Attiya:2016kh}, an insertion operation is represented by a triple $(a, t, r)$ where $a$ is the character being inserted, $t$ is the timestamp of the operation, and $r$ is the timestamp of the \emph{reference character} (the timestamp of the operation that inserted the immediate predecessor character at the time the insertion was performed, or the distinguished value $\bot$ if the insertion was performed at the beginning of the document).
 Deletion operations are performed by marking a character as deleted but retaining its position in the document as a \emph{tombstone}.
