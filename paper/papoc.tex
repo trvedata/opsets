@@ -71,7 +71,7 @@
 }
 
 \begin{abstract}
-Collaborative text editors allow two or more users to edit a shared document concurrently without merge conflicts.
+Collaborative text editors allow two or more users to concurrently edit a shared document without merge conflicts.
 Such systems require an algorithm to provide \emph{convergence}, ensuring all clients which have seen the same set of document edits are in the same state.
 Unfortunately convergence alone does not guarantee that a collaborative text editor is usable.
 Several published algorithms for collaborative text editing exhibit an undesirable anomaly in which concurrently inserted portions of text with a well-defined order may be randomly interleaved on a character-by-character basis, resulting in an unreadable jumble of letters which nevertheless satisfy the convergence property.
@@ -343,7 +343,7 @@ For example, the consistency property for a document can be met by ensuring all 
 
 In this paper we examine a particular consistency property for collaborative text editors that has been overlooked in the literature.
 Notably, failing to satisfy this property may result in arbitrary text interleaving leading to an undesirable (garbled) document state.
-We highlight existing CRDT algorithms and a specification that exhibit this anomaly, and compare them to other approaches that do not suffer from this anomaly, or only a lesser variant.
+We highlight existing CRDT algorithms and a specification that exhibits this anomaly, and compare them to other approaches that do not suffer from this anomaly, or only a lesser variant.
 
 \section{The interleaving anomaly}\label{sec:anomaly}
 
@@ -540,13 +540,13 @@ A formal proof of this conjecture is left for future work.
 \section{Related work}\label{sec:relwork}
 
 The interleaving anomaly in Logoot and LSEQ has been independently pointed out in our unpublished prior work~\cite{ExtendedVersion}, by Sun et al.~\cite{Sun:2018wb}, and by a Stack Overflow user~\cite{StackOverflowInterleaving}.
-From conversations with various members of the CRDT community it appears that the anomaly has been known in the community ``folklore'' for some time, but to our knowledge there is no published work that clearly explains the problem or proposes solutions.
+From conversations with various members of the CRDT community it appears that the anomaly has been known in the community folklore for some time, but to our knowledge there is no published work that clearly explains the problem or proposes solutions.
 
 \section{Conclusion}
 
 Several published CRDT algorithms for collaborative text editing exhibit an undesirable anomaly in which concurrently inserted portions of text with a well-defined order may be randomly interleaved on a character-by-character basis, resulting in an unreadable jumble of letters.
-We highlight two cases of unnecessary interleaving, one affecting Logoot and LSEQ, and the other affecting RGA.
-We proposed improved specifications for these algorithms which we conjecture removes unnecessary interleaving and we leave the production of a mechanised proof of correctness as future work.
+We highlighted two cases of unnecessary interleaving, one affecting Logoot and LSEQ, and the other affecting RGA.
+We proposed improved specifications for these algorithms which we conjecture removes unnecessary interleaving; we leave the construction of a mechanised proof of correctness as future work.
 
 \begin{acks}
 This work was supported by The Boeing Company and the EPSRC ``REMS: Rigorous Engineering for Mainstream Systems'' programme grant (EP/K008528).
