@@ -72,7 +72,7 @@
 Several published algorithms for collaborative text editing exhibit an undesirable anomaly in which concurrently inserted text may be interleaved on a character-by-character basis, resulting in an unreadable jumble of letters.
 We highlight algorithms that suffer from this problem, explain its cause, and also identify a lesser variant of the anomaly that occurs in some other algorithms.
 Finally, we propose a solution that can---in some cases---prevent the anomaly.
-To our knowledge this is the discussion of this anomaly in print.
+To our knowledge this is the first discussion of this anomaly in print.
 \end{abstract}
 
 %
@@ -87,7 +87,7 @@ To our knowledge this is the discussion of this anomaly in print.
 
 \section{Introduction}
 
-In collaborative software several users may contribute to a project by creating and editing shared documents such as text documents, spreadsheets, or similar.
+In collaborative software, several users may contribute to a project by creating and editing shared documents such as text documents, spreadsheets, or similar.
 When a user wishes to view a document, a copy of that document is loaded on the user's computer in a web-browser tab, or in a native app on their device, for example.
 A user's changes are immediately applied to the local copy of the document on the user's computer, and then asynchronously sent to any other users who have a copy of the document---possibly via a server, which may also store a copy.
 This collaboration scenario is very similar to the problem of replication in distributed databases: in this context, the shared data is a database rather than a document, and each node that has a copy of the data is called a \emph{replica}.
