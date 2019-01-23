@@ -67,7 +67,7 @@
 
 \begin{abstract}
 Several published algorithms for collaborative text editing exhibit an undesirable anomaly in which concurrently inserted portions of text may be interleaved on a character-by-character basis, resulting in an unreadable jumble of letters.
-We highlight algorithms that suffer from this problem, explain its cause, and also identify a lesser variant of the anomaly that occurs in some other well known algorithms.
+We show that many algorithms suffer from this problem, explain its cause, and also identify a lesser variant of the anomaly that occurs in some other well known algorithms.
 Finally, we propose a solution that can---in some cases---prevent the interleaving anomaly.
 To our knowledge this is the first acknowledgment and discussion of this anomaly in print.
 \end{abstract}
@@ -293,7 +293,7 @@ Moreover, local changes are propagated to other replicas, with updated states pa
 CRDTs implement a consistency model called \emph{strong eventual consistency}~\cite{Shapiro:2011un,Gomes:2017gy} which is defined by the following properties:
 \begin{description}
 \item[Eventual delivery:] An update applied on one correct replica is eventually applied on all correct replicas.
-\item[Convergence:] If the same set of updates have been applied on two replicas then those two replicas have equivalent state.
+\item[Convergence:] If the same set of updates have been applied (possibly in a different order) on two replicas then those two replicas have equivalent state.
 \item[Termination:] All method executions terminate.
 \end{description}
 In operation-based CRDTs the convergence property is implemented by ensuring that concurrent operations \emph{commute}.
@@ -302,11 +302,11 @@ Commutativity of the insertions ensures that the two replicas obtain the same st
 
 When replicas mutually merge each others' changes, the convergence property ensures that those replicas end up in the same state.
 However, note that nothing that we have written so far has specified what that state should be!
-This means that, for the purposes of specifying what a collaborative text editing application should do, for instance, strong eventual consistency is merely necessary but it is not sufficient, as it does not capture all of the consistency properties that we require.
-More is needed.
+This means that, for the purposes of specifying what a collaborative text editing application should do, for instance, strong eventual consistency is necessary but not sufficient: it does not capture all of the consistency properties that we require.
+For example, the consistency property for a document can be met by ensuring all inserted characters are stored in lexicographical order, but this does not represent a useful document editing system. More is needed in order to ensure the system is useful.
 
 In this paper we examine a particular consistency property for collaborative text editors that has been overlooked in the literature.
-Notably, failing to satisfy this property may result in arbitrary text interleaving resulting in an undesirable garbled document state.
+Notably, failing to satisfy this property may result in arbitrary text interleaving resulting in an undesirable (garbled) document state.
 We highlight existing CRDT algorithms and a specification that exhibit this anomaly, and compare them to other approaches that do not suffer from this anomaly, or only a lesser variant.
 
 
@@ -325,7 +325,7 @@ However, when the concurrent edits are merged, the algorithm randomly interleave
 The reason why this anomaly occurs with Logoot and LSEQ is illustrated in Figure~\ref{fig:real-numbers}.
 Conceptually, these algorithms work by assigning every character of the text a unique position identifier from a \emph{dense} ordered set; that is, for any two given identifiers we can find a new, distinct identifier that lies between the two.
 The order of characters in the text is then given by the order of these identifiers.
-In Figure~\ref{fig:real-numbers} we use rational numbers between 0.0 and 1.0 as identifiers though, in reality, identifiers in Logoot and LSEQ are paths through a tree with an entirely similar effect.
+In Figure~\ref{fig:real-numbers} we use rational numbers between 0.0 and 1.0 as identifiers though, in reality, identifiers in Logoot and LSEQ are paths through a tree with the same effect.
 
 We can see in Figure~\ref{fig:real-numbers} that identifiers are assigned correctly by each of the users: the characters of \texttt{` Alice'} and \texttt{` Charlie'} are assigned rational numbers between 0.64 and 0.95 (the interval between the preceding \texttt{`Hello'} and the following \texttt{`!'}) in increasing order.
 However, the exact values assigned to each character can vary arbitrarily, and since neither user knows about the other user's concurrent insertion, both users spread the identifiers of their insertions across the interval (0.64, 0.95).
@@ -334,7 +334,7 @@ When merged, the resulting character sequence is an arbitrary interleaving of th
 We performed tests with open source implementations of Logoot \cite{AhmedNacer:2011ke,ReplicationBenchmark} and LSEQ \cite{LSEQTree,Nedelec:2016eo}, and observed this interleaving anomaly occurring in practice.
 The problem is even worse if the concurrent insertions are comprised of not just a single word but a paragraph or section.
 In these cases, interleaving the users' insertions would most likely result in an incomprehensible text that would have to be deleted and rewritten.
-Yet, despite the merge in Figure~\ref{fig:bad-merge} being particularly undesirable, to our knowledge our unpublished draft manuscript~\cite{ExtendedVersion} was the first to point out this anomaly.
+Yet, despite the merge in Figure~\ref{fig:bad-merge} being particularly undesirable, to our knowledge our draft manuscript~\cite{ExtendedVersion} on arXiv was the first to point out this anomaly.
 
 Note, however, that this problem does not occur in the example of Figure~\ref{fig:hello-world}.
 Here, the merged outcome is unambiguous as the relative ordering of all parts of the text is clear: \texttt{` World'} is inserted before the exclamation mark, while the \texttt{` :)'} is inserted after it.
@@ -445,7 +445,7 @@ Thus, in this example, RGA allows three possible outcomes of the merge:
 \item \texttt{`Hello dear Alice reader!'}
 \item \texttt{`Hello Alice dear reader!'}
 \end{enumerate}
-Although RGA rules out random character-by-character interleaving in this case, it does still allows the word \texttt{`Alice'} to be interleaved between the two insertion sequences by User 1 which we characterise as a lesser form of the anomaly described in Section~\ref{sec:anomaly}.
+Although RGA rules out random character-by-character interleaving in this case, it does still allow the word \texttt{`Alice'} to be interleaved between the two insertion sequences by User 1 which we characterise as a lesser form of the anomaly described in Section~\ref{sec:anomaly}.
 
 The worst case for RGA occurs if the user types all characters in the reverse order of their appearance in the document, i.e.\ if the document is typed from back to front.
 In this case, each character would be treated as a separate insertion sequence, and thus arbitrary character-level interleaving could occur.
