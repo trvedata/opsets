@@ -517,15 +517,12 @@ In this case we make the ordering of operations consistent with the \emph{happen
 (a_2, t_2, r, e_2) < (a_1, t_1, r, e_1) &\quad\text{if } t_2 \in e_1
 \end{align*}
 Otherwise $\mathit{ins}_1$ and $\mathit{ins}_2$ are concurrent, and we have $t_1 \notin e_2$ and $t_2 \notin e_1$.
-From this and from $t_1 \ne t_2$ we can conclude that
-\begin{align*}
-(e_1 \cup \{t_1\}) - (e_2 \cup \{t_2\}) &\ne \{\} \quad\text{and}\\
-(e_2 \cup \{t_2\}) - (e_1 \cup \{t_1\}) &\ne \{\}.
-\end{align*}
+From this we can deduce that
+\[ \{t_1\} \cup e_1 - e_2 \ne \{\} \quad\text{and}\quad \{t_2\} \cup e_2 - e_1 \ne \{\}. \]
 As these sets are nonempty and we have a total ordering on timestamps, each of them has a unique minimal element:
 \begin{align*}
-m_1 &= \mathrm{min}\big( (e_1 \cup \{t_1\}) - (e_2 \cup \{t_2\}) \big) \\
-m_2 &= \mathrm{min}\big( (e_2 \cup \{t_2\}) - (e_1 \cup \{t_1\}) \big)
+m_1 &= \mathrm{min}(\{t_1\} \cup e_1 - e_2) \\
+m_2 &= \mathrm{min}(\{t_2\} \cup e_2 - e_1)
 \end{align*}
 The timestamps $m_1$ and $m_2$ identify the first operations at which the editing histories of $\mathit{ins}_1$ and $\mathit{ins}_2$ diverged.
 From the definition above it follows that $m_1 \ne m_2$.
