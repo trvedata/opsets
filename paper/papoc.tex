@@ -196,6 +196,8 @@ In order to ensure that no user input is lost these concurrent changes must be \
 	\tikzstyle{state}=[matrix,column sep={20pt,between origins}]
 	\tikzstyle{val}=[draw,anchor=base,minimum width=20pt,text height=8pt,text depth=3pt]
 	\tikzstyle{oid}=[anchor=base]
+	\tikzstyle{ins1}=[fill=red!10]
+	\tikzstyle{ins2}=[fill=blue!10]
 	\tikzstyle{leftevent}=[left,inner xsep=6pt,text width=4cm,text ragged left,midway]
 	\tikzstyle{rightevent}=[right,inner xsep=6pt,text width=4cm,text ragged,midway]
 	\tikzstyle{time}=[thick,->]
@@ -220,12 +222,12 @@ In order to ensure that no user input is lost these concurrent changes must be \
 		\node [val] {\texttt{l}}; &
 		\node [val] {\texttt{l}}; &
 		\node [val] {\texttt{o}}; &
-		\node [val] {\texttt{ }}; &
-		\node [val] {\texttt{A}}; &
-		\node [val] {\texttt{l}}; &
-		\node [val] {\texttt{i}}; &
-		\node [val] {\texttt{c}}; &
-		\node [val] {\texttt{e}}; &
+		\node [val,ins1] {\texttt{ }}; &
+		\node [val,ins1] {\texttt{A}}; &
+		\node [val,ins1] {\texttt{l}}; &
+		\node [val,ins1] {\texttt{i}}; &
+		\node [val,ins1] {\texttt{c}}; &
+		\node [val,ins1] {\texttt{e}}; &
 		\node [val] {\texttt{!}}; \\
 		\node [oid] {0.18}; & % H
 		\node [oid] {0.26}; & % e
@@ -246,14 +248,14 @@ In order to ensure that no user input is lost these concurrent changes must be \
 		\node [val] {\texttt{l}}; &
 		\node [val] {\texttt{l}}; &
 		\node [val] {\texttt{o}}; &
-		\node [val] {\texttt{ }}; &
-		\node [val] {\texttt{C}}; &
-		\node [val] {\texttt{h}}; &
-		\node [val] {\texttt{a}}; &
-		\node [val] {\texttt{r}}; &
-		\node [val] {\texttt{l}}; &
-		\node [val] {\texttt{i}}; &
-		\node [val] {\texttt{e}}; &
+		\node [val,ins2] {\texttt{ }}; &
+		\node [val,ins2] {\texttt{C}}; &
+		\node [val,ins2] {\texttt{h}}; &
+		\node [val,ins2] {\texttt{a}}; &
+		\node [val,ins2] {\texttt{r}}; &
+		\node [val,ins2] {\texttt{l}}; &
+		\node [val,ins2] {\texttt{i}}; &
+		\node [val,ins2] {\texttt{e}}; &
 		\node [val] {\texttt{!}}; \\
 		\node [oid] {0.18}; & % H
 		\node [oid] {0.26}; & % e
@@ -276,20 +278,20 @@ In order to ensure that no user input is lost these concurrent changes must be \
 		\node [val] {\texttt{l}}; &
 		\node [val] {\texttt{l}}; &
 		\node [val] {\texttt{o}}; &
-		\node [val] {\texttt{ }}; &
-		\node [val] {\texttt{A}}; &
-		\node [val] {\texttt{l}}; &
-		\node [val] {\texttt{ }}; &
-		\node [val] {\texttt{C}}; &
-		\node [val] {\texttt{i}}; &
-		\node [val] {\texttt{h}}; &
-		\node [val] {\texttt{a}}; &
-		\node [val] {\texttt{r}}; &
-		\node [val] {\texttt{c}}; &
-		\node [val] {\texttt{l}}; &
-		\node [val] {\texttt{i}}; &
-		\node [val] {\texttt{e}}; &
-		\node [val] {\texttt{e}}; &
+		\node [val,ins1] {\texttt{ }}; &
+		\node [val,ins1] {\texttt{A}}; &
+		\node [val,ins1] {\texttt{l}}; &
+		\node [val,ins2] {\texttt{ }}; &
+		\node [val,ins2] {\texttt{C}}; &
+		\node [val,ins1] {\texttt{i}}; &
+		\node [val,ins2] {\texttt{h}}; &
+		\node [val,ins2] {\texttt{a}}; &
+		\node [val,ins2] {\texttt{r}}; &
+		\node [val,ins1] {\texttt{c}}; &
+		\node [val,ins2] {\texttt{l}}; &
+		\node [val,ins2] {\texttt{i}}; &
+		\node [val,ins2] {\texttt{e}}; &
+		\node [val,ins1] {\texttt{e}}; &
 		\node [val] {\texttt{!}}; \\
 		\node [oid] {0.18}; & % H
 		\node [oid] {0.26}; & % e
