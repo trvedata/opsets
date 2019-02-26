@@ -480,22 +480,23 @@ The existing clause 1(b) ensures that all replicas resolve the insertions to app
 	\node (hello3) at (6,6) [box] {\texttt{l}};
 	\node (hello4) at (7,6) [box] {\texttt{l}};
 	\node (hello5) at (8,6) [box] {\texttt{o}};
+	\node (hello5t) at (8,6.6) {$\tau_0$};
 	\node (hello6) at (12,4.2) [box] {\texttt{!}};
-    \node (hello6t) at (12,3.6) {$t_1$};
-    \node (dear1t) at (6,3.6) {$t_4$};
+    \node (hello6t) at (12,3.6) {$\tau_1$};
+    \node (dear1t) at (6,3.6) {$\tau_4$};
     \node (dear1)  at (6,4.2) [box] {\textit{space}};
 	\node (dear2)  at (7,3) [box] {\texttt{d}};
 	\node (dear3)  at (8,2) [box] {\texttt{e}};
 	\node (dear4)  at (9,1) [box] {\texttt{a}};
 	\node (dear5) at (10,0) [box] {\texttt{r}};
-    \node (alice1t) at (8,3.6) {$t_3$};
+    \node (alice1t) at (8,3.6) {$\tau_3$};
     \node (alice1) at (8,4.2) [box] {\textit{space}};
 	\node (alice2) at (9,3) [box] {\texttt{A}};
 	\node (alice3) at (10,2) [box] {\texttt{l}};
 	\node (alice4) at (11,1) [box] {\texttt{i}};
 	\node (alice5) at (12,0) [box] {\texttt{c}};
 	\node (alice6) at (13,-1) [box] {\texttt{e}};
-    \node (reader1t) at (10,3.6) {$t_2$};
+    \node (reader1t) at (10,3.6) {$\tau_2$};
     \node (reader1) at (10,4.2) [box] {\textit{space}};
 	\node (reader2) at (11,3) [box] {\texttt{r}};
 	\node (reader3) at (12,2) [box] {\texttt{e}};
@@ -531,7 +532,7 @@ The existing clause 1(b) ensures that all replicas resolve the insertions to app
   \caption{The tree structure underlying the RGA example in Figure~\ref{fig:rga-interleaving}: each node
   represents a character, and its parent is the immediate predecessor character at the time it was inserted.
   The document state corresponds to a depth-first pre-order traversal over this tree, with sibling nodes
-  visited in descending timestamp order ($t_4 > t_3 > t_2 > t_1$).}
+  visited in descending timestamp order ($\tau_4 > \tau_3 > \tau_2 > \tau_1$).}
   \label{fig:rga-tree}
 \end{figure*}
 
@@ -583,7 +584,7 @@ Let $I$ be the set of insertion operations that have been performed on a documen
 To insert a character $a$ after reference character $r$ in this document, we create a new timestamp $t$, create an insertion operation, and add it to $I$:
 \[ I' = I \;\cup\; \big\{\,(a,\, t,\, r,\, \{t' \mid \exists a', e'.\; (a', t', r, e') \in I \}\,)\,\big\} \]
 
-In the example of Figure~\ref{fig:rga-tree}, if the timestamp of the last character of \texttt{`Hello'} is $t_0$, the set of insertions contains $(\texttt{`!'}, t_1, t_0, \{\})$ for the exclamation mark, $(\texttt{`~'}, t_2, t_0, \{t_1\})$ for the first character of \texttt{`~reader'}, $(\texttt{`~'}, t_3, t_0, \{t_1\})$ for the first character of \texttt{`~Alice'}, and $(\texttt{`~'}, t_4, t_0, \{t_1, t_2\})$ for the first character of \texttt{`~dear'}.
+In the example of Figure~\ref{fig:rga-tree}, if the timestamp of the last character of \texttt{`Hello'} is $\tau_0$, the set of insertions contains $(\texttt{`!'}, \tau_1, \tau_0, \{\})$ for the exclamation mark, $(\texttt{`~'}, \tau_2, \tau_0, \{\tau_1\})$ for the first character of \texttt{`~reader'}, $(\texttt{`~'}, \tau_3, \tau_0, \{\tau_1\})$ for the first character of \texttt{`~Alice'}, and $(\texttt{`~'}, \tau_4, \tau_0, \{\tau_1, \tau_2\})$ for the first character of \texttt{`~dear'}.
 
 In order to use this insertion 4-tuple in RGA we need to define a total order that is used to sort insertions with the same reference character.
 Consider two distinct insertion operations $\mathit{ins}_1$ and $\mathit{ins}_2$ with the same reference character $r$:
