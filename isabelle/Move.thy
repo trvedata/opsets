@@ -87,7 +87,7 @@ lemma sorted_oplist_sorted_1:
 using assms proof(induction xs, simp)
   case (Cons x xs)
   hence IH: "sorted (map fst (sorted_oplist xs oper))"
-    by (simp add: sorted_Cons)
+    by simp
   obtain i1 op1 where "x = (i1, op1)" by fastforce
   obtain i2 op2 where "oper = (i2, op2)" by fastforce
   show "sorted (map fst (sorted_oplist (x # xs) oper))"
