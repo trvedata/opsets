@@ -371,7 +371,7 @@ We can see in Figure~\ref{fig:real-numbers} that identifiers are assigned correc
 However, the exact values assigned to each character can vary arbitrarily, and since neither user knows about the other user's concurrent insertion, both users spread the identifiers of their insertions across the interval (0.64, 0.95).
 When merged, the resulting character sequence is an arbitrary interleaving of the two.
 
-We performed tests with open source implementations of Logoot \cite{AhmedNacer:2011ke,ReplicationBenchmark} and LSEQ \cite{LSEQTree,Nedelec:2016eo}, and observed this interleaving anomaly occurring in practice.
+We performed tests with open source implementations of Logoot \cite{AhmedNacer:2011ke,ReplicationBenchmark} and LSEQ \cite{LSEQTree,Nedelec:2016eo}, and observed this interleaving anomaly occurring in practice~\cite{InterleavingData}.
 The problem is even worse if the concurrent insertions are comprised of not just a single word but a paragraph or section.
 In these cases, interleaving the users' insertions would most likely result in an incomprehensible text that would have to be deleted and rewritten.
 
